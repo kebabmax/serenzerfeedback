@@ -111,6 +111,35 @@ body {
   gap: 6px;
 }
 
+.sidebar-email-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--sage);
+  text-decoration: none;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.sidebar-email-link:hover {
+  color: var(--sage-dark);
+}
+
+.sidebar-email-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.sidebar-email-icon path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .session-countdown {
   display: flex;
   flex-direction: column;
@@ -825,6 +854,72 @@ body {
   cursor: pointer;
 }
 
+.debug-deadline-btn {
+  position: fixed;
+  right: 20px;
+  bottom: 204px;
+  z-index: 700;
+  border: 2px solid #8f1111;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 16px;
+  padding: 14px 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  box-shadow: 0 10px 26px rgba(143, 17, 17, 0.35);
+  cursor: pointer;
+}
+
+.debug-deadline-reset-btn {
+  position: fixed;
+  right: 20px;
+  bottom: 112px;
+  z-index: 700;
+  border: 2px solid #8f1111;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 16px;
+  padding: 14px 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  box-shadow: 0 10px 26px rgba(143, 17, 17, 0.35);
+  cursor: pointer;
+}
+
+.debug-deadline-btn span {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: none;
+}
+
+.debug-deadline-reset-btn span {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: none;
+}
+
+.debug-deadline-btn:hover {
+  background: #db241a;
+}
+
+.debug-deadline-reset-btn:hover {
+  background: #db241a;
+}
+
 .debug-wipe-btn span {
   display: block;
   margin-top: 4px;
@@ -839,6 +934,20 @@ body {
 }
 
 @media (max-width: 767px) {
+  .debug-deadline-btn {
+    right: 12px;
+    bottom: 256px;
+    padding: 12px 14px;
+    max-width: calc(100vw - 24px);
+  }
+
+  .debug-deadline-reset-btn {
+    right: 12px;
+    bottom: 164px;
+    padding: 12px 14px;
+    max-width: calc(100vw - 24px);
+  }
+
   .debug-wipe-btn {
     right: 12px;
     bottom: 72px;

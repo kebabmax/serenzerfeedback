@@ -56,6 +56,16 @@
     <div class="sidebar-inner" id="mobile-sidebar-inner"></div>
   </aside>
 
+  <button class="debug-deadline-btn" id="debug-deadline-btn" type="button">
+    TEMP TEST SESSION END
+    <span>Push deadline forward for countdown test</span>
+  </button>
+
+  <button class="debug-deadline-reset-btn" id="debug-deadline-reset-btn" type="button">
+    TEMP RESET SESSION END
+    <span>Restore May 10 at 22:00 CEST</span>
+  </button>
+
   <button class="debug-wipe-btn" id="debug-wipe-btn" type="button">
     TEMP WIPE EVERYTHING
     <span>Remove before publishing</span>
@@ -106,6 +116,8 @@ const T = {
     durationText:   "30-60 minutes en tout, selon le temps que tu passes dans l'app.",
     autosaveLabel:  "Sauvegarde automatique :",
     autosaveText:   "Tes réponses sont enregistrées localement. Tu peux fermer et revenir !",
+    sessionEndsOnLabel: "Fin de session :",
+    emailUs: "Écrivez-nous",
     startBtn:        "J'ai compris, commencer !",
     langSelectTitle:  "Choisissez votre langue",
     langSelectHint:   "Vous pouvez toujours changer la langue en haut à droite.",
@@ -197,6 +209,8 @@ const T = {
     durationText:  "30-60 minutes in total, depending on how much time you spend in the app.",
     autosaveLabel: "Automatic save:",
     autosaveText:  "Your answers are saved locally. You can close and come back!",
+    sessionEndsOnLabel: "Session ends on:",
+    emailUs: "Email us",
     startBtn:        "Got it, let's start!",
     langSelectTitle:  "Choose your language",
     langSelectHint:   "You can always change the language in the top right.",
@@ -288,6 +302,8 @@ const T = {
     durationText:  "30-60 minuti in totale, a seconda del tempo trascorso nell'app.",
     autosaveLabel: "Salvataggio automatico:",
     autosaveText:  "Le tue risposte vengono salvate localmente. Puoi chiudere e tornare!",
+    sessionEndsOnLabel: "La sessione termina il:",
+    emailUs: "Scrivici",
     startBtn:        "Ho capito, iniziamo!",
     langSelectTitle:  "Scegli la tua lingua",
     langSelectHint:   "Puoi sempre cambiare la lingua in alto a destra.",
@@ -379,6 +395,8 @@ const T = {
     durationText:  "30-60 minuten in totaal, afhankelijk van hoe lang je in de app doorbrengt.",
     autosaveLabel: "Automatisch opslaan:",
     autosaveText:  "Je antwoorden worden lokaal opgeslagen. Je kunt sluiten en terugkomen!",
+    sessionEndsOnLabel: "Sessie eindigt op:",
+    emailUs: "Mail ons",
     startBtn:        "Begrepen, laten we beginnen!",
     langSelectTitle:  "Kies je taal",
     langSelectHint:   "Je kunt de taal altijd rechtsboven wijzigen.",
@@ -470,6 +488,8 @@ const T = {
     durationText:  "30-60 Minuten insgesamt, je nachdem wie viel Zeit du in der App verbringst.",
     autosaveLabel: "Automatisches Speichern:",
     autosaveText:  "Deine Antworten werden lokal gespeichert. Du kannst schliessen und zurückkommen!",
+    sessionEndsOnLabel: "Sitzung endet am:",
+    emailUs: "E-Mail an uns",
     startBtn:        "Verstanden, los geht's!",
     langSelectTitle:  "Wähle deine Sprache",
     langSelectHint:   "Du kannst die Sprache jederzeit oben rechts ändern.",
@@ -561,6 +581,8 @@ const T = {
     durationText:  "30-60 minutos en total, según el tiempo que pases en la app.",
     autosaveLabel: "Guardado automático:",
     autosaveText:  "Tus respuestas se guardan localmente. Puedes cerrar y volver!",
+    sessionEndsOnLabel: "La sesión termina el:",
+    emailUs: "Escríbenos",
     startBtn:        "Entendido, empezamos!",
     langSelectTitle:  "Elige tu idioma",
     langSelectHint:   "Siempre puedes cambiar el idioma en la parte superior derecha.",
@@ -741,6 +763,15 @@ function doneBadgeHTML(className = "") {
   `;
 }
 
+function emailIconSVG(className = "") {
+  return `
+    <svg class="${className}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4 7.5H20V16.5H4Z" />
+      <path d="M4.8 8.1L12 13.3L19.2 8.1" />
+    </svg>
+  `;
+}
+
 function updateAutosaveIndicators() {
   const isSaved = state.autosaveStatus === "saved";
   document.querySelectorAll(".autosave-indicator").forEach(el => {
@@ -802,6 +833,10 @@ function renderSidebarContent(containerId) {
       ${getNavTabs().map(tab => navItemHTML(tab)).join("")}
     </nav>
     <div class="sidebar-footer">
+      <a class="sidebar-email-link" href="mailto:noejore@serenzer.com">
+        ${emailIconSVG("sidebar-email-icon")}
+        <span>${t("emailUs")}</span>
+      </a>
       <div class="session-countdown">
         <span class="countdown-label">${t("sessionEndsIn")}</span>
         <span class="countdown-timer"></span>
@@ -903,6 +938,7 @@ function tutorielHTML() {
     { n: "4", title: t("step4Title"), desc: t("step4Desc") },
     { n: "5", title: t("step5Title"), desc: t("step5Desc") },
   ];
+  const sessionEndsOn = formatDeadlineDate();
 
   return `
     <div class="card">
@@ -934,7 +970,8 @@ function tutorielHTML() {
     <div class="card card-highlight">
       <p style="color:var(--olive-mid);font-size:14px;line-height:1.6;margin-bottom:16px;margin-top:0;">
         <strong>${t("durationLabel")}</strong> ${t("durationText")}<br>
-        <strong>${t("autosaveLabel")}</strong> ${t("autosaveText")}
+        <strong>${t("autosaveLabel")}</strong> ${t("autosaveText")}<br>
+        <strong>${t("sessionEndsOnLabel")}</strong> ${sessionEndsOn}
       </p>
       <button class="submit-btn" id="tutoriel-start-btn">${t("startBtn")}</button>
     </div>
@@ -1349,7 +1386,27 @@ function renderSplash() {
 
 // ── Countdown ────────────────────────────────────────────────────────────────
 // May 10 2026 at 22:00 CEST (UTC+2) = 20:00 UTC
-const DEADLINE = new Date("2026-05-10T20:00:00Z");
+const DEFAULT_DEADLINE_ISO = "2026-05-10T20:00:00Z";
+let DEADLINE = new Date(DEFAULT_DEADLINE_ISO);
+
+function deadlineLocale() {
+  return {
+    fr: "fr-FR",
+    en: "en-GB",
+    it: "it-IT",
+    nl: "nl-NL",
+    de: "de-DE",
+    es: "es-ES",
+  }[state.lang] || "en-GB";
+}
+
+function formatDeadlineDate() {
+  return new Intl.DateTimeFormat(deadlineLocale(), {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "Europe/Amsterdam",
+  }).format(DEADLINE);
+}
 
 function formatCountdown() {
   const diff = DEADLINE - Date.now();
@@ -1366,6 +1423,18 @@ function formatCountdown() {
 function updateCountdown() {
   const text = formatCountdown();
   document.querySelectorAll(".countdown-timer").forEach(el => el.textContent = text);
+}
+
+function setDebugDeadline() {
+  DEADLINE = new Date(Date.now() + 10 * 60000);
+  renderAll();
+  updateCountdown();
+}
+
+function resetDebugDeadline() {
+  DEADLINE = new Date(DEFAULT_DEADLINE_ISO);
+  renderAll();
+  updateCountdown();
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
@@ -1397,6 +1466,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("debug-wipe-btn").addEventListener("click", () => {
     resetAppState();
+  });
+
+  document.getElementById("debug-deadline-btn").addEventListener("click", () => {
+    setDebugDeadline();
+  });
+
+  document.getElementById("debug-deadline-reset-btn").addEventListener("click", () => {
+    resetDebugDeadline();
   });
 
   window.addEventListener("resize", () => renderAll());
