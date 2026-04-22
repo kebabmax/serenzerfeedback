@@ -58,6 +58,10 @@
 
   <div class="debug-menu" id="debug-menu">
     <div class="debug-menu-panel hidden" id="debug-menu-panel">
+      <button class="debug-chaos-btn" id="debug-chaos-btn" type="button">
+        DO NOT PRESS
+      </button>
+
       <button class="debug-deadline-btn" id="debug-deadline-btn" type="button">
         TEMP TEST SESSION END
         <span>Push deadline forward for countdown test</span>
@@ -77,6 +81,23 @@
     <button class="debug-menu-toggle" id="debug-menu-toggle" type="button" aria-label="Open debug menu" aria-expanded="false">
       <span class="debug-menu-icon">!</span>
     </button>
+  </div>
+
+  <div class="debug-chaos-overlay hidden" id="debug-chaos-overlay" aria-hidden="true">
+    <div class="debug-chaos-burst debug-chaos-burst-1"></div>
+    <div class="debug-chaos-burst debug-chaos-burst-2"></div>
+    <div class="debug-chaos-burst debug-chaos-burst-3"></div>
+    <div class="debug-chaos-static"></div>
+    <div class="debug-chaos-scanlines"></div>
+    <div class="debug-chaos-flash"></div>
+    <div class="debug-chaos-crash">Fatal error: Serenzer has stopped responding.</div>
+  </div>
+
+  <div class="debug-roast-modal hidden" id="debug-roast-modal" aria-hidden="true">
+    <div class="debug-roast-card">
+      <div class="debug-roast-title">lila you fucked up</div>
+      <button class="debug-roast-close" id="debug-roast-close" type="button">ok</button>
+    </div>
   </div>
 </div>
 
@@ -1455,6 +1476,36 @@ function resetDebugDeadline() {
   updateCountdown();
 }
 
+function triggerFakeExplosion() {
+  const overlay = document.getElementById("debug-chaos-overlay");
+  const roastModal = document.getElementById("debug-roast-modal");
+  const app = document.querySelector(".app");
+  if (!overlay || !roastModal || !app) return;
+
+  overlay.classList.remove("hidden");
+  overlay.classList.remove("debug-chaos-active");
+  roastModal.classList.add("hidden");
+  app.classList.remove("debug-site-chaos");
+  app.classList.remove("debug-site-lag");
+  app.classList.remove("debug-site-crashed");
+
+  void overlay.offsetWidth;
+
+  overlay.classList.add("debug-chaos-active");
+  app.classList.add("debug-site-chaos");
+  app.classList.add("debug-site-lag");
+  app.classList.add("debug-site-crashed");
+
+  window.setTimeout(() => {
+    overlay.classList.add("hidden");
+    overlay.classList.remove("debug-chaos-active");
+    app.classList.remove("debug-site-chaos");
+    app.classList.remove("debug-site-lag");
+    app.classList.remove("debug-site-crashed");
+    roastModal.classList.remove("hidden");
+  }, 3000);
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1494,9 +1545,17 @@ document.addEventListener("DOMContentLoaded", () => {
     resetDebugDeadline();
   });
 
+  document.getElementById("debug-chaos-btn").addEventListener("click", () => {
+    triggerFakeExplosion();
+  });
+
   document.getElementById("debug-menu-toggle").addEventListener("click", () => {
     state.debugMenuOpen = !state.debugMenuOpen;
     renderAll();
+  });
+
+  document.getElementById("debug-roast-close").addEventListener("click", () => {
+    document.getElementById("debug-roast-modal").classList.add("hidden");
   });
 
   window.addEventListener("resize", () => renderAll());
