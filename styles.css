@@ -727,79 +727,6 @@ body {
   line-height: 1;
 }
 
-/* ── Mobile bottom nav ── */
-
-.mobile-nav {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--white);
-  border-top: 1px solid var(--border);
-  overflow-x: auto;
-  padding: 8px 4px;
-  z-index: 100;
-}
-
-.mobile-nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  min-width: 56px;
-  padding: 4px 6px;
-  border: none;
-  background: none;
-  cursor: pointer;
-}
-
-.mobile-nav-item.locked {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.mobile-nav-icon {
-  font-size: 18px;
-}
-
-.mobile-nav-label {
-  font-size: 9px;
-  color: var(--olive-mid);
-  white-space: nowrap;
-}
-
-.mobile-nav-item.active .mobile-nav-label {
-  color: var(--sage);
-  font-weight: 600;
-}
-
-.mobile-nav-status {
-  margin-top: 2px;
-}
-
-.mobile-nav-status.status-badge {
-  width: 14px;
-  height: 14px;
-}
-
-.mobile-nav-status .status-badge-check {
-  width: 8px;
-  height: 8px;
-}
-
-.mobile-nav-status-locked {
-  font-size: 9px;
-  color: var(--locked);
-}
-
-.mobile-nav-indicator {
-  width: 16px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--sage);
-}
-
 /* ── Mobile overlay ── */
 
 .overlay {
@@ -903,6 +830,22 @@ body {
   cursor: pointer;
 }
 
+.debug-unlock-btn {
+  border: 2px solid #8f1111;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 16px;
+  padding: 14px 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  box-shadow: 0 10px 26px rgba(143, 17, 17, 0.35);
+  cursor: pointer;
+}
+
 .debug-deadline-btn {
   border: 2px solid #8f1111;
   background: #ff3b30;
@@ -953,6 +896,19 @@ body {
   text-transform: none;
 }
 
+.debug-unlock-btn span {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: none;
+}
+
+.debug-unlock-btn:hover {
+  background: #db241a;
+}
+
 .debug-deadline-btn:hover {
   background: #db241a;
 }
@@ -980,6 +936,7 @@ body {
     bottom: 72px;
   }
 
+  .debug-unlock-btn,
   .debug-deadline-btn,
   .debug-deadline-reset-btn,
   .debug-wipe-btn {
@@ -997,7 +954,7 @@ body {
 
   .main {
     margin-left: 0;
-    padding-bottom: 80px;
+    padding-bottom: 40px;
   }
 
   .topbar {
@@ -1010,10 +967,6 @@ body {
 
   .content-area {
     padding: 24px 16px;
-  }
-
-  .mobile-nav {
-    display: flex;
   }
 
   .input-grid {

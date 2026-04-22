@@ -40,8 +40,6 @@
     </div>
   </main>
 
-  <nav class="mobile-nav" id="mobile-nav"></nav>
-
   <div class="overlay hidden" id="overlay"></div>
 
   <!-- Language splash (first visit only) -->
@@ -58,6 +56,11 @@
 
   <div class="debug-menu" id="debug-menu">
     <div class="debug-menu-panel hidden" id="debug-menu-panel">
+      <button class="debug-unlock-btn" id="debug-unlock-btn" type="button">
+        TEMP UNLOCK ALL TABS
+        <span>Bypass steps 1 and 2 for testing</span>
+      </button>
+
       <button class="debug-deadline-btn" id="debug-deadline-btn" type="button">
         TEMP TEST SESSION END
         <span>Push deadline forward for countdown test</span>
@@ -675,6 +678,7 @@ const state = {
   toolData: {},
   mobileOpen: false,
   debugMenuOpen: false,
+  debugUnlockAllTabs: false,
   lang: "en",
   langSelected: false,
   autosaveStatus: "saved",
@@ -733,7 +737,7 @@ function persistNow() {
 
 function totalCompleted() { return Object.keys(state.completed).length; }
 function progressPct()    { return Math.round((totalCompleted() / 10) * 100); }
-function isLocked(tabId)  { return tabId >= 3 && !(state.completed[1] && state.completed[2]); }
+function isLocked(tabId)  { return !state.debugUnlockAllTabs && tabId >= 3 && !(state.completed[1] && state.completed[2]); }
 
 function getTabStatus(tabId) {
   if (state.completed[tabId]) return "done";
@@ -890,34 +894,6 @@ function updateTopBar() {
   document.getElementById("progress-text").textContent = `${totalCompleted()}/10`;
   document.getElementById("progress-fill").style.width = `${progressPct()}%`;
   document.getElementById("lang-select").value = state.lang;
-}
-
-// ── Mobile nav ────────────────────────────────────────────────────────────────
-
-function renderMobileNav() {
-  const nav = document.getElementById("mobile-nav");
-  if (!nav) return;
-
-  nav.innerHTML = getNavTabs().map(tab => {
-    const status    = getTabStatus(tab.id);
-    const isActive  = state.activeTab === tab.id;
-    const cls       = ["mobile-nav-item", isActive ? "active" : "", status === "locked" ? "locked" : ""].filter(Boolean).join(" ");
-    const statusEl  = status === "done"   ? doneBadgeHTML("mobile-nav-status")
-                    : status === "locked" ? `<span class="mobile-nav-status mobile-nav-status-locked">-</span>` : "";
-    const indicator = isActive ? `<div class="mobile-nav-indicator"></div>` : "";
-    return `
-      <button class="${cls}" data-tab-id="${tab.id}">
-        <span class="mobile-nav-icon">${tab.icon}</span>
-        <span class="mobile-nav-label">${tab.label.split(" ")[0]}</span>
-        ${statusEl}
-        ${indicator}
-      </button>
-    `;
-  }).join("");
-
-  nav.querySelectorAll(".mobile-nav-item").forEach(btn => {
-    btn.addEventListener("click", () => handleTabClick(parseInt(btn.dataset.tabId)));
-  });
 }
 
 // ── Tab content ───────────────────────────────────────────────────────────────
@@ -1344,7 +1320,6 @@ function renderAll() {
   updateTopBar();
   renderSidebarContent("sidebar-inner");
   renderSidebarContent("mobile-sidebar-inner");
-  renderMobileNav();
   renderContent();
   updateAutosaveIndicators();
 
@@ -1484,6 +1459,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("debug-wipe-btn").addEventListener("click", () => {
     resetAppState();
+  });
+
+  document.getElementById("debug-unlock-btn").addEventListener("click", () => {
+    state.debugUnlockAllTabs = true;
+    renderAll();
   });
 
   document.getElementById("debug-deadline-btn").addEventListener("click", () => {
