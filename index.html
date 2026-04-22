@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serenzer Beta Feedback</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-inner" id="sidebar-inner"></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger" id="hamburger-btn">☰</button>
+        <span class="topbar-title" id="topbar-title"></span>
+      </div>
+      <div class="topbar-right">
+        <span class="progress-text" id="progress-text"></span>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <select class="lang-select" id="lang-select">
+          <option value="fr">🇫🇷 FR</option>
+          <option value="en">🇬🇧 EN</option>
+          <option value="it">🇮🇹 IT</option>
+          <option value="nl">🇳🇱 NL</option>
+          <option value="de">🇩🇪 DE</option>
+          <option value="es">🇪🇸 ES</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <div id="tab-content"></div>
+    </div>
+  </main>
+
+  <nav class="mobile-nav" id="mobile-nav"></nav>
+
+  <div class="overlay hidden" id="overlay"></div>
+
+  <!-- Language splash (first visit only) -->
+  <div class="lang-splash hidden" id="lang-splash">
+    <div class="lang-splash-card" id="lang-splash-card"></div>
+  </div>
+
+  <aside class="mobile-sidebar hidden" id="mobile-sidebar">
+    <div class="mobile-sidebar-header">
+      <button class="close-btn" id="close-sidebar-btn">✕</button>
+    </div>
+    <div class="sidebar-inner" id="mobile-sidebar-inner"></div>
+  </aside>
+
+  <button class="debug-wipe-btn" id="debug-wipe-btn" type="button">
+    TEMP WIPE EVERYTHING
+    <span>Remove before publishing</span>
+  </button>
+</div>
+
+<script>
+// ── Tool structure (labels + tasks live in translations) ──────────────────────
+
+const TOOLS = [
+  { id: 3,  key: "tableau",},
+  { id: 4,  key: "coach",},
+  { id: 5,  key: "rituels",},
+  { id: 6,  key: "challenges",},
+  { id: 7,  key: "calendrier",},
+  { id: 8,  key: "organisation",},
+  { id: 9,  key: "progression",},
+  { id: 10, key: "notifications",},
+];
+
+// ── Translations ──────────────────────────────────────────────────────────────
+
+const T = {
+
+  fr: {
+    betaFeedback: "Beta Feedback",
+    completed:    n => `${n}/10 complétés`,
+    autosave:     "Sauvegarde automatique",
+
+    tabTutorial:   "Tutoriel",
+    tabOnboarding: "Onboarding",
+
+    welcomeTitle:    "Bienvenue, Beta Testeur !",
+    welcomeSubtitle: "Merci d'être là ! Ton avis compte énormément pour nous.",
+    welcomeBody:     "Tu fais partie d'un groupe de personnes choisies avec soin pour tester Serenzer avant son lancement officiel. Ce formulaire te guidera à travers chaque fonctionnalité de l'app, étape par étape. Prends ton temps, sois curieux(se) et dis-nous tout !",
+    howItWorks:      "Comment ça marche ?",
+    step1Title: "Lis chaque section attentivement",
+    step1Desc:  "Chaque onglet correspond à un outil Serenzer. Lis la mission avant de tester.",
+    step2Title: "Teste dans l'app Serenzer",
+    step2Desc:  "Ouvre Serenzer, accomplis la tâche décrite, puis reviens ici pour répondre.",
+    step3Title: "Sois honnête et spontané(e)",
+    step3Desc:  "Pas de bonne ou mauvaise réponse. C'est TON ressenti qui compte.",
+    step4Title: "Complète chaque outil",
+    step4Desc:  "Chaque onglet doit être soumis pour que ta progression soit enregistrée.",
+    step5Title: "Tu peux revenir plus tard",
+    step5Desc:  "Ta progression est sauvegardée automatiquement. Reprends à tout moment !",
+    durationLabel:  "Durée estimée :",
+    durationText:   "30-60 minutes en tout, selon le temps que tu passes dans l'app.",
+    autosaveLabel:  "Sauvegarde automatique :",
+    autosaveText:   "Tes réponses sont enregistrées localement. Tu peux fermer et revenir !",
+    startBtn:        "J'ai compris, commencer !",
+    langSelectTitle:  "Choisissez votre langue",
+    langSelectHint:   "Vous pouvez toujours changer la langue en haut à droite.",
+    sessionEndsIn:      "La session se termine dans",
+    sessionEnded:       "Session terminée",
+    cdDays: "j", cdHours: "h", cdMinutes: "min", cdSeconds: "s",
+    langSplashContinue: "Continuer",
+
+    onboardingTitle:    "Présente-toi !",
+    onboardingSubtitle: "On aimerait mieux te connaître avant de commencer. C'est rapide, promis !",
+    labelFirstName:       "Prénom *",
+    labelLastName:        "Nom *",
+    labelEmail:           "Email *",
+    labelInvitation:      "Numéro d'invitation *",
+    placeholderFirstName: "Julien",
+    placeholderLastName:  "Doré",
+    placeholderEmail:     "julien@exemple.com",
+    placeholderInvitation:"ex: INV-00123",
+    techProfileTitle: "Ton profil tech",
+    techLevelLabel:   "Niveau de confort avec la tech *",
+    techBeginner:     "Débutant(e)",
+    techIntermediate: "Intermédiaire",
+    techAdvanced:     "Avancé(e)",
+    devicesLabel:     "Appareil(s) sur lequel/lesquels tu testeras *",
+    deviceIphone:     "iPhone",
+    deviceAndroid:    "Android",
+    deviceWeb:        "Web",
+    timeLabel:        "Temps disponible par semaine *",
+    timeLt1h:         "< 1h par semaine",
+    time1to3h:        "1-3h par semaine",
+    time3hplus:       "3h+ par semaine",
+    hopesLabel:       "Qu'espères-tu tirer de cette expérience de test ?",
+    hopesPlaceholder: "Dis-nous ce qui t'attire dans Serenzer, ce que tu veux explorer...",
+    onboardingSubmit: "Enregistrer et accéder aux outils",
+    requiredFields:   "* Complète les champs obligatoires pour continuer",
+
+    missionLabel:      "Ta mission :",
+    evaluationTitle:   "Ton évaluation",
+    evaluationSubtitle:"Après avoir testé, réponds aux questions ci-dessous.",
+    intuitiveLabel:    "Intuitivité - C'était facile à prendre en main ?",
+    usefulLabel:       "Utilité - Tu t'en servirais au quotidien ?",
+    experienceQuestion:"Qu'as-tu vécu en utilisant cet outil ?",
+    expPerfect:        "Tout a fonctionné parfaitement",
+    expBug:            "J'ai rencontré un bug",
+    expConfused:       "J'étais confus(e)",
+    expLoved:          "J'ai adoré une fonctionnalité",
+    descriptionLabel:  "Décris ton expérience en quelques mots",
+    descriptionPlaceholder: "J'ai trouvé ça intuitif / Je n'ai pas compris comment...",
+    suggestionsLabel:  "Des suggestions ou idées d'amélioration ?",
+    suggestionsPlaceholder: "Ce serait super si... / J'aurais aimé pouvoir...",
+    toolSubmit:        label => `Valider mon feedback pour ${label}`,
+    ratingRequired:    "* Donne au moins une note pour continuer",
+
+    tools: {
+      tableau:       { label: "Tableau de bord", task: "Explore ton tableau de bord principal. Navigue entre les différentes sections et observe comment les informations sont présentées." },
+      coach:         { label: "Mon Coach",       task: "Interagis avec ton coach IA. Pose-lui une question sur ton bien-être ou ta journée, et observe sa réponse et ses suggestions." },
+      rituels:       { label: "Rituels",         task: "Crée ou explore un rituel dans Serenzer. Configure ses paramètres et active-le pour voir comment il s'intègre dans ta routine." },
+      challenges:    { label: "Challenges",      task: "Rejoins ou consulte un challenge disponible. Observe la progression et les étapes proposées." },
+      calendrier:    { label: "Calendrier",      task: "Consulte ton calendrier Serenzer. Ajoute un événement ou un rappel et vérifie qu'il s'affiche correctement." },
+      organisation:  { label: "Organisation",    task: "Utilise les outils d'organisation : crée une tâche ou une note, classe-la et marque-la comme terminée." },
+      progression:   { label: "Progression",     task: "Consulte ta page de progression. Observe tes statistiques, graphiques et badges obtenus." },
+      notifications: { label: "Notifications",   task: "Vérifie le centre de notifications. Configure tes préférences et observe si les alertes arrivent correctement." },
+    },
+  },
+
+  en: {
+    betaFeedback: "Beta Feedback",
+    completed:    n => `${n}/10 completed`,
+    autosave:     "Automatic save",
+
+    tabTutorial:   "Tutorial",
+    tabOnboarding: "Onboarding",
+
+    welcomeTitle:    "Welcome, Beta Tester!",
+    welcomeSubtitle: "Thank you for being here! Your feedback means a lot to us.",
+    welcomeBody:     "You are part of a carefully selected group of people testing Serenzer before its official launch. This form will guide you through each feature of the app, step by step. Take your time, be curious, and tell us everything!",
+    howItWorks:      "How does it work?",
+    step1Title: "Read each section carefully",
+    step1Desc:  "Each tab corresponds to a Serenzer tool. Read the mission before testing.",
+    step2Title: "Test in the Serenzer app",
+    step2Desc:  "Open Serenzer, complete the described task, then come back here to answer.",
+    step3Title: "Be honest and spontaneous",
+    step3Desc:  "There are no right or wrong answers. It's YOUR experience that matters.",
+    step4Title: "Complete each tool",
+    step4Desc:  "Each tab must be submitted for your progress to be recorded.",
+    step5Title: "You can come back later",
+    step5Desc:  "Your progress is saved automatically. Resume at any time!",
+    durationLabel: "Estimated duration:",
+    durationText:  "30-60 minutes in total, depending on how much time you spend in the app.",
+    autosaveLabel: "Automatic save:",
+    autosaveText:  "Your answers are saved locally. You can close and come back!",
+    startBtn:        "Got it, let's start!",
+    langSelectTitle:  "Choose your language",
+    langSelectHint:   "You can always change the language in the top right.",
+    sessionEndsIn:      "Session ends in",
+    sessionEnded:       "Session ended",
+    cdDays: "d", cdHours: "h", cdMinutes: "m", cdSeconds: "s",
+    langSplashContinue: "Continue",
+
+    onboardingTitle:    "Introduce yourself!",
+    onboardingSubtitle: "We'd like to get to know you before we begin. It's quick, we promise!",
+    labelFirstName:        "First name *",
+    labelLastName:         "Last name *",
+    labelEmail:            "Email *",
+    labelInvitation:       "Invitation number *",
+    placeholderFirstName:  "John",
+    placeholderLastName:   "Smith",
+    placeholderEmail:      "john@example.com",
+    placeholderInvitation: "e.g. INV-00123",
+    techProfileTitle: "Your tech profile",
+    techLevelLabel:   "Comfort level with technology *",
+    techBeginner:     "Beginner",
+    techIntermediate: "Intermediate",
+    techAdvanced:     "Advanced",
+    devicesLabel:     "Device(s) you will test on *",
+    deviceIphone:     "iPhone",
+    deviceAndroid:    "Android",
+    deviceWeb:        "Web",
+    timeLabel:        "Time available per week *",
+    timeLt1h:         "< 1h per week",
+    time1to3h:        "1-3h per week",
+    time3hplus:       "3h+ per week",
+    hopesLabel:       "What do you hope to get out of this testing experience?",
+    hopesPlaceholder: "Tell us what draws you to Serenzer, what you want to explore...",
+    onboardingSubmit: "Save and access the tools",
+    requiredFields:   "* Fill in all required fields to continue",
+
+    missionLabel:       "Your mission:",
+    evaluationTitle:    "Your evaluation",
+    evaluationSubtitle: "After testing, answer the questions below.",
+    intuitiveLabel:     "Intuitiveness - Was it easy to get started?",
+    usefulLabel:        "Usefulness - Would you use it daily?",
+    experienceQuestion: "What did you experience using this tool?",
+    expPerfect:         "Everything worked perfectly",
+    expBug:             "I encountered a bug",
+    expConfused:        "I was confused",
+    expLoved:           "I loved a feature",
+    descriptionLabel:   "Describe your experience in a few words",
+    descriptionPlaceholder: "I found it intuitive / I didn't understand how...",
+    suggestionsLabel:   "Any suggestions or improvement ideas?",
+    suggestionsPlaceholder: "It would be great if... / I wish I could...",
+    toolSubmit:         label => `Submit feedback for ${label}`,
+    ratingRequired:     "* Give at least one rating to continue",
+
+    tools: {
+      tableau:       { label: "Dashboard",     task: "Explore your main dashboard. Navigate between the different sections and observe how information is presented." },
+      coach:         { label: "My Coach",      task: "Interact with your AI coach. Ask it a question about your well-being or your day, and observe its response and suggestions." },
+      rituels:       { label: "Rituals",       task: "Create or explore a ritual in Serenzer. Configure its settings and activate it to see how it fits into your routine." },
+      challenges:    { label: "Challenges",    task: "Join or consult an available challenge. Observe the progress and proposed steps." },
+      calendrier:    { label: "Calendar",      task: "Check your Serenzer calendar. Add an event or reminder and verify it displays correctly." },
+      organisation:  { label: "Organisation",  task: "Use the organisation tools: create a task or note, categorise it and mark it as done." },
+      progression:   { label: "Progress",      task: "Check your progress page. Observe your statistics, charts and badges earned." },
+      notifications: { label: "Notifications", task: "Check the notification centre. Configure your preferences and observe whether alerts arrive correctly." },
+    },
+  },
+
+  it: {
+    betaFeedback: "Beta Feedback",
+    completed:    n => `${n}/10 completati`,
+    autosave:     "Salvataggio automatico",
+
+    tabTutorial:   "Tutorial",
+    tabOnboarding: "Onboarding",
+
+    welcomeTitle:    "Benvenuto, Beta Tester!",
+    welcomeSubtitle: "Grazie per essere qui! Il tuo feedback è molto importante per noi.",
+    welcomeBody:     "Fai parte di un gruppo di persone selezionate con cura per testare Serenzer prima del lancio ufficiale. Questo modulo ti guiderà attraverso ogni funzionalità dell'app, passo dopo passo. Prenditi il tuo tempo, sii curioso/a e dicci tutto!",
+    howItWorks:      "Come funziona?",
+    step1Title: "Leggi ogni sezione con attenzione",
+    step1Desc:  "Ogni scheda corrisponde a uno strumento Serenzer. Leggi la missione prima di testare.",
+    step2Title: "Testa nell'app Serenzer",
+    step2Desc:  "Apri Serenzer, completa il compito descritto, poi torna qui per rispondere.",
+    step3Title: "Sii onesto/a e spontaneo/a",
+    step3Desc:  "Non ci sono risposte giuste o sbagliate. È la TUA esperienza che conta.",
+    step4Title: "Completa ogni strumento",
+    step4Desc:  "Ogni scheda deve essere inviata affinché il tuo progresso venga registrato.",
+    step5Title: "Puoi tornare più tardi",
+    step5Desc:  "Il tuo progresso viene salvato automaticamente. Riprendi quando vuoi!",
+    durationLabel: "Durata stimata:",
+    durationText:  "30-60 minuti in totale, a seconda del tempo trascorso nell'app.",
+    autosaveLabel: "Salvataggio automatico:",
+    autosaveText:  "Le tue risposte vengono salvate localmente. Puoi chiudere e tornare!",
+    startBtn:        "Ho capito, iniziamo!",
+    langSelectTitle:  "Scegli la tua lingua",
+    langSelectHint:   "Puoi sempre cambiare la lingua in alto a destra.",
+    sessionEndsIn:      "La sessione termina tra",
+    sessionEnded:       "Sessione terminata",
+    cdDays: "g", cdHours: "h", cdMinutes: "min", cdSeconds: "s",
+    langSplashContinue: "Continua",
+
+    onboardingTitle:    "Presentati!",
+    onboardingSubtitle: "Ci piacerebbe conoscerti meglio prima di iniziare. È veloce, promesso!",
+    labelFirstName:        "Nome *",
+    labelLastName:         "Cognome *",
+    labelEmail:            "Email *",
+    labelInvitation:       "Numero di invito *",
+    placeholderFirstName:  "Marco",
+    placeholderLastName:   "Rossi",
+    placeholderEmail:      "marco@esempio.com",
+    placeholderInvitation: "es: INV-00123",
+    techProfileTitle: "Il tuo profilo tech",
+    techLevelLabel:   "Livello di comfort con la tecnologia *",
+    techBeginner:     "Principiante",
+    techIntermediate: "Intermedio",
+    techAdvanced:     "Avanzato",
+    devicesLabel:     "Dispositivo/i su cui testerai *",
+    deviceIphone:     "iPhone",
+    deviceAndroid:    "Android",
+    deviceWeb:        "Web",
+    timeLabel:        "Tempo disponibile a settimana *",
+    timeLt1h:         "< 1h a settimana",
+    time1to3h:        "1-3h a settimana",
+    time3hplus:       "3h+ a settimana",
+    hopesLabel:       "Cosa speri di ottenere da questa esperienza di test?",
+    hopesPlaceholder: "Dicci cosa ti attrae di Serenzer, cosa vuoi esplorare...",
+    onboardingSubmit: "Salva e accedi agli strumenti",
+    requiredFields:   "* Compila tutti i campi obbligatori per continuare",
+
+    missionLabel:       "La tua missione:",
+    evaluationTitle:    "La tua valutazione",
+    evaluationSubtitle: "Dopo aver testato, rispondi alle domande qui sotto.",
+    intuitiveLabel:     "Intuitività - È stato facile iniziare?",
+    usefulLabel:        "Utilità - Lo useresti ogni giorno?",
+    experienceQuestion: "Cosa hai vissuto usando questo strumento?",
+    expPerfect:         "Tutto ha funzionato perfettamente",
+    expBug:             "Ho incontrato un bug",
+    expConfused:        "Ero confuso/a",
+    expLoved:           "Ho adorato una funzionalità",
+    descriptionLabel:   "Descrivi la tua esperienza in poche parole",
+    descriptionPlaceholder: "L'ho trovato intuitivo / Non ho capito come...",
+    suggestionsLabel:   "Hai suggerimenti o idee di miglioramento?",
+    suggestionsPlaceholder: "Sarebbe fantastico se... / Avrei voluto poter...",
+    toolSubmit:         label => `Invia il feedback per ${label}`,
+    ratingRequired:     "* Dai almeno un voto per continuare",
+
+    tools: {
+      tableau:       { label: "Dashboard",      task: "Esplora la tua dashboard principale. Naviga tra le diverse sezioni e osserva come vengono presentate le informazioni." },
+      coach:         { label: "Il mio Coach",   task: "Interagisci con il tuo coach IA. Fagli una domanda sul tuo benessere o sulla tua giornata, e osserva la sua risposta e i suoi suggerimenti." },
+      rituels:       { label: "Rituali",         task: "Crea o esplora un rituale in Serenzer. Configura le sue impostazioni e attivalo per vedere come si integra nella tua routine." },
+      challenges:    { label: "Sfide",           task: "Partecipa o consulta una sfida disponibile. Osserva i progressi e i passaggi proposti." },
+      calendrier:    { label: "Calendario",      task: "Consulta il tuo calendario Serenzer. Aggiungi un evento o un promemoria e verifica che venga visualizzato correttamente." },
+      organisation:  { label: "Organizzazione",  task: "Usa gli strumenti di organizzazione: crea un'attività o una nota, classificala e contrassegnala come completata." },
+      progression:   { label: "Progressi",       task: "Consulta la tua pagina dei progressi. Osserva le tue statistiche, grafici e badge ottenuti." },
+      notifications: { label: "Notifiche",       task: "Controlla il centro notifiche. Configura le tue preferenze e osserva se gli avvisi arrivano correttamente." },
+    },
+  },
+
+  nl: {
+    betaFeedback: "Beta Feedback",
+    completed:    n => `${n}/10 voltooid`,
+    autosave:     "Automatisch opslaan",
+
+    tabTutorial:   "Tutorial",
+    tabOnboarding: "Onboarding",
+
+    welcomeTitle:    "Welkom, Beta Tester!",
+    welcomeSubtitle: "Bedankt dat je er bent! Jouw feedback betekent veel voor ons.",
+    welcomeBody:     "Je maakt deel uit van een zorgvuldig geselecteerde groep mensen die Serenzer test voor de officiële lancering. Dit formulier begeleidt je door elke functie van de app, stap voor stap. Neem de tijd, wees nieuwsgierig en vertel ons alles!",
+    howItWorks:      "Hoe werkt het?",
+    step1Title: "Lees elke sectie zorgvuldig",
+    step1Desc:  "Elk tabblad komt overeen met een Serenzer-tool. Lees de missie voor je test.",
+    step2Title: "Test in de Serenzer-app",
+    step2Desc:  "Open Serenzer, voer de beschreven taak uit en kom dan hier terug om te antwoorden.",
+    step3Title: "Wees eerlijk en spontaan",
+    step3Desc:  "Er zijn geen goede of foute antwoorden. Jouw ervaring telt.",
+    step4Title: "Voltooi elke tool",
+    step4Desc:  "Elk tabblad moet worden ingediend om je voortgang te registreren.",
+    step5Title: "Je kunt later terugkomen",
+    step5Desc:  "Je voortgang wordt automatisch opgeslagen. Ga op elk moment verder!",
+    durationLabel: "Geschatte duur:",
+    durationText:  "30-60 minuten in totaal, afhankelijk van hoe lang je in de app doorbrengt.",
+    autosaveLabel: "Automatisch opslaan:",
+    autosaveText:  "Je antwoorden worden lokaal opgeslagen. Je kunt sluiten en terugkomen!",
+    startBtn:        "Begrepen, laten we beginnen!",
+    langSelectTitle:  "Kies je taal",
+    langSelectHint:   "Je kunt de taal altijd rechtsboven wijzigen.",
+    sessionEndsIn:      "Sessie eindigt over",
+    sessionEnded:       "Sessie beëindigd",
+    cdDays: "d", cdHours: "u", cdMinutes: "m", cdSeconds: "s",
+    langSplashContinue: "Doorgaan",
+
+    onboardingTitle:    "Stel jezelf voor!",
+    onboardingSubtitle: "We willen je graag beter leren kennen voor we beginnen. Het is snel, beloofd!",
+    labelFirstName:        "Voornaam *",
+    labelLastName:         "Achternaam *",
+    labelEmail:            "E-mail *",
+    labelInvitation:       "Uitnodigingsnummer *",
+    placeholderFirstName:  "Jan",
+    placeholderLastName:   "de Vries",
+    placeholderEmail:      "jan@voorbeeld.nl",
+    placeholderInvitation: "bijv: INV-00123",
+    techProfileTitle: "Jouw techprofiel",
+    techLevelLabel:   "Comfortniveau met technologie *",
+    techBeginner:     "Beginner",
+    techIntermediate: "Gemiddeld",
+    techAdvanced:     "Gevorderd",
+    devicesLabel:     "Apparaat/apparaten waarop je test *",
+    deviceIphone:     "iPhone",
+    deviceAndroid:    "Android",
+    deviceWeb:        "Web",
+    timeLabel:        "Beschikbare tijd per week *",
+    timeLt1h:         "< 1u per week",
+    time1to3h:        "1-3u per week",
+    time3hplus:       "3u+ per week",
+    hopesLabel:       "Wat hoop je uit deze testervaring te halen?",
+    hopesPlaceholder: "Vertel ons wat je aantrekt aan Serenzer, wat je wil verkennen...",
+    onboardingSubmit: "Opslaan en toegang tot de tools",
+    requiredFields:   "* Vul alle verplichte velden in om door te gaan",
+
+    missionLabel:       "Jouw missie:",
+    evaluationTitle:    "Jouw beoordeling",
+    evaluationSubtitle: "Beantwoord na het testen de onderstaande vragen.",
+    intuitiveLabel:     "Intuitiviteit - Was het makkelijk om mee te starten?",
+    usefulLabel:        "Nut - Zou je het dagelijks gebruiken?",
+    experienceQuestion: "Wat heb je ervaren bij het gebruik van deze tool?",
+    expPerfect:         "Alles werkte perfect",
+    expBug:             "Ik heb een bug gevonden",
+    expConfused:        "Ik was in de war",
+    expLoved:           "Ik was dol op een functie",
+    descriptionLabel:   "Beschrijf je ervaring in een paar woorden",
+    descriptionPlaceholder: "Ik vond het intuïtief / Ik begreep niet hoe...",
+    suggestionsLabel:   "Heb je suggesties of verbeterideeën?",
+    suggestionsPlaceholder: "Het zou geweldig zijn als... / Ik had graag kunnen...",
+    toolSubmit:         label => `Feedback indienen voor ${label}`,
+    ratingRequired:     "* Geef minstens een beoordeling om verder te gaan",
+
+    tools: {
+      tableau:       { label: "Dashboard",    task: "Verken je hoofddashboard. Navigeer tussen de verschillende secties en observeer hoe informatie wordt gepresenteerd." },
+      coach:         { label: "Mijn Coach",   task: "Communiceer met je AI-coach. Stel hem een vraag over je welzijn of je dag, en observeer zijn reactie en suggesties." },
+      rituels:       { label: "Rituelen",     task: "Maak of verken een ritueel in Serenzer. Configureer de instellingen en activeer het om te zien hoe het in je routine past." },
+      challenges:    { label: "Uitdagingen",  task: "Doe mee aan of bekijk een beschikbare uitdaging. Observeer de voortgang en de voorgestelde stappen." },
+      calendrier:    { label: "Kalender",     task: "Bekijk je Serenzer-kalender. Voeg een evenement of herinnering toe en controleer of het correct wordt weergegeven." },
+      organisation:  { label: "Organisatie",  task: "Gebruik de organisatietools: maak een taak of notitie, categoriseer deze en markeer als voltooid." },
+      progression:   { label: "Voortgang",    task: "Bekijk je voortgangspagina. Observeer je statistieken, grafieken en behaalde badges." },
+      notifications: { label: "Meldingen",    task: "Controleer het meldingencentrum. Configureer je voorkeuren en observeer of waarschuwingen correct aankomen." },
+    },
+  },
+
+  de: {
+    betaFeedback: "Beta Feedback",
+    completed:    n => `${n}/10 abgeschlossen`,
+    autosave:     "Automatisch gespeichert",
+
+    tabTutorial:   "Tutorial",
+    tabOnboarding: "Onboarding",
+
+    welcomeTitle:    "Willkommen, Beta-Tester!",
+    welcomeSubtitle: "Danke, dass du dabei bist! Dein Feedback bedeutet uns sehr viel.",
+    welcomeBody:     "Du bist Teil einer sorgfältig ausgewählten Gruppe von Personen, die Serenzer vor dem offiziellen Launch testet. Dieses Formular führt dich Schritt für Schritt durch jede Funktion der App. Nimm dir Zeit, sei neugierig und sag uns alles!",
+    howItWorks:      "Wie funktioniert es?",
+    step1Title: "Lies jeden Abschnitt sorgfältig",
+    step1Desc:  "Jede Registerkarte entspricht einem Serenzer-Tool. Lies die Mission, bevor du testest.",
+    step2Title: "Teste in der Serenzer-App",
+    step2Desc:  "Öffne Serenzer, erledige die beschriebene Aufgabe und komm dann hierher zurück, um zu antworten.",
+    step3Title: "Sei ehrlich und spontan",
+    step3Desc:  "Es gibt keine richtigen oder falschen Antworten. Es ist DEINE Erfahrung, die zählt.",
+    step4Title: "Schliesse jedes Tool ab",
+    step4Desc:  "Jede Registerkarte muss eingereicht werden, damit dein Fortschritt erfasst wird.",
+    step5Title: "Du kannst später zurückkommen",
+    step5Desc:  "Dein Fortschritt wird automatisch gespeichert. Mach jederzeit weiter!",
+    durationLabel: "Geschätzte Dauer:",
+    durationText:  "30-60 Minuten insgesamt, je nachdem wie viel Zeit du in der App verbringst.",
+    autosaveLabel: "Automatisches Speichern:",
+    autosaveText:  "Deine Antworten werden lokal gespeichert. Du kannst schliessen und zurückkommen!",
+    startBtn:        "Verstanden, los geht's!",
+    langSelectTitle:  "Wähle deine Sprache",
+    langSelectHint:   "Du kannst die Sprache jederzeit oben rechts ändern.",
+    sessionEndsIn:      "Sitzung endet in",
+    sessionEnded:       "Sitzung beendet",
+    cdDays: "T", cdHours: "Std", cdMinutes: "Min", cdSeconds: "Sek",
+    langSplashContinue: "Weiter",
+
+    onboardingTitle:    "Stell dich vor!",
+    onboardingSubtitle: "Wir möchten dich gerne besser kennenlernen, bevor wir beginnen. Es ist schnell, versprochen!",
+    labelFirstName:        "Vorname *",
+    labelLastName:         "Nachname *",
+    labelEmail:            "E-Mail *",
+    labelInvitation:       "Einladungsnummer *",
+    placeholderFirstName:  "Thomas",
+    placeholderLastName:   "Müller",
+    placeholderEmail:      "thomas@beispiel.de",
+    placeholderInvitation: "z.B. INV-00123",
+    techProfileTitle: "Dein Tech-Profil",
+    techLevelLabel:   "Komfortniveau mit Technologie *",
+    techBeginner:     "Anfänger",
+    techIntermediate: "Mittelstufe",
+    techAdvanced:     "Fortgeschritten",
+    devicesLabel:     "Gerät(e), auf denen du testest *",
+    deviceIphone:     "iPhone",
+    deviceAndroid:    "Android",
+    deviceWeb:        "Web",
+    timeLabel:        "Verfügbare Zeit pro Woche *",
+    timeLt1h:         "< 1h pro Woche",
+    time1to3h:        "1-3h pro Woche",
+    time3hplus:       "3h+ pro Woche",
+    hopesLabel:       "Was erhoffst du dir von dieser Testerfahrung?",
+    hopesPlaceholder: "Erzähl uns, was dich an Serenzer anzieht, was du erkunden möchtest...",
+    onboardingSubmit: "Speichern und auf die Tools zugreifen",
+    requiredFields:   "* Fülle alle Pflichtfelder aus, um fortzufahren",
+
+    missionLabel:       "Deine Aufgabe:",
+    evaluationTitle:    "Deine Bewertung",
+    evaluationSubtitle: "Beantworte nach dem Testen die folgenden Fragen.",
+    intuitiveLabel:     "Intuitivität - War es einfach, damit anzufangen?",
+    usefulLabel:        "Nützlichkeit - Würdest du es täglich verwenden?",
+    experienceQuestion: "Was hast du bei der Verwendung dieses Tools erlebt?",
+    expPerfect:         "Alles hat perfekt funktioniert",
+    expBug:             "Ich habe einen Fehler gefunden",
+    expConfused:        "Ich war verwirrt",
+    expLoved:           "Ich liebte eine Funktion",
+    descriptionLabel:   "Beschreibe deine Erfahrung in ein paar Worten",
+    descriptionPlaceholder: "Ich fand es intuitiv / Ich habe nicht verstanden wie...",
+    suggestionsLabel:   "Hast du Vorschläge oder Verbesserungsideen?",
+    suggestionsPlaceholder: "Es wäre toll wenn... / Ich hätte gerne können...",
+    toolSubmit:         label => `Feedback einreichen für ${label}`,
+    ratingRequired:     "* Gib mindestens eine Bewertung ab, um fortzufahren",
+
+    tools: {
+      tableau:       { label: "Dashboard",           task: "Erkunde dein Haupt-Dashboard. Navigiere zwischen den verschiedenen Abschnitten und beobachte, wie Informationen präsentiert werden." },
+      coach:         { label: "Mein Coach",           task: "Interagiere mit deinem KI-Coach. Stelle ihm eine Frage zu deinem Wohlbefinden oder deinem Tag und beobachte seine Antwort und Vorschläge." },
+      rituels:       { label: "Rituale",              task: "Erstelle oder erkunde ein Ritual in Serenzer. Konfiguriere die Einstellungen und aktiviere es, um zu sehen, wie es sich in deine Routine einfügt." },
+      challenges:    { label: "Herausforderungen",    task: "Nimm an einer verfügbaren Herausforderung teil oder konsultiere sie. Beobachte den Fortschritt und die vorgeschlagenen Schritte." },
+      calendrier:    { label: "Kalender",             task: "Schau dir deinen Serenzer-Kalender an. Füge ein Ereignis oder eine Erinnerung hinzu und überprüfe, ob es korrekt angezeigt wird." },
+      organisation:  { label: "Organisation",         task: "Verwende die Organisationstools: Erstelle eine Aufgabe oder Notiz, kategorisiere sie und markiere sie als erledigt." },
+      progression:   { label: "Fortschritt",          task: "Schau dir deine Fortschrittsseite an. Beobachte deine Statistiken, Diagramme und erhaltenen Abzeichen." },
+      notifications: { label: "Benachrichtigungen",   task: "Überprüfe das Benachrichtigungszentrum. Konfiguriere deine Einstellungen und beobachte, ob Benachrichtigungen korrekt ankommen." },
+    },
+  },
+
+  es: {
+    betaFeedback: "Beta Feedback",
+    completed:    n => `${n}/10 completados`,
+    autosave:     "Guardado automático",
+
+    tabTutorial:   "Tutorial",
+    tabOnboarding: "Onboarding",
+
+    welcomeTitle:    "Bienvenido, Beta Tester!",
+    welcomeSubtitle: "Gracias por estar aqui! Tu opinion es muy importante para nosotros.",
+    welcomeBody:     "Formas parte de un grupo de personas cuidadosamente seleccionadas para probar Serenzer antes de su lanzamiento oficial. Este formulario te guiara a traves de cada funcion de la app, paso a paso. Tomatelo con calma, se curioso/a y dinos todo!",
+    howItWorks:      "Como funciona?",
+    step1Title: "Lee cada sección con atención",
+    step1Desc:  "Cada pestaña corresponde a una herramienta de Serenzer. Lee la mision antes de probar.",
+    step2Title: "Prueba en la app Serenzer",
+    step2Desc:  "Abre Serenzer, completa la tarea descrita y vuelve aqui para responder.",
+    step3Title: "Se honesto/a y espontaneo/a",
+    step3Desc:  "No hay respuestas correctas o incorrectas. Es TU experiencia la que importa.",
+    step4Title: "Completa cada herramienta",
+    step4Desc:  "Cada pestaña debe enviarse para que tu progreso quede registrado.",
+    step5Title: "Puedes volver más tarde",
+    step5Desc:  "Tu progreso se guarda automaticamente. Retoma en cualquier momento!",
+    durationLabel: "Duración estimada:",
+    durationText:  "30-60 minutos en total, según el tiempo que pases en la app.",
+    autosaveLabel: "Guardado automático:",
+    autosaveText:  "Tus respuestas se guardan localmente. Puedes cerrar y volver!",
+    startBtn:        "Entendido, empezamos!",
+    langSelectTitle:  "Elige tu idioma",
+    langSelectHint:   "Siempre puedes cambiar el idioma en la parte superior derecha.",
+    sessionEndsIn:      "La sesión termina en",
+    sessionEnded:       "Sesión finalizada",
+    cdDays: "d", cdHours: "h", cdMinutes: "m", cdSeconds: "s",
+    langSplashContinue: "Continuar",
+
+    onboardingTitle:    "Presentate!",
+    onboardingSubtitle: "Nos gustaria conocerte mejor antes de empezar. Es rapido, lo prometemos!",
+    labelFirstName:        "Nombre *",
+    labelLastName:         "Apellido *",
+    labelEmail:            "Email *",
+    labelInvitation:       "Número de invitación *",
+    placeholderFirstName:  "Carlos",
+    placeholderLastName:   "García",
+    placeholderEmail:      "carlos@ejemplo.com",
+    placeholderInvitation: "ej: INV-00123",
+    techProfileTitle: "Tu perfil tecnológico",
+    techLevelLabel:   "Nivel de comodidad con la tecnología *",
+    techBeginner:     "Principiante",
+    techIntermediate: "Intermedio",
+    techAdvanced:     "Avanzado",
+    devicesLabel:     "Dispositivo(s) en los que vas a probar *",
+    deviceIphone:     "iPhone",
+    deviceAndroid:    "Android",
+    deviceWeb:        "Web",
+    timeLabel:        "Tiempo disponible por semana *",
+    timeLt1h:         "< 1h por semana",
+    time1to3h:        "1-3h por semana",
+    time3hplus:       "3h+ por semana",
+    hopesLabel:       "Que esperas conseguir de esta experiencia de prueba?",
+    hopesPlaceholder: "Dinos que te atrae de Serenzer, que quieres explorar...",
+    onboardingSubmit: "Guardar y acceder a las herramientas",
+    requiredFields:   "* Completa todos los campos obligatorios para continuar",
+
+    missionLabel:       "Tu misión:",
+    evaluationTitle:    "Tu evaluación",
+    evaluationSubtitle: "Después de probar, responde las preguntas a continuación.",
+    intuitiveLabel:     "Intuitividad - Era fácil empezar?",
+    usefulLabel:        "Utilidad - Lo usarías a diario?",
+    experienceQuestion: "Que experimentaste al usar esta herramienta?",
+    expPerfect:         "Todo funcionó perfectamente",
+    expBug:             "Encontré un error",
+    expConfused:        "Estaba confundido/a",
+    expLoved:           "Me encantó una función",
+    descriptionLabel:   "Describe tu experiencia en pocas palabras",
+    descriptionPlaceholder: "Lo encontré intuitivo / No entendí cómo...",
+    suggestionsLabel:   "Tienes sugerencias o ideas de mejora?",
+    suggestionsPlaceholder: "Sería genial si... / Me hubiera gustado poder...",
+    toolSubmit:         label => `Enviar feedback para ${label}`,
+    ratingRequired:     "* Da al menos una valoración para continuar",
+
+    tools: {
+      tableau:       { label: "Panel",           task: "Explora tu panel principal. Navega entre las diferentes secciones y observa cómo se presenta la información." },
+      coach:         { label: "Mi Coach",        task: "Interactua con tu coach de IA. Hazle una pregunta sobre tu bienestar o tu dia, y observa su respuesta y sugerencias." },
+      rituels:       { label: "Rituales",        task: "Crea o explora un ritual en Serenzer. Configura sus ajustes y activalo para ver cómo se integra en tu rutina." },
+      challenges:    { label: "Retos",           task: "Únete o consulta un reto disponible. Observa el progreso y los pasos propuestos." },
+      calendrier:    { label: "Calendario",      task: "Consulta tu calendario Serenzer. Añade un evento o un recordatorio y verifica que se muestre correctamente." },
+      organisation:  { label: "Organización",    task: "Utiliza las herramientas de organización: crea una tarea o una nota, clasifícala y márcala como completada." },
+      progression:   { label: "Progreso",        task: "Consulta tu página de progreso. Observa tus estadísticas, gráficos e insignias obtenidas." },
+      notifications: { label: "Notificaciones",  task: "Comprueba el centro de notificaciones. Configura tus preferencias y observa si las alertas llegan correctamente." },
+    },
+  },
+
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = "serenzer_feedback_v2";
+
+const state = {
+  activeTab: 1,
+  completed: {},
+  onboardingData: {},
+  toolData: {},
+  mobileOpen: false,
+  lang: "en",
+  langSelected: false,
+  autosaveStatus: "saved",
+};
+
+let autosaveTimer = null;
+
+// ── Translation helper ────────────────────────────────────────────────────────
+
+function t(key) {
+  return T[state.lang]?.[key] ?? T.fr[key] ?? key;
+}
+
+function toolT(key) {
+  return T[state.lang]?.tools?.[key] ?? T.fr.tools[key];
+}
+
+function getNavTabs() {
+  return [
+    { id: 1, label: t("tabTutorial"),   icon: "·" },
+    { id: 2, label: t("tabOnboarding"), icon: "·" },
+    ...TOOLS.map(tool => ({ id: tool.id, label: toolT(tool.key).label, icon: tool.icon })),
+  ];
+}
+
+// ── Storage ───────────────────────────────────────────────────────────────────
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      state.completed      = saved.completed      || {};
+      state.onboardingData = saved.onboardingData || {};
+      state.toolData       = saved.toolData       || {};
+      if (saved.lang && T[saved.lang]) state.lang = saved.lang;
+      if (saved.langSelected) state.langSelected = true;
+    }
+  } catch (_) {}
+}
+
+function persistNow() {
+  clearTimeout(autosaveTimer);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      completed:      state.completed,
+      onboardingData: state.onboardingData,
+      toolData:       state.toolData,
+      lang:           state.lang,
+      langSelected:   state.langSelected,
+    }));
+  } catch (_) {}
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function totalCompleted() { return Object.keys(state.completed).length; }
+function progressPct()    { return Math.round((totalCompleted() / 10) * 100); }
+function isLocked(tabId)  { return tabId >= 3 && !(state.completed[1] && state.completed[2]); }
+
+function getTabStatus(tabId) {
+  if (state.completed[tabId]) return "done";
+  if (isLocked(tabId))        return "locked";
+  return "open";
+}
+
+function esc(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function autosaveIndicatorHTML() {
+  const isSaved = state.autosaveStatus === "saved";
+  return `
+    <span
+      class="autosave-indicator ${isSaved ? "saved" : "saving"}"
+      aria-label="${isSaved ? "Saved" : "Saving"}"
+      role="status"
+    >
+      ${checkIconSVG("autosave-check-icon")}
+    </span>
+  `;
+}
+
+function checkIconSVG(className = "") {
+  return `
+    <svg class="${className}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M6.8 12.6L10.5 16.3L18 8.7" />
+    </svg>
+  `;
+}
+
+function doneBadgeHTML(className = "") {
+  return `
+    <span class="status-badge status-badge-done ${className}">
+      ${checkIconSVG("status-badge-check")}
+    </span>
+  `;
+}
+
+function updateAutosaveIndicators() {
+  const isSaved = state.autosaveStatus === "saved";
+  document.querySelectorAll(".autosave-indicator").forEach(el => {
+    el.classList.toggle("saved", isSaved);
+    el.classList.toggle("saving", !isSaved);
+    el.setAttribute("aria-label", isSaved ? "Saved" : "Saving");
+  });
+}
+
+function setAutosaveStatus(status) {
+  state.autosaveStatus = status;
+  updateAutosaveIndicators();
+}
+
+function schedulePersist() {
+  setAutosaveStatus("saving");
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    persistNow();
+    setAutosaveStatus("saved");
+  }, 1500);
+}
+
+function resetAppState() {
+  clearTimeout(autosaveTimer);
+  localStorage.removeItem(STORAGE_KEY);
+
+  state.activeTab = 1;
+  state.completed = {};
+  state.onboardingData = {};
+  state.toolData = {};
+  state.mobileOpen = false;
+  state.lang = "en";
+  state.langSelected = false;
+  state.autosaveStatus = "saved";
+
+  document.documentElement.lang = state.lang;
+  renderAll();
+  renderSplash();
+  document.getElementById("lang-splash").classList.remove("hidden");
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+
+function renderSidebarContent(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="sidebar-logo">
+      <img src="https://apps.serenzer.com/static/serenzer_wave.png" alt="Serenzer" onerror="this.style.display='none'">
+      <div class="sidebar-logo-title">${t("betaFeedback")}</div>
+      <div class="sidebar-logo-count">${t("completed")(totalCompleted())}</div>
+      <div class="sidebar-progress">
+        <div class="sidebar-progress-fill" style="width:${progressPct()}%"></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      ${getNavTabs().map(tab => navItemHTML(tab)).join("")}
+    </nav>
+    <div class="sidebar-footer">
+      <div class="session-countdown">
+        <span class="countdown-label">${t("sessionEndsIn")}</span>
+        <span class="countdown-timer"></span>
+      </div>
+      <div class="autosave-label">
+        ${autosaveIndicatorHTML()}
+        <span>${t("autosave")}</span>
+      </div>
+    </div>
+  `;
+
+  el.querySelectorAll(".nav-item").forEach(btn => {
+    btn.addEventListener("click", () => handleTabClick(parseInt(btn.dataset.tabId)));
+  });
+}
+
+function navItemHTML(tab) {
+  const status   = getTabStatus(tab.id);
+  const isActive = state.activeTab === tab.id;
+  const cls      = ["nav-item", isActive ? "active" : "", status === "locked" ? "locked" : ""].filter(Boolean).join(" ");
+  const statusIcon = status === "done" ? doneBadgeHTML("nav-item-status")
+                   : status === "locked" ? `<span class="nav-item-status nav-item-status-locked">-</span>` : "";
+  return `
+    <button class="${cls}" data-tab-id="${tab.id}">
+      <span class="nav-item-label">${tab.label}</span>
+      ${statusIcon}
+    </button>
+  `;
+}
+
+// ── Topbar ────────────────────────────────────────────────────────────────────
+
+function updateTopBar() {
+  const tab = getNavTabs().find(tb => tb.id === state.activeTab);
+  document.getElementById("topbar-title").textContent = tab ? tab.label : "";
+  document.getElementById("progress-text").textContent = `${totalCompleted()}/10`;
+  document.getElementById("progress-fill").style.width = `${progressPct()}%`;
+  document.getElementById("lang-select").value = state.lang;
+}
+
+// ── Mobile nav ────────────────────────────────────────────────────────────────
+
+function renderMobileNav() {
+  const nav = document.getElementById("mobile-nav");
+  if (!nav) return;
+
+  nav.innerHTML = getNavTabs().map(tab => {
+    const status    = getTabStatus(tab.id);
+    const isActive  = state.activeTab === tab.id;
+    const cls       = ["mobile-nav-item", isActive ? "active" : "", status === "locked" ? "locked" : ""].filter(Boolean).join(" ");
+    const statusEl  = status === "done"   ? doneBadgeHTML("mobile-nav-status")
+                    : status === "locked" ? `<span class="mobile-nav-status mobile-nav-status-locked">-</span>` : "";
+    const indicator = isActive ? `<div class="mobile-nav-indicator"></div>` : "";
+    return `
+      <button class="${cls}" data-tab-id="${tab.id}">
+        <span class="mobile-nav-icon">${tab.icon}</span>
+        <span class="mobile-nav-label">${tab.label.split(" ")[0]}</span>
+        ${statusEl}
+        ${indicator}
+      </button>
+    `;
+  }).join("");
+
+  nav.querySelectorAll(".mobile-nav-item").forEach(btn => {
+    btn.addEventListener("click", () => handleTabClick(parseInt(btn.dataset.tabId)));
+  });
+}
+
+// ── Tab content ───────────────────────────────────────────────────────────────
+
+function renderContent() {
+  const container = document.getElementById("tab-content");
+  if (!container) return;
+
+  if (state.activeTab === 1) {
+    container.innerHTML = tutorielHTML();
+    document.getElementById("tutoriel-start-btn").addEventListener("click", () => markComplete(1));
+
+  } else if (state.activeTab === 2) {
+    container.innerHTML = onboardingHTML();
+    attachOnboardingListeners();
+
+  } else {
+    const tool = TOOLS.find(tl => tl.id === state.activeTab);
+    if (tool) {
+      container.innerHTML = toolTabHTML(tool);
+      attachToolListeners(tool);
+    }
+  }
+}
+
+// ── Tutorial tab ──────────────────────────────────────────────────────────────
+
+function tutorielHTML() {
+  const steps = [
+    { n: "1", title: t("step1Title"), desc: t("step1Desc") },
+    { n: "2", title: t("step2Title"), desc: t("step2Desc") },
+    { n: "3", title: t("step3Title"), desc: t("step3Desc") },
+    { n: "4", title: t("step4Title"), desc: t("step4Desc") },
+    { n: "5", title: t("step5Title"), desc: t("step5Desc") },
+  ];
+
+  return `
+    <div class="card">
+      <div class="welcome-header">
+        <img src="https://apps.serenzer.com/static/serenzer_wave.png" alt="Serenzer" onerror="this.style.display='none'">
+        <div>
+          <h2 class="section-title">${t("welcomeTitle")}</h2>
+          <p style="margin:0;color:var(--olive-mid);font-size:15px;">${t("welcomeSubtitle")}</p>
+        </div>
+      </div>
+      <p style="color:var(--olive-mid);font-size:15px;line-height:1.7;margin-bottom:0;">${t("welcomeBody")}</p>
+    </div>
+
+    <div class="card">
+      <h3 class="subsection-title">${t("howItWorks")}</h3>
+      <div class="step-list">
+        ${steps.map(s => `
+          <div class="step-item">
+            <div class="step-number">${s.n}</div>
+            <div>
+              <div class="step-content-title">${s.title}</div>
+              <div class="step-content-desc">${s.desc}</div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <div class="card card-highlight">
+      <p style="color:var(--olive-mid);font-size:14px;line-height:1.6;margin-bottom:16px;margin-top:0;">
+        <strong>${t("durationLabel")}</strong> ${t("durationText")}<br>
+        <strong>${t("autosaveLabel")}</strong> ${t("autosaveText")}
+      </p>
+      <button class="submit-btn" id="tutoriel-start-btn">${t("startBtn")}</button>
+    </div>
+  `;
+}
+
+// ── Onboarding tab ────────────────────────────────────────────────────────────
+
+function onboardingHTML() {
+  const d = state.onboardingData;
+
+  const techOptions = [
+    { value: "beginner",     label: t("techBeginner") },
+    { value: "intermediate", label: t("techIntermediate") },
+    { value: "advanced",     label: t("techAdvanced") },
+  ];
+  const deviceOptions = [
+    { value: "iphone",  label: t("deviceIphone") },
+    { value: "android", label: t("deviceAndroid") },
+    { value: "web",     label: t("deviceWeb") },
+  ];
+  const timeOptions = [
+    { value: "lt1h",   label: t("timeLt1h") },
+    { value: "1to3h",  label: t("time1to3h") },
+    { value: "3hplus", label: t("time3hplus") },
+  ];
+
+  const isValid = d.firstName && d.lastName && d.email && d.invitationNumber && d.tech && (d.devices || []).length > 0 && d.time;
+
+  return `
+    <div class="card">
+      <h2 class="section-title">${t("onboardingTitle")}</h2>
+      <p style="color:var(--olive-mid);font-size:15px;margin-bottom:24px;margin-top:4px;">${t("onboardingSubtitle")}</p>
+      <div class="input-grid">
+        <div class="field">
+          <label class="field-label" for="inp-firstName">${t("labelFirstName")}</label>
+          <input class="text-input" id="inp-firstName" type="text" placeholder="${t("placeholderFirstName")}" value="${esc(d.firstName)}">
+        </div>
+        <div class="field">
+          <label class="field-label" for="inp-lastName">${t("labelLastName")}</label>
+          <input class="text-input" id="inp-lastName" type="text" placeholder="${t("placeholderLastName")}" value="${esc(d.lastName)}">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="inp-email">${t("labelEmail")}</label>
+        <input class="text-input" id="inp-email" type="email" placeholder="${t("placeholderEmail")}" value="${esc(d.email)}">
+      </div>
+      <div class="field">
+        <label class="field-label" for="inp-invitationNumber">${t("labelInvitation")}</label>
+        <input class="text-input" id="inp-invitationNumber" type="text" placeholder="${t("placeholderInvitation")}" value="${esc(d.invitationNumber)}">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="subsection-title">${t("techProfileTitle")}</h3>
+      ${checkboxGroupHTML(t("techLevelLabel"),   techOptions,            d.tech,           true,  "tech")}
+      ${checkboxGroupHTML(t("devicesLabel"),      deviceOptions,          d.devices || [],  false, "devices")}
+      ${checkboxGroupHTML(t("timeLabel"),         timeOptions,            d.time,           true,  "time")}
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label class="field-label" for="inp-hopes">${t("hopesLabel")}</label>
+        <textarea class="textarea-input" id="inp-hopes" rows="4" placeholder="${t("hopesPlaceholder")}">${esc(d.hopes)}</textarea>
+      </div>
+      <button class="submit-btn" id="onboarding-submit-btn" ${isValid ? "" : "disabled"}>
+        ${t("onboardingSubmit")}
+      </button>
+      ${!isValid ? `<p class="field-hint">${t("requiredFields")}</p>` : ""}
+    </div>
+  `;
+}
+
+function attachOnboardingListeners() {
+  ["firstName", "lastName", "email", "invitationNumber", "hopes"].forEach(field => {
+    const el = document.getElementById(`inp-${field}`);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      state.onboardingData[field] = el.value;
+      schedulePersist();
+      refreshOnboardingSubmit();
+    });
+  });
+
+  document.querySelectorAll(".checkbox-group").forEach(group => {
+    const key = group.dataset.groupKey;
+    group.querySelectorAll("input").forEach(input => {
+      input.addEventListener("change", () => {
+        if (input.type === "radio") {
+          state.onboardingData[key] = input.value;
+        } else {
+          const cur = state.onboardingData[key] || [];
+          state.onboardingData[key] = input.checked
+            ? [...cur, input.value]
+            : cur.filter(v => v !== input.value);
+        }
+        group.querySelectorAll(".checkbox-option").forEach(lbl => {
+          lbl.classList.toggle("checked", lbl.querySelector("input").checked);
+        });
+        schedulePersist();
+        refreshOnboardingSubmit();
+      });
+    });
+  });
+
+  document.getElementById("onboarding-submit-btn")?.addEventListener("click", () => markComplete(2));
+}
+
+function refreshOnboardingSubmit() {
+  const d = state.onboardingData;
+  const isValid = d.firstName && d.lastName && d.email && d.invitationNumber && d.tech && (d.devices || []).length > 0 && d.time;
+  const btn  = document.getElementById("onboarding-submit-btn");
+  const hint = document.querySelector(".field-hint");
+  if (btn) btn.disabled = !isValid;
+  if (isValid && hint) hint.remove();
+  if (!isValid && !hint && btn) {
+    btn.insertAdjacentHTML("afterend", `<p class="field-hint">${t("requiredFields")}</p>`);
+  }
+}
+
+// ── Tool tab ──────────────────────────────────────────────────────────────────
+
+function toolTabHTML(tool) {
+  const d       = state.toolData[tool.key] || {};
+  const isValid = d.intuitive && d.useful;
+  const tr      = toolT(tool.key);
+
+  const experienceOptions = [
+    { value: "perfect",  label: t("expPerfect") },
+    { value: "bug",      label: t("expBug") },
+    { value: "confused", label: t("expConfused") },
+    { value: "loved",    label: t("expLoved") },
+  ];
+
+  return `
+    <div class="card card-sage">
+      <h2 class="section-title">${tr.label}</h2>
+      <p style="color:var(--olive-mid);font-size:15px;line-height:1.65;margin:0;">
+        <strong>${t("missionLabel")}</strong> ${tr.task}
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 class="subsection-title" style="margin-bottom:4px;">${t("evaluationTitle")}</h3>
+      <p style="color:var(--olive-mid);font-size:14px;margin-top:0;margin-bottom:20px;">${t("evaluationSubtitle")}</p>
+      ${starRatingHTML(t("intuitiveLabel"), d.intuitive, "intuitive")}
+      ${starRatingHTML(t("usefulLabel"),    d.useful,    "useful")}
+    </div>
+
+    <div class="card">
+      ${checkboxGroupHTML(t("experienceQuestion"), experienceOptions, d.experience || [], false, "experience")}
+
+      <div class="field">
+        <label class="field-label" for="inp-description">${t("descriptionLabel")}</label>
+        <textarea class="textarea-input" id="inp-description" rows="3"
+          placeholder="${t("descriptionPlaceholder")}">${esc(d.description)}</textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="inp-suggestions">${t("suggestionsLabel")}</label>
+        <textarea class="textarea-input" id="inp-suggestions" rows="3"
+          placeholder="${t("suggestionsPlaceholder")}">${esc(d.suggestions)}</textarea>
+      </div>
+
+      <button class="submit-btn" id="tool-submit-btn" ${isValid ? "" : "disabled"}>
+        ${t("toolSubmit")(tr.label)}
+      </button>
+      ${!isValid ? `<p class="field-hint">${t("ratingRequired")}</p>` : ""}
+    </div>
+  `;
+}
+
+function attachToolListeners(tool) {
+  const key = tool.key;
+
+  document.querySelectorAll(".star-rating").forEach(ratingEl => {
+    const ratingKey = ratingEl.dataset.ratingKey;
+    ratingEl.querySelectorAll(".star-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const val = parseInt(btn.dataset.star);
+        if (!state.toolData[key]) state.toolData[key] = {};
+        state.toolData[key][ratingKey] = val;
+        schedulePersist();
+        ratingEl.querySelectorAll(".star-btn").forEach(s => {
+          s.classList.toggle("active", parseInt(s.dataset.star) <= val);
+        });
+        refreshToolSubmit(tool);
+      });
+    });
+  });
+
+  document.querySelectorAll(".checkbox-group").forEach(group => {
+    const groupKey = group.dataset.groupKey;
+    group.querySelectorAll("input").forEach(input => {
+      input.addEventListener("change", () => {
+        if (!state.toolData[key]) state.toolData[key] = {};
+        const cur = state.toolData[key][groupKey] || [];
+        state.toolData[key][groupKey] = input.checked
+          ? [...cur, input.value]
+          : cur.filter(v => v !== input.value);
+        group.querySelectorAll(".checkbox-option").forEach(lbl => {
+          lbl.classList.toggle("checked", lbl.querySelector("input").checked);
+        });
+        schedulePersist();
+      });
+    });
+  });
+
+  ["description", "suggestions"].forEach(field => {
+    const el = document.getElementById(`inp-${field}`);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      if (!state.toolData[key]) state.toolData[key] = {};
+      state.toolData[key][field] = el.value;
+      schedulePersist();
+    });
+  });
+
+  document.getElementById("tool-submit-btn")?.addEventListener("click", () => {
+    ["description", "suggestions"].forEach(field => {
+      const el = document.getElementById(`inp-${field}`);
+      if (el) {
+        if (!state.toolData[key]) state.toolData[key] = {};
+        state.toolData[key][field] = el.value;
+      }
+    });
+    persistNow();
+    setAutosaveStatus("saved");
+    markComplete(state.activeTab);
+  });
+}
+
+function refreshToolSubmit(tool) {
+  const d = state.toolData[tool.key] || {};
+  const isValid = d.intuitive && d.useful;
+  const btn  = document.getElementById("tool-submit-btn");
+  const hint = document.querySelector(".field-hint");
+  if (btn) btn.disabled = !isValid;
+  if (isValid && hint) hint.remove();
+}
+
+// ── Shared components ─────────────────────────────────────────────────────────
+
+function starRatingHTML(label, value, ratingKey) {
+  return `
+    <div class="star-rating" data-rating-key="${ratingKey}">
+      <label class="field-label">${label}</label>
+      <div class="stars">
+        ${[1,2,3,4,5].map(star => `
+          <button class="star-btn ${star <= (value || 0) ? "active" : ""}" data-star="${star}">★</button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function checkboxGroupHTML(label, options, values, single, key) {
+  return `
+    <div class="checkbox-group" data-group-key="${key}">
+      <label class="field-label">${label}</label>
+      <div class="checkbox-options">
+        ${options.map(opt => {
+          const checked = single
+            ? values === opt.value
+            : (Array.isArray(values) && values.includes(opt.value));
+          return `
+            <label class="checkbox-option ${checked ? "checked" : ""}">
+              <input type="${single ? "radio" : "checkbox"}" name="${key}" value="${opt.value}" ${checked ? "checked" : ""}>
+              <span class="checkbox-option-label">${opt.label}</span>
+            </label>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+// ── SERVER INTEGRATION ───────────────────────────────────────────────────────
+//
+// 1. Replace the body of submitToServer() with your fetch/axios call.
+// 2. That's it — buildPayload() and the call site in markComplete() are wired up.
+//
+// submitToServer() is called after every tab submission.
+// When the user completes all 10 tabs, payload.isComplete is true.
+//
+// Full payload shape:
+// {
+//   lang:         string,           // "fr" | "en" | "it" | "nl" | "de" | "es"
+//   isComplete:   boolean,          // true only when all 10 tabs are done
+//   onboarding: {
+//     firstName:        string,
+//     lastName:         string,
+//     email:            string,
+//     invitationNumber: string,
+//     tech:             "beginner" | "intermediate" | "advanced",
+//     devices:          Array<"iphone" | "android" | "web">,
+//     time:             "lt1h" | "1to3h" | "3hplus",
+//     hopes:            string,
+//   },
+//   tools: {
+//     [toolKey: string]: {          // keys: tableau, coach, rituels, challenges,
+//       intuitive:   number,        //   calendrier, organisation, progression, notifications
+//       useful:      number,        // intuitive + useful: 1–5 star rating
+//       experience:  Array<"perfect" | "bug" | "confused" | "loved">,
+//       description: string,
+//       suggestions: string,
+//     }
+//   },
+//   completedTabs: number[],        // tab IDs submitted so far, e.g. [1, 2, 3]
+// }
+
+function buildPayload() {
+  const isComplete = Object.keys(state.completed).length === 10;
+  return {
+    lang:          state.lang,
+    isComplete,
+    onboarding:    { ...state.onboardingData },
+    tools:         { ...state.toolData },
+    completedTabs: Object.keys(state.completed).map(Number),
+  };
+}
+
+async function submitToServer(payload) {
+  // ↓ Replace this with your actual endpoint ↓
+  // await fetch("/api/feedback", {
+  //   method:  "POST",
+  //   headers: { "Content-Type": "application/json" },
+  //   body:    JSON.stringify(payload),
+  // });
+  console.log("[Serenzer] payload:", payload);
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+
+function handleTabClick(tabId) {
+  if (isLocked(tabId)) return;
+  state.activeTab = tabId;
+  state.mobileOpen = false;
+  renderAll();
+}
+
+function markComplete(tabId) {
+  state.completed[tabId] = true;
+  persistNow();
+  setAutosaveStatus("saved");
+  submitToServer(buildPayload());
+  if (tabId < 10) state.activeTab = tabId + 1;
+  renderAll();
+}
+
+// ── Full render ───────────────────────────────────────────────────────────────
+
+function renderAll() {
+  updateTopBar();
+  renderSidebarContent("sidebar-inner");
+  renderSidebarContent("mobile-sidebar-inner");
+  renderMobileNav();
+  renderContent();
+  updateAutosaveIndicators();
+
+  document.getElementById("overlay").classList.toggle("hidden", !state.mobileOpen);
+  document.getElementById("mobile-sidebar").classList.toggle("hidden", !state.mobileOpen);
+}
+
+// ── Language splash ───────────────────────────────────────────────────────────
+
+const SPLASH_LANGS = [
+  { code: "fr", flag: "🇫🇷", name: "Français" },
+  { code: "en", flag: "🇬🇧", name: "English" },
+  { code: "it", flag: "🇮🇹", name: "Italiano" },
+  { code: "nl", flag: "🇳🇱", name: "Nederlands" },
+  { code: "de", flag: "🇩🇪", name: "Deutsch" },
+  { code: "es", flag: "🇪🇸", name: "Español" },
+];
+
+function renderSplash() {
+  const card = document.getElementById("lang-splash-card");
+  if (!card) return;
+
+  card.innerHTML = `
+    <img src="https://apps.serenzer.com/static/serenzer_wave.png" alt="Serenzer"
+      style="height:48px;border-radius:10px;display:block;margin:0 auto 20px;"
+      onerror="this.style.display='none'">
+    <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--olive);margin:0 0 20px;">${t("langSelectTitle")}</h2>
+    <div class="lang-pills" style="justify-content:center;margin-bottom:28px;">
+      ${SPLASH_LANGS.map(l => `
+        <button class="lang-pill ${l.code === state.lang ? "active" : ""}" data-lang="${l.code}">
+          ${l.flag} ${l.name}
+        </button>
+      `).join("")}
+    </div>
+    <button class="submit-btn" id="splash-continue-btn">${t("langSplashContinue")}</button>
+  `;
+
+  card.querySelectorAll(".lang-pill").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.lang = btn.dataset.lang;
+      document.documentElement.lang = state.lang;
+      document.getElementById("lang-select").value = state.lang;
+      renderSplash();
+    });
+  });
+
+  document.getElementById("splash-continue-btn").addEventListener("click", () => {
+    state.langSelected = true;
+    persistNow();
+    setAutosaveStatus("saved");
+    document.getElementById("lang-splash").classList.add("hidden");
+    renderAll();
+  });
+}
+
+// ── Countdown ────────────────────────────────────────────────────────────────
+// May 10 2026 at 22:00 CEST (UTC+2) = 20:00 UTC
+const DEADLINE = new Date("2026-05-10T20:00:00Z");
+
+function formatCountdown() {
+  const diff = DEADLINE - Date.now();
+  if (diff <= 0) return t("sessionEnded");
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  return d > 0
+    ? `${d}${t("cdDays")} ${h}${t("cdHours")} ${m}${t("cdMinutes")}`
+    : `${h}${t("cdHours")} ${m}${t("cdMinutes")} ${s}${t("cdSeconds")}`;
+}
+
+function updateCountdown() {
+  const text = formatCountdown();
+  document.querySelectorAll(".countdown-timer").forEach(el => el.textContent = text);
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadFromStorage();
+
+  document.getElementById("hamburger-btn").addEventListener("click", () => {
+    state.mobileOpen = true;
+    renderAll();
+  });
+
+  document.getElementById("close-sidebar-btn").addEventListener("click", () => {
+    state.mobileOpen = false;
+    renderAll();
+  });
+
+  document.getElementById("overlay").addEventListener("click", () => {
+    state.mobileOpen = false;
+    renderAll();
+  });
+
+  document.getElementById("lang-select").addEventListener("change", e => {
+    state.lang = e.target.value;
+    document.documentElement.lang = state.lang;
+    schedulePersist();
+    renderAll();
+  });
+
+  document.getElementById("debug-wipe-btn").addEventListener("click", () => {
+    resetAppState();
+  });
+
+  window.addEventListener("resize", () => renderAll());
+
+  renderAll();
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  if (!state.langSelected) {
+    document.getElementById("lang-splash").classList.remove("hidden");
+    renderSplash();
+  }
+});
+</script>
+</body>
+</html>
