@@ -56,20 +56,28 @@
     <div class="sidebar-inner" id="mobile-sidebar-inner"></div>
   </aside>
 
-  <button class="debug-deadline-btn" id="debug-deadline-btn" type="button">
-    TEMP TEST SESSION END
-    <span>Push deadline forward for countdown test</span>
-  </button>
+  <div class="debug-menu" id="debug-menu">
+    <div class="debug-menu-panel hidden" id="debug-menu-panel">
+      <button class="debug-deadline-btn" id="debug-deadline-btn" type="button">
+        TEMP TEST SESSION END
+        <span>Push deadline forward for countdown test</span>
+      </button>
 
-  <button class="debug-deadline-reset-btn" id="debug-deadline-reset-btn" type="button">
-    TEMP RESET SESSION END
-    <span>Restore May 10 at 22:00 CEST</span>
-  </button>
+      <button class="debug-deadline-reset-btn" id="debug-deadline-reset-btn" type="button">
+        TEMP RESET SESSION END
+        <span>Restore May 10 at 22:00 CEST</span>
+      </button>
 
-  <button class="debug-wipe-btn" id="debug-wipe-btn" type="button">
-    TEMP WIPE EVERYTHING
-    <span>Remove before publishing</span>
-  </button>
+      <button class="debug-wipe-btn" id="debug-wipe-btn" type="button">
+        TEMP WIPE EVERYTHING
+        <span>Remove before publishing</span>
+      </button>
+    </div>
+
+    <button class="debug-menu-toggle" id="debug-menu-toggle" type="button" aria-label="Open debug menu" aria-expanded="false">
+      <span class="debug-menu-icon">!</span>
+    </button>
+  </div>
 </div>
 
 <script>
@@ -666,6 +674,7 @@ const state = {
   onboardingData: {},
   toolData: {},
   mobileOpen: false,
+  debugMenuOpen: false,
   lang: "en",
   langSelected: false,
   autosaveStatus: "saved",
@@ -1341,6 +1350,8 @@ function renderAll() {
 
   document.getElementById("overlay").classList.toggle("hidden", !state.mobileOpen);
   document.getElementById("mobile-sidebar").classList.toggle("hidden", !state.mobileOpen);
+  document.getElementById("debug-menu-panel").classList.toggle("hidden", !state.debugMenuOpen);
+  document.getElementById("debug-menu-toggle").setAttribute("aria-expanded", state.debugMenuOpen ? "true" : "false");
 }
 
 // ── Language splash ───────────────────────────────────────────────────────────
@@ -1481,6 +1492,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("debug-deadline-reset-btn").addEventListener("click", () => {
     resetDebugDeadline();
+  });
+
+  document.getElementById("debug-menu-toggle").addEventListener("click", () => {
+    state.debugMenuOpen = !state.debugMenuOpen;
+    renderAll();
   });
 
   window.addEventListener("resize", () => renderAll());

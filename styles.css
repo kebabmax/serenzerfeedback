@@ -845,11 +845,49 @@ body {
   display: none !important;
 }
 
-.debug-wipe-btn {
+.debug-menu {
   position: fixed;
   right: 20px;
   bottom: 20px;
   z-index: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.debug-menu-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.debug-menu-toggle {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 2px solid #8f1111;
+  background: #ff3b30;
+  color: #fff;
+  box-shadow: 0 10px 26px rgba(143, 17, 17, 0.35);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.debug-menu-icon {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.debug-menu-toggle:hover {
+  background: #db241a;
+}
+
+.debug-wipe-btn {
   border: 2px solid #8f1111;
   background: #ff3b30;
   color: #fff;
@@ -866,10 +904,6 @@ body {
 }
 
 .debug-deadline-btn {
-  position: fixed;
-  right: 20px;
-  bottom: 204px;
-  z-index: 700;
   border: 2px solid #8f1111;
   background: #ff3b30;
   color: #fff;
@@ -886,10 +920,6 @@ body {
 }
 
 .debug-deadline-reset-btn {
-  position: fixed;
-  right: 20px;
-  bottom: 112px;
-  z-index: 700;
   border: 2px solid #8f1111;
   background: #ff3b30;
   color: #fff;
@@ -945,23 +975,14 @@ body {
 }
 
 @media (max-width: 767px) {
-  .debug-deadline-btn {
-    right: 12px;
-    bottom: 256px;
-    padding: 12px 14px;
-    max-width: calc(100vw - 24px);
-  }
-
-  .debug-deadline-reset-btn {
-    right: 12px;
-    bottom: 164px;
-    padding: 12px 14px;
-    max-width: calc(100vw - 24px);
-  }
-
-  .debug-wipe-btn {
+  .debug-menu {
     right: 12px;
     bottom: 72px;
+  }
+
+  .debug-deadline-btn,
+  .debug-deadline-reset-btn,
+  .debug-wipe-btn {
     padding: 12px 14px;
     max-width: calc(100vw - 24px);
   }
