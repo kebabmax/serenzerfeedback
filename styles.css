@@ -238,6 +238,7 @@ body {
 }
 
 .nav-item-label {
+  font-family: 'DM Sans', sans-serif;
   font-size: 13.5px;
   color: var(--olive-mid);
   flex: 1;
@@ -495,11 +496,13 @@ body {
 }
 
 .subsection-title {
-  font-family: 'DM Serif Display', serif;
-  font-size: 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--olive);
   margin-top: 0;
   margin-bottom: 18px;
+  letter-spacing: 0;
 }
 
 /* ── Form elements ── */
@@ -653,6 +656,133 @@ body {
   color: var(--locked);
   margin-top: 8px;
   margin-bottom: 0;
+}
+
+.coach-intro-kicker {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  color: var(--sage);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.coach-duration {
+  margin: 0;
+  color: var(--locked);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.coach-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--olive);
+  margin-bottom: 18px;
+}
+
+.coach-section-title::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(107, 143, 113, 0.55);
+  flex-shrink: 0;
+}
+
+.coach-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.coach-action-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  color: var(--olive-mid);
+}
+
+.coach-action-item input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--sage);
+}
+
+.coach-action-item.checked {
+  background: rgba(107, 143, 113, 0.06);
+}
+
+.coach-table-head {
+  display: grid;
+  grid-template-columns: 2.2fr 1.2fr 1.8fr;
+  gap: 16px;
+  padding: 0 8px 12px;
+  border-bottom: 1px solid var(--border);
+  color: #9c9386;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.coach-table-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.coach-row {
+  display: grid;
+  grid-template-columns: 2.2fr 1.2fr 1.8fr;
+  gap: 16px;
+  align-items: start;
+  padding: 18px 8px;
+  border-bottom: 1px solid rgba(217, 210, 196, 0.8);
+}
+
+.coach-row:last-child {
+  border-bottom: none;
+  padding-bottom: 8px;
+}
+
+.coach-row-label {
+  color: var(--olive);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.coach-row-responses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.coach-pill {
+  min-width: 38px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--olive-mid);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.coach-pill.active {
+  border-color: var(--sage);
+  background: rgba(107, 143, 113, 0.1);
+  color: var(--olive);
+}
+
+.coach-comment-input {
+  min-height: 54px;
 }
 
 /* ── Tutorial steps ── */
@@ -975,5 +1105,15 @@ body {
 
   .card {
     padding: 20px 18px;
+  }
+
+  .coach-table-head {
+    display: none;
+  }
+
+  .coach-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px 0;
   }
 }

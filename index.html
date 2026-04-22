@@ -87,14 +87,15 @@
 // ── Tool structure (labels + tasks live in translations) ──────────────────────
 
 const TOOLS = [
-  { id: 3,  key: "tableau",},
+  { id: 3,  key: "tableauIntro",},
   { id: 4,  key: "coach",},
-  { id: 5,  key: "rituels",},
-  { id: 6,  key: "challenges",},
-  { id: 7,  key: "calendrier",},
+  { id: 5,  key: "calendrier",},
+  { id: 6,  key: "rituels",},
+  { id: 7,  key: "challenges",},
   { id: 8,  key: "organisation",},
   { id: 9,  key: "progression",},
   { id: 10, key: "notifications",},
+  { id: 11, key: "tableauFinal",},
 ];
 
 // ── Translations ──────────────────────────────────────────────────────────────
@@ -103,7 +104,7 @@ const T = {
 
   fr: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 complétés`,
+    completed:    n => `${n}/11 complétés`,
     autosave:     "Sauvegarde automatique",
 
     tabTutorial:   "Tutoriel",
@@ -169,6 +170,8 @@ const T = {
     missionLabel:      "Ta mission :",
     evaluationTitle:   "Ton évaluation",
     evaluationSubtitle:"Après avoir testé, réponds aux questions ci-dessous.",
+    yesOption:         "Oui",
+    noOption:          "Non",
     intuitiveLabel:    "Intuitivité - C'était facile à prendre en main ?",
     usefulLabel:       "Utilité - Tu t'en servirais au quotidien ?",
     experienceQuestion:"Qu'as-tu vécu en utilisant cet outil ?",
@@ -182,9 +185,57 @@ const T = {
     suggestionsPlaceholder: "Ce serait super si... / J'aurais aimé pouvoir...",
     toolSubmit:        label => `Valider mon feedback pour ${label}`,
     ratingRequired:    "* Donne au moins une note pour continuer",
+    dashboardIntroRequired: "* Réponds aux questions obligatoires pour continuer",
+    dashboardIntroQ1:  "La date et l'heure s'affichent-t-elles correctement ?",
+    dashboardIntroQ2:  "La phrase d'accueil est-elle en accordance avec l'heure ?",
+    dashboardIntroQ3:  "Les détails sur cette page font-ils sens pour vous ?",
+    dashboardIntroQ4:  "Le bouton \"Démarrer une conversation\" fonctionne-t-il bien ?",
+    coachKicker:       "FORMULAIRE COACH",
+    coachDuration:     "~20 min",
+    coachActionsTitle: "Actions à faire",
+    coachAction1:      "Démarre une conversation texte avec The AI",
+    coachAction2:      "Parle d'un sujet personnel réel",
+    coachAction3:      "Complète une session de 10 minutes minimum",
+    coachObservationsTitle: "Observations",
+    coachColObservation: "Observation",
+    coachColResponse:    "Oui / Non / ?",
+    coachColRating:      "Note",
+    coachColComment:     "Commentaire",
+    coachMaybeOption:    "?",
+    coachPlaceholder:    "...",
+    coachRequired:       "* Complète au moins les actions et les réponses aux observations pour continuer",
+    coachObs1:         "The AI comprend bien ce que je dis",
+    coachObs2:         "Les réponses sont pertinentes",
+    coachObs3:         "Le ton est adapté et bienveillant",
+    coachObs4:         "La conversation semble naturelle",
+    coachObs5:         "Je me sens à l'aise de me confier",
+    ritualDoneOption:  "Fait",
+    ritualRequired:    "* Complète au moins les deux sections Rituels et l'évaluation pour continuer",
+    ritualNewTitle:    "Actions à faire - Nouveau rituel",
+    ritualNewAction:   "Crée un nouveau rituel.",
+    ritualNewWorks:    "Le formulaire « Nouveau rituel » fonctionne-t-il ?",
+    ritualNewSense:    "Le formulaire « Nouveau rituel » te semble-t-il clair ?",
+    ritualNewCalendar: "Le nouveau rituel s'ajoute-t-il à ton calendrier ?",
+    ritualNewMine:     "Le nouveau rituel s'ajoute-t-il à « Mes rituels » ?",
+    ritualAiTitle:     "Actions à faire - Suggestions IA",
+    ritualAiOpen:      "Clique sur « Suggestions IA ».",
+    ritualAiLoad:      "Les suggestions se chargent-elles ?",
+    ritualAiSense:     "Les suggestions te semblent-elles pertinentes ?",
+    ritualAiAccept:    "Accepte l'une des suggestions.",
+    ritualAiCalendar:  "Le nouveau rituel s'ajoute-t-il à ton calendrier ?",
+    ritualAiMine:      "Le nouveau rituel s'ajoute-t-il à « Mes rituels » ?",
+    calendarRequired:  "* Complète au moins les deux sections Calendrier et l'évaluation pour continuer",
+    calendarGoogleTitle: "Google Connection",
+    calendarGoogleAdd: "Ajoute ton Google Calendar.",
+    calendarGoogleShow: "Tes événements s'affichent-ils sur le calendrier Serenzer ?",
+    calendarSerenzerTitle: "Serenzer Calendar",
+    calendarSerenzerClick: "Clique sur une date dans le calendrier.",
+    calendarSerenzerCreate: "Crée un nouvel événement.",
+    calendarSerenzerShow: "L'événement s'affiche-t-il sur le calendrier Serenzer ?",
+    calendarGoogleSync: "L'événement s'affiche-t-il sur ton Google Calendar ?",
 
     tools: {
-      tableau:       { label: "Tableau de bord", task: "Explore ton tableau de bord principal. Navigue entre les différentes sections et observe comment les informations sont présentées." },
+      tableauIntro:  { label: "Tableau de bord pt. 1", task: "Bienvenue sur ton tableau de bord. Comme c’est ta première fois sur l’app, il ne devrait pas encore contenir tes données personnalisées. Au fil de ta découverte de Serenzer, des informations viendront s’y ajouter. Le dernier formulaire te demandera si tes informations personnelles s’y affichent correctement. Pour l’instant, réponds à ces quelques questions générales, explore l’app et profite de ta première expérience Serenzer !" },
       coach:         { label: "Mon Coach",       task: "Interagis avec ton coach IA. Pose-lui une question sur ton bien-être ou ta journée, et observe sa réponse et ses suggestions." },
       rituels:       { label: "Rituels",         task: "Crée ou explore un rituel dans Serenzer. Configure ses paramètres et active-le pour voir comment il s'intègre dans ta routine." },
       challenges:    { label: "Challenges",      task: "Rejoins ou consulte un challenge disponible. Observe la progression et les étapes proposées." },
@@ -192,12 +243,13 @@ const T = {
       organisation:  { label: "Organisation",    task: "Utilise les outils d'organisation : crée une tâche ou une note, classe-la et marque-la comme terminée." },
       progression:   { label: "Progression",     task: "Consulte ta page de progression. Observe tes statistiques, graphiques et badges obtenus." },
       notifications: { label: "Notifications",   task: "Vérifie le centre de notifications. Configure tes préférences et observe si les alertes arrivent correctement." },
+      tableauFinal:  { label: "Tableau de bord pt. 2", task: "Reviens au tableau de bord après avoir utilisé les autres outils Serenzer. Observe ce qui a évolué, la richesse des informations affichées et si l'ensemble te paraît maintenant plus utile et vivant." },
     },
   },
 
   en: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 completed`,
+    completed:    n => `${n}/11 completed`,
     autosave:     "Automatic save",
 
     tabTutorial:   "Tutorial",
@@ -263,6 +315,8 @@ const T = {
     missionLabel:       "Your mission:",
     evaluationTitle:    "Your evaluation",
     evaluationSubtitle: "After testing, answer the questions below.",
+    yesOption:           "Yes",
+    noOption:            "No",
     intuitiveLabel:     "Intuitiveness - Was it easy to get started?",
     usefulLabel:        "Usefulness - Would you use it daily?",
     experienceQuestion: "What did you experience using this tool?",
@@ -276,9 +330,57 @@ const T = {
     suggestionsPlaceholder: "It would be great if... / I wish I could...",
     toolSubmit:         label => `Submit feedback for ${label}`,
     ratingRequired:     "* Give at least one rating to continue",
+    dashboardIntroRequired: "* Answer the required questions to continue",
+    dashboardIntroQ1:   "Are the date and time displayed correctly?",
+    dashboardIntroQ2:   "Is the welcome sentence consistent with the time of day?",
+    dashboardIntroQ3:   "Do the details on this page make sense to you?",
+    dashboardIntroQ4:   "Does the \"Start a conversation\" button work properly?",
+    coachKicker:         "COACH FORM",
+    coachDuration:       "~20 min",
+    coachActionsTitle:   "Actions to complete",
+    coachAction1:        "Start a text conversation with The AI",
+    coachAction2:        "Talk about a real personal topic",
+    coachAction3:        "Complete a session of at least 10 minutes",
+    coachObservationsTitle: "Observations",
+    coachColObservation: "Observation",
+    coachColResponse:    "Yes / No / ?",
+    coachColRating:      "Rating",
+    coachColComment:     "Comment",
+    coachMaybeOption:    "?",
+    coachPlaceholder:    "...",
+    coachRequired:       "* Complete at least the actions and the observation responses to continue",
+    coachObs1:         "The AI understands what I say well",
+    coachObs2:         "The responses are relevant",
+    coachObs3:         "The tone is appropriate and caring",
+    coachObs4:         "The conversation feels natural",
+    coachObs5:         "I feel comfortable opening up",
+    ritualDoneOption:  "Done",
+    ritualRequired:    "* Complete at least both Rituals sections and the evaluation to continue",
+    ritualNewTitle:    "Actions to complete - New ritual",
+    ritualNewAction:   "Create a new ritual.",
+    ritualNewWorks:    "Does the \"New Ritual\" form work?",
+    ritualNewSense:    "Does the \"New Ritual\" form make sense to you?",
+    ritualNewCalendar: "Is the new ritual added to your calendar?",
+    ritualNewMine:     "Is the new ritual added to \"My Rituals\"?",
+    ritualAiTitle:     "Actions to complete - AI suggestions",
+    ritualAiOpen:      "Click on \"AI Suggestions\".",
+    ritualAiLoad:      "Do the suggestions load?",
+    ritualAiSense:     "Do the suggestions make sense to you?",
+    ritualAiAccept:    "Accept one of the suggestions.",
+    ritualAiCalendar:  "Is the new ritual added to your calendar?",
+    ritualAiMine:      "Is the new ritual added to \"My Rituals\"?",
+    calendarRequired:  "* Complete at least both Calendar sections and the evaluation to continue",
+    calendarGoogleTitle: "Google Connection",
+    calendarGoogleAdd: "Add your Google Calendar.",
+    calendarGoogleShow: "Do your events show on the Serenzer Calendar?",
+    calendarSerenzerTitle: "Serenzer Calendar",
+    calendarSerenzerClick: "Click on a date in the calendar.",
+    calendarSerenzerCreate: "Create a new event.",
+    calendarSerenzerShow: "Does the event show on the Serenzer Calendar?",
+    calendarGoogleSync: "Does the event show on your Google Calendar?",
 
     tools: {
-      tableau:       { label: "Dashboard",     task: "Explore your main dashboard. Navigate between the different sections and observe how information is presented." },
+      tableauIntro:  { label: "Dashboard pt. 1", task: "Welcome to your dashboard. Because this is your first time on the app, it should not have any of your personalised data yet. As you discover Serenzer, information will be added to it. The last form will ask you whether your personal details have been properly rendered on the dashboard. For now, answer these few general questions, explore the app, and enjoy your first Serenzer experience!" },
       coach:         { label: "My Coach",      task: "Interact with your AI coach. Ask it a question about your well-being or your day, and observe its response and suggestions." },
       rituels:       { label: "Rituals",       task: "Create or explore a ritual in Serenzer. Configure its settings and activate it to see how it fits into your routine." },
       challenges:    { label: "Challenges",    task: "Join or consult an available challenge. Observe the progress and proposed steps." },
@@ -286,12 +388,13 @@ const T = {
       organisation:  { label: "Organisation",  task: "Use the organisation tools: create a task or note, categorise it and mark it as done." },
       progression:   { label: "Progress",      task: "Check your progress page. Observe your statistics, charts and badges earned." },
       notifications: { label: "Notifications", task: "Check the notification centre. Configure your preferences and observe whether alerts arrive correctly." },
+      tableauFinal:  { label: "Dashboard pt. 2", task: "Return to the dashboard after using the other Serenzer tools. Observe what has changed, how rich the displayed information feels, and whether the overall page now feels more useful and alive." },
     },
   },
 
   it: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 completati`,
+    completed:    n => `${n}/11 completati`,
     autosave:     "Salvataggio automatico",
 
     tabTutorial:   "Tutorial",
@@ -357,6 +460,8 @@ const T = {
     missionLabel:       "La tua missione:",
     evaluationTitle:    "La tua valutazione",
     evaluationSubtitle: "Dopo aver testato, rispondi alle domande qui sotto.",
+    yesOption:           "Sì",
+    noOption:            "No",
     intuitiveLabel:     "Intuitività - È stato facile iniziare?",
     usefulLabel:        "Utilità - Lo useresti ogni giorno?",
     experienceQuestion: "Cosa hai vissuto usando questo strumento?",
@@ -370,9 +475,57 @@ const T = {
     suggestionsPlaceholder: "Sarebbe fantastico se... / Avrei voluto poter...",
     toolSubmit:         label => `Invia il feedback per ${label}`,
     ratingRequired:     "* Dai almeno un voto per continuare",
+    dashboardIntroRequired: "* Rispondi alle domande obbligatorie per continuare",
+    dashboardIntroQ1:   "La data e l'ora vengono visualizzate correttamente?",
+    dashboardIntroQ2:   "La frase di benvenuto è coerente con l'ora del giorno?",
+    dashboardIntroQ3:   "I dettagli di questa pagina hanno senso per te?",
+    dashboardIntroQ4:   "Il pulsante \"Avvia una conversazione\" funziona correttamente?",
+    coachKicker:         "MODULO COACH",
+    coachDuration:       "~20 min",
+    coachActionsTitle:   "Azioni da fare",
+    coachAction1:        "Avvia una conversazione testuale con The AI",
+    coachAction2:        "Parla di un argomento personale reale",
+    coachAction3:        "Completa una sessione di almeno 10 minuti",
+    coachObservationsTitle: "Osservazioni",
+    coachColObservation: "Osservazione",
+    coachColResponse:    "Sì / No / ?",
+    coachColRating:      "Valutazione",
+    coachColComment:     "Commento",
+    coachMaybeOption:    "?",
+    coachPlaceholder:    "...",
+    coachRequired:       "* Completa almeno le azioni e le risposte alle osservazioni per continuare",
+    coachObs1:         "The AI capisce bene ciò che dico",
+    coachObs2:         "Le risposte sono pertinenti",
+    coachObs3:         "Il tono è adatto e benevolo",
+    coachObs4:         "La conversazione sembra naturale",
+    coachObs5:         "Mi sento a mio agio ad aprirmi",
+    ritualDoneOption:  "Fatto",
+    ritualRequired:    "* Completa almeno entrambe le sezioni Rituali e la valutazione per continuare",
+    ritualNewTitle:    "Azioni da fare - Nuovo rituale",
+    ritualNewAction:   "Crea un nuovo rituale.",
+    ritualNewWorks:    "Il modulo \"Nuovo rituale\" funziona?",
+    ritualNewSense:    "Il modulo \"Nuovo rituale\" ti sembra chiaro?",
+    ritualNewCalendar: "Il nuovo rituale viene aggiunto al tuo calendario?",
+    ritualNewMine:     "Il nuovo rituale viene aggiunto a \"I miei rituali\"?",
+    ritualAiTitle:     "Azioni da fare - Suggerimenti IA",
+    ritualAiOpen:      "Clicca su \"Suggerimenti IA\".",
+    ritualAiLoad:      "I suggerimenti si caricano?",
+    ritualAiSense:     "I suggerimenti ti sembrano pertinenti?",
+    ritualAiAccept:    "Accetta uno dei suggerimenti.",
+    ritualAiCalendar:  "Il nuovo rituale viene aggiunto al tuo calendario?",
+    ritualAiMine:      "Il nuovo rituale viene aggiunto a \"I miei rituali\"?",
+    calendarRequired:  "* Completa almeno entrambe le sezioni Calendario e la valutazione per continuare",
+    calendarGoogleTitle: "Connessione Google",
+    calendarGoogleAdd: "Aggiungi il tuo Google Calendar.",
+    calendarGoogleShow: "I tuoi eventi vengono visualizzati sul calendario Serenzer?",
+    calendarSerenzerTitle: "Calendario Serenzer",
+    calendarSerenzerClick: "Clicca su una data nel calendario.",
+    calendarSerenzerCreate: "Crea un nuovo evento.",
+    calendarSerenzerShow: "L'evento viene visualizzato sul calendario Serenzer?",
+    calendarGoogleSync: "L'evento viene visualizzato sul tuo Google Calendar?",
 
     tools: {
-      tableau:       { label: "Dashboard",      task: "Esplora la tua dashboard principale. Naviga tra le diverse sezioni e osserva come vengono presentate le informazioni." },
+      tableauIntro:  { label: "Dashboard pt. 1", task: "Benvenuto nella tua dashboard. Poiché è la tua prima volta sull’app, non dovrebbe ancora contenere i tuoi dati personalizzati. Man mano che scoprirai Serenzer, vi si aggiungeranno nuove informazioni. L’ultimo modulo ti chiederà se i tuoi dati personali vengono visualizzati correttamente sulla dashboard. Per ora, rispondi a queste poche domande generali, esplora l’app e goditi la tua prima esperienza con Serenzer!" },
       coach:         { label: "Il mio Coach",   task: "Interagisci con il tuo coach IA. Fagli una domanda sul tuo benessere o sulla tua giornata, e osserva la sua risposta e i suoi suggerimenti." },
       rituels:       { label: "Rituali",         task: "Crea o esplora un rituale in Serenzer. Configura le sue impostazioni e attivalo per vedere come si integra nella tua routine." },
       challenges:    { label: "Sfide",           task: "Partecipa o consulta una sfida disponibile. Osserva i progressi e i passaggi proposti." },
@@ -380,12 +533,13 @@ const T = {
       organisation:  { label: "Organizzazione",  task: "Usa gli strumenti di organizzazione: crea un'attività o una nota, classificala e contrassegnala come completata." },
       progression:   { label: "Progressi",       task: "Consulta la tua pagina dei progressi. Osserva le tue statistiche, grafici e badge ottenuti." },
       notifications: { label: "Notifiche",       task: "Controlla il centro notifiche. Configura le tue preferenze e osserva se gli avvisi arrivano correttamente." },
+      tableauFinal:  { label: "Dashboard pt. 2", task: "Torna alla dashboard dopo aver usato gli altri strumenti di Serenzer. Osserva cosa è cambiato, quanto sono ricche le informazioni mostrate e se la pagina ti sembra ora più utile e viva." },
     },
   },
 
   nl: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 voltooid`,
+    completed:    n => `${n}/11 voltooid`,
     autosave:     "Automatisch opslaan",
 
     tabTutorial:   "Tutorial",
@@ -451,6 +605,8 @@ const T = {
     missionLabel:       "Jouw missie:",
     evaluationTitle:    "Jouw beoordeling",
     evaluationSubtitle: "Beantwoord na het testen de onderstaande vragen.",
+    yesOption:           "Ja",
+    noOption:            "Nee",
     intuitiveLabel:     "Intuitiviteit - Was het makkelijk om mee te starten?",
     usefulLabel:        "Nut - Zou je het dagelijks gebruiken?",
     experienceQuestion: "Wat heb je ervaren bij het gebruik van deze tool?",
@@ -464,9 +620,57 @@ const T = {
     suggestionsPlaceholder: "Het zou geweldig zijn als... / Ik had graag kunnen...",
     toolSubmit:         label => `Feedback indienen voor ${label}`,
     ratingRequired:     "* Geef minstens een beoordeling om verder te gaan",
+    dashboardIntroRequired: "* Beantwoord de verplichte vragen om verder te gaan",
+    dashboardIntroQ1:   "Worden de datum en tijd correct weergegeven?",
+    dashboardIntroQ2:   "Past de welkomstzin bij het tijdstip van de dag?",
+    dashboardIntroQ3:   "Zijn de details op deze pagina logisch voor jou?",
+    dashboardIntroQ4:   "Werkt de knop \"Een gesprek starten\" goed?",
+    coachKicker:         "COACHFORMULIER",
+    coachDuration:       "~20 min",
+    coachActionsTitle:   "Acties om uit te voeren",
+    coachAction1:        "Start een tekstgesprek met The AI",
+    coachAction2:        "Praat over een echt persoonlijk onderwerp",
+    coachAction3:        "Voltooi een sessie van minstens 10 minuten",
+    coachObservationsTitle: "Observaties",
+    coachColObservation: "Observatie",
+    coachColResponse:    "Ja / Nee / ?",
+    coachColRating:      "Score",
+    coachColComment:     "Opmerking",
+    coachMaybeOption:    "?",
+    coachPlaceholder:    "...",
+    coachRequired:       "* Voltooi minstens de acties en de antwoorden op de observaties om verder te gaan",
+    coachObs1:         "The AI begrijpt goed wat ik zeg",
+    coachObs2:         "De antwoorden zijn relevant",
+    coachObs3:         "De toon is passend en vriendelijk",
+    coachObs4:         "Het gesprek voelt natuurlijk aan",
+    coachObs5:         "Ik voel me op mijn gemak om me open te stellen",
+    ritualDoneOption:  "Gedaan",
+    ritualRequired:    "* Vul minstens beide Rituelen-secties en de evaluatie in om verder te gaan",
+    ritualNewTitle:    "Acties om uit te voeren - Nieuw ritueel",
+    ritualNewAction:   "Maak een nieuw ritueel aan.",
+    ritualNewWorks:    "Werkt het formulier \"Nieuw ritueel\" goed?",
+    ritualNewSense:    "Is het formulier \"Nieuw ritueel\" duidelijk voor jou?",
+    ritualNewCalendar: "Wordt het nieuwe ritueel aan je kalender toegevoegd?",
+    ritualNewMine:     "Wordt het nieuwe ritueel toegevoegd aan \"Mijn rituelen\"?",
+    ritualAiTitle:     "Acties om uit te voeren - AI-suggesties",
+    ritualAiOpen:      "Klik op \"AI-suggesties\".",
+    ritualAiLoad:      "Laden de suggesties?",
+    ritualAiSense:     "Zijn de suggesties logisch voor jou?",
+    ritualAiAccept:    "Accepteer een van de suggesties.",
+    ritualAiCalendar:  "Wordt het nieuwe ritueel aan je kalender toegevoegd?",
+    ritualAiMine:      "Wordt het nieuwe ritueel toegevoegd aan \"Mijn rituelen\"?",
+    calendarRequired:  "* Vul minstens beide Kalender-secties en de evaluatie in om verder te gaan",
+    calendarGoogleTitle: "Google-verbinding",
+    calendarGoogleAdd: "Voeg je Google Calendar toe.",
+    calendarGoogleShow: "Worden je evenementen getoond in de Serenzer-kalender?",
+    calendarSerenzerTitle: "Serenzer-kalender",
+    calendarSerenzerClick: "Klik op een datum in de kalender.",
+    calendarSerenzerCreate: "Maak een nieuwe gebeurtenis aan.",
+    calendarSerenzerShow: "Wordt de gebeurtenis getoond in de Serenzer-kalender?",
+    calendarGoogleSync: "Wordt de gebeurtenis getoond in je Google Calendar?",
 
     tools: {
-      tableau:       { label: "Dashboard",    task: "Verken je hoofddashboard. Navigeer tussen de verschillende secties en observeer hoe informatie wordt gepresenteerd." },
+      tableauIntro:  { label: "Dashboard pt. 1", task: "Welkom op je dashboard. Omdat dit je eerste keer in de app is, zou het nog geen persoonlijke gegevens van jou moeten bevatten. Terwijl je Serenzer ontdekt, zal er geleidelijk informatie aan worden toegevoegd. In het laatste formulier vragen we je of jouw persoonlijke gegevens correct op het dashboard zijn weergegeven. Beantwoord voorlopig eerst een paar algemene vragen, verken de app en geniet van je eerste Serenzer-ervaring!" },
       coach:         { label: "Mijn Coach",   task: "Communiceer met je AI-coach. Stel hem een vraag over je welzijn of je dag, en observeer zijn reactie en suggesties." },
       rituels:       { label: "Rituelen",     task: "Maak of verken een ritueel in Serenzer. Configureer de instellingen en activeer het om te zien hoe het in je routine past." },
       challenges:    { label: "Uitdagingen",  task: "Doe mee aan of bekijk een beschikbare uitdaging. Observeer de voortgang en de voorgestelde stappen." },
@@ -474,12 +678,13 @@ const T = {
       organisation:  { label: "Organisatie",  task: "Gebruik de organisatietools: maak een taak of notitie, categoriseer deze en markeer als voltooid." },
       progression:   { label: "Voortgang",    task: "Bekijk je voortgangspagina. Observeer je statistieken, grafieken en behaalde badges." },
       notifications: { label: "Meldingen",    task: "Controleer het meldingencentrum. Configureer je voorkeuren en observeer of waarschuwingen correct aankomen." },
+      tableauFinal:  { label: "Dashboard pt. 2", task: "Ga terug naar het dashboard nadat je de andere Serenzer-tools hebt gebruikt. Kijk wat er is veranderd, hoe rijk de getoonde informatie nu aanvoelt en of de pagina nu nuttiger en levendiger lijkt." },
     },
   },
 
   de: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 abgeschlossen`,
+    completed:    n => `${n}/11 abgeschlossen`,
     autosave:     "Automatisch gespeichert",
 
     tabTutorial:   "Tutorial",
@@ -545,6 +750,8 @@ const T = {
     missionLabel:       "Deine Aufgabe:",
     evaluationTitle:    "Deine Bewertung",
     evaluationSubtitle: "Beantworte nach dem Testen die folgenden Fragen.",
+    yesOption:           "Ja",
+    noOption:            "Nein",
     intuitiveLabel:     "Intuitivität - War es einfach, damit anzufangen?",
     usefulLabel:        "Nützlichkeit - Würdest du es täglich verwenden?",
     experienceQuestion: "Was hast du bei der Verwendung dieses Tools erlebt?",
@@ -558,9 +765,57 @@ const T = {
     suggestionsPlaceholder: "Es wäre toll wenn... / Ich hätte gerne können...",
     toolSubmit:         label => `Feedback einreichen für ${label}`,
     ratingRequired:     "* Gib mindestens eine Bewertung ab, um fortzufahren",
+    dashboardIntroRequired: "* Beantworte die Pflichtfragen, um fortzufahren",
+    dashboardIntroQ1:   "Werden Datum und Uhrzeit korrekt angezeigt?",
+    dashboardIntroQ2:   "Passt der Begrüßungssatz zur Tageszeit?",
+    dashboardIntroQ3:   "Ergeben die Details auf dieser Seite für dich Sinn?",
+    dashboardIntroQ4:   "Funktioniert die Schaltfläche \"Ein Gespräch starten\" richtig?",
+    coachKicker:         "COACH-FORMULAR",
+    coachDuration:       "~20 Min",
+    coachActionsTitle:   "Zu erledigende Aktionen",
+    coachAction1:        "Starte ein Textgespräch mit The AI",
+    coachAction2:        "Sprich über ein echtes persönliches Thema",
+    coachAction3:        "Schließe eine Sitzung von mindestens 10 Minuten ab",
+    coachObservationsTitle: "Beobachtungen",
+    coachColObservation: "Beobachtung",
+    coachColResponse:    "Ja / Nein / ?",
+    coachColRating:      "Bewertung",
+    coachColComment:     "Kommentar",
+    coachMaybeOption:    "?",
+    coachPlaceholder:    "...",
+    coachRequired:       "* Erledige mindestens die Aktionen und die Antworten auf die Beobachtungen, um fortzufahren",
+    coachObs1:         "The AI versteht gut, was ich sage",
+    coachObs2:         "Die Antworten sind relevant",
+    coachObs3:         "Der Ton ist passend und wohlwollend",
+    coachObs4:         "Das Gespräch wirkt natürlich",
+    coachObs5:         "Ich fühle mich wohl dabei, mich anzuvertrauen",
+    ritualDoneOption:  "Erledigt",
+    ritualRequired:    "* Fülle mindestens beide Rituale-Bereiche und die Bewertung aus, um fortzufahren",
+    ritualNewTitle:    "Zu erledigende Aktionen - Neues Ritual",
+    ritualNewAction:   "Erstelle ein neues Ritual.",
+    ritualNewWorks:    "Funktioniert das Formular „Neues Ritual“?",
+    ritualNewSense:    "Ist das Formular „Neues Ritual“ für dich verständlich?",
+    ritualNewCalendar: "Wird das neue Ritual zu deinem Kalender hinzugefügt?",
+    ritualNewMine:     "Wird das neue Ritual zu „Meine Rituale“ hinzugefügt?",
+    ritualAiTitle:     "Zu erledigende Aktionen - KI-Vorschläge",
+    ritualAiOpen:      "Klicke auf „KI-Vorschläge“.",
+    ritualAiLoad:      "Werden die Vorschläge geladen?",
+    ritualAiSense:     "Sind die Vorschläge für dich sinnvoll?",
+    ritualAiAccept:    "Akzeptiere einen der Vorschläge.",
+    ritualAiCalendar:  "Wird das neue Ritual zu deinem Kalender hinzugefügt?",
+    ritualAiMine:      "Wird das neue Ritual zu „Meine Rituale“ hinzugefügt?",
+    calendarRequired:  "* Fülle mindestens beide Kalender-Bereiche und die Bewertung aus, um fortzufahren",
+    calendarGoogleTitle: "Google-Verbindung",
+    calendarGoogleAdd: "Füge deinen Google Calendar hinzu.",
+    calendarGoogleShow: "Werden deine Ereignisse im Serenzer-Kalender angezeigt?",
+    calendarSerenzerTitle: "Serenzer-Kalender",
+    calendarSerenzerClick: "Klicke auf ein Datum im Kalender.",
+    calendarSerenzerCreate: "Erstelle ein neues Ereignis.",
+    calendarSerenzerShow: "Wird das Ereignis im Serenzer-Kalender angezeigt?",
+    calendarGoogleSync: "Wird das Ereignis in deinem Google Calendar angezeigt?",
 
     tools: {
-      tableau:       { label: "Dashboard",           task: "Erkunde dein Haupt-Dashboard. Navigiere zwischen den verschiedenen Abschnitten und beobachte, wie Informationen präsentiert werden." },
+      tableauIntro:  { label: "Dashboard Teil 1",      task: "Willkommen auf deinem Dashboard. Da dies dein erstes Mal in der App ist, sollte es noch keine personalisierten Daten von dir enthalten. Während du Serenzer entdeckst, werden nach und nach Informationen hinzugefügt. Im letzten Formular wirst du gefragt, ob deine persönlichen Daten korrekt auf dem Dashboard angezeigt werden. Für den Moment beantworte zuerst ein paar allgemeine Fragen, erkunde die App und genieße deine erste Serenzer-Erfahrung!" },
       coach:         { label: "Mein Coach",           task: "Interagiere mit deinem KI-Coach. Stelle ihm eine Frage zu deinem Wohlbefinden oder deinem Tag und beobachte seine Antwort und Vorschläge." },
       rituels:       { label: "Rituale",              task: "Erstelle oder erkunde ein Ritual in Serenzer. Konfiguriere die Einstellungen und aktiviere es, um zu sehen, wie es sich in deine Routine einfügt." },
       challenges:    { label: "Herausforderungen",    task: "Nimm an einer verfügbaren Herausforderung teil oder konsultiere sie. Beobachte den Fortschritt und die vorgeschlagenen Schritte." },
@@ -568,12 +823,13 @@ const T = {
       organisation:  { label: "Organisation",         task: "Verwende die Organisationstools: Erstelle eine Aufgabe oder Notiz, kategorisiere sie und markiere sie als erledigt." },
       progression:   { label: "Fortschritt",          task: "Schau dir deine Fortschrittsseite an. Beobachte deine Statistiken, Diagramme und erhaltenen Abzeichen." },
       notifications: { label: "Benachrichtigungen",   task: "Überprüfe das Benachrichtigungszentrum. Konfiguriere deine Einstellungen und beobachte, ob Benachrichtigungen korrekt ankommen." },
+      tableauFinal:  { label: "Dashboard Teil 2",      task: "Kehre zum Dashboard zurück, nachdem du die anderen Serenzer-Tools genutzt hast. Beobachte, was sich verändert hat, wie reichhaltig die angezeigten Informationen nun wirken und ob die Seite jetzt nützlicher und lebendiger erscheint." },
     },
   },
 
   es: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 completados`,
+    completed:    n => `${n}/11 completados`,
     autosave:     "Guardado automático",
 
     tabTutorial:   "Tutorial",
@@ -639,6 +895,8 @@ const T = {
     missionLabel:       "Tu misión:",
     evaluationTitle:    "Tu evaluación",
     evaluationSubtitle: "Después de probar, responde las preguntas a continuación.",
+    yesOption:           "Sí",
+    noOption:            "No",
     intuitiveLabel:     "Intuitividad - Era fácil empezar?",
     usefulLabel:        "Utilidad - Lo usarías a diario?",
     experienceQuestion: "Que experimentaste al usar esta herramienta?",
@@ -652,9 +910,57 @@ const T = {
     suggestionsPlaceholder: "Sería genial si... / Me hubiera gustado poder...",
     toolSubmit:         label => `Enviar feedback para ${label}`,
     ratingRequired:     "* Da al menos una valoración para continuar",
+    dashboardIntroRequired: "* Responde a las preguntas obligatorias para continuar",
+    dashboardIntroQ1:   "¿La fecha y la hora se muestran correctamente?",
+    dashboardIntroQ2:   "¿La frase de bienvenida corresponde con la hora del día?",
+    dashboardIntroQ3:   "¿Los detalles de esta página tienen sentido para ti?",
+    dashboardIntroQ4:   "¿Funciona bien el botón \"Iniciar una conversación\"?",
+    coachKicker:         "FORMULARIO COACH",
+    coachDuration:       "~20 min",
+    coachActionsTitle:   "Acciones a realizar",
+    coachAction1:        "Inicia una conversación de texto con The AI",
+    coachAction2:        "Habla de un tema personal real",
+    coachAction3:        "Completa una sesión de al menos 10 minutos",
+    coachObservationsTitle: "Observaciones",
+    coachColObservation: "Observación",
+    coachColResponse:    "Sí / No / ?",
+    coachColRating:      "Nota",
+    coachColComment:     "Comentario",
+    coachMaybeOption:    "?",
+    coachPlaceholder:    "...",
+    coachRequired:       "* Completa al menos las acciones y las respuestas de observación para continuar",
+    coachObs1:         "The AI comprende bien lo que digo",
+    coachObs2:         "Las respuestas son pertinentes",
+    coachObs3:         "El tono es adecuado y amable",
+    coachObs4:         "La conversación parece natural",
+    coachObs5:         "Me siento cómodo al abrirme",
+    ritualDoneOption:  "Hecho",
+    ritualRequired:    "* Completa al menos las dos secciones de Rituales y la evaluación para continuar",
+    ritualNewTitle:    "Acciones a realizar - Nuevo ritual",
+    ritualNewAction:   "Crea un nuevo ritual.",
+    ritualNewWorks:    "¿Funciona el formulario \"Nuevo ritual\"?",
+    ritualNewSense:    "¿El formulario \"Nuevo ritual\" te parece claro?",
+    ritualNewCalendar: "¿Se añade el nuevo ritual a tu calendario?",
+    ritualNewMine:     "¿Se añade el nuevo ritual a \"Mis rituales\"?",
+    ritualAiTitle:     "Acciones a realizar - Sugerencias de IA",
+    ritualAiOpen:      "Haz clic en \"Sugerencias de IA\".",
+    ritualAiLoad:      "¿Se cargan las sugerencias?",
+    ritualAiSense:     "¿Las sugerencias te parecen pertinentes?",
+    ritualAiAccept:    "Acepta una de las sugerencias.",
+    ritualAiCalendar:  "¿Se añade el nuevo ritual a tu calendario?",
+    ritualAiMine:      "¿Se añade el nuevo ritual a \"Mis rituales\"?",
+    calendarRequired:  "* Completa al menos las dos secciones de Calendario y la evaluación para continuar",
+    calendarGoogleTitle: "Conexión con Google",
+    calendarGoogleAdd: "Añade tu Google Calendar.",
+    calendarGoogleShow: "¿Tus eventos aparecen en el calendario de Serenzer?",
+    calendarSerenzerTitle: "Calendario Serenzer",
+    calendarSerenzerClick: "Haz clic en una fecha del calendario.",
+    calendarSerenzerCreate: "Crea un nuevo evento.",
+    calendarSerenzerShow: "¿El evento aparece en el calendario de Serenzer?",
+    calendarGoogleSync: "¿El evento aparece en tu Google Calendar?",
 
     tools: {
-      tableau:       { label: "Panel",           task: "Explora tu panel principal. Navega entre las diferentes secciones y observa cómo se presenta la información." },
+      tableauIntro:  { label: "Panel pt. 1",      task: "Bienvenido a tu panel. Como es tu primera vez en la app, todavía no debería mostrar tus datos personalizados. A medida que descubras Serenzer, se irán añadiendo informaciones. El último formulario te preguntará si tus datos personales se muestran correctamente en el panel. Por ahora, responde a estas pocas preguntas generales, explora la app y disfruta de tu primera experiencia con Serenzer." },
       coach:         { label: "Mi Coach",        task: "Interactua con tu coach de IA. Hazle una pregunta sobre tu bienestar o tu dia, y observa su respuesta y sugerencias." },
       rituels:       { label: "Rituales",        task: "Crea o explora un ritual en Serenzer. Configura sus ajustes y activalo para ver cómo se integra en tu rutina." },
       challenges:    { label: "Retos",           task: "Únete o consulta un reto disponible. Observa el progreso y los pasos propuestos." },
@@ -662,6 +968,7 @@ const T = {
       organisation:  { label: "Organización",    task: "Utiliza las herramientas de organización: crea una tarea o una nota, clasifícala y márcala como completada." },
       progression:   { label: "Progreso",        task: "Consulta tu página de progreso. Observa tus estadísticas, gráficos e insignias obtenidas." },
       notifications: { label: "Notificaciones",  task: "Comprueba el centro de notificaciones. Configura tus preferencias y observa si las alertas llegan correctamente." },
+      tableauFinal:  { label: "Panel pt. 2",      task: "Vuelve al panel después de haber usado las demás herramientas de Serenzer. Observa qué ha cambiado, lo rica que se siente ahora la información mostrada y si la página te parece más útil y viva." },
     },
   },
 
@@ -736,7 +1043,7 @@ function persistNow() {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function totalCompleted() { return Object.keys(state.completed).length; }
-function progressPct()    { return Math.round((totalCompleted() / 10) * 100); }
+function progressPct()    { return Math.round((totalCompleted() / 11) * 100); }
 function isLocked(tabId)  { return !state.debugUnlockAllTabs && tabId >= 3 && !(state.completed[1] && state.completed[2]); }
 
 function getTabStatus(tabId) {
@@ -891,7 +1198,7 @@ function navItemHTML(tab) {
 function updateTopBar() {
   const tab = getNavTabs().find(tb => tb.id === state.activeTab);
   document.getElementById("topbar-title").textContent = tab ? tab.label : "";
-  document.getElementById("progress-text").textContent = `${totalCompleted()}/10`;
+  document.getElementById("progress-text").textContent = `${totalCompleted()}/11`;
   document.getElementById("progress-fill").style.width = `${progressPct()}%`;
   document.getElementById("lang-select").value = state.lang;
 }
@@ -1088,7 +1395,18 @@ function refreshOnboardingSubmit() {
 
 function toolTabHTML(tool) {
   const d       = state.toolData[tool.key] || {};
-  const isValid = d.intuitive && d.useful;
+  if (tool.key === "coach") {
+    return coachToolHTML(tool, d);
+  }
+  if (tool.key === "calendrier") {
+    return calendarToolHTML(tool, d);
+  }
+  if (tool.key === "rituels") {
+    return ritualsToolHTML(tool, d);
+  }
+  const isValid = tool.key === "tableauIntro"
+    ? d.intuitive && d.useful && d.dateTimeCorrect && d.greetingMatchesTime && d.startConversationWorks && String(d.pageDetailsSense || "").trim()
+    : d.intuitive && d.useful;
   const tr      = toolT(tool.key);
 
   const experienceOptions = [
@@ -1098,6 +1416,19 @@ function toolTabHTML(tool) {
     { value: "loved",    label: t("expLoved") },
   ];
 
+  const customIntroBlock = tool.key === "tableauIntro" ? `
+    <div class="card">
+      <h3 class="subsection-title">${t("coachObservationsTitle")}</h3>
+      ${checkboxGroupHTML(t("dashboardIntroQ1"), yesNoOptions(), d.dateTimeCorrect, true, "dateTimeCorrect")}
+      ${checkboxGroupHTML(t("dashboardIntroQ2"), yesNoOptions(), d.greetingMatchesTime, true, "greetingMatchesTime")}
+      <div class="field">
+        <label class="field-label" for="inp-pageDetailsSense">${t("dashboardIntroQ3")}</label>
+        <textarea class="textarea-input" id="inp-pageDetailsSense" rows="4">${esc(d.pageDetailsSense)}</textarea>
+      </div>
+      ${checkboxGroupHTML(t("dashboardIntroQ4"), yesNoOptions(), d.startConversationWorks, true, "startConversationWorks")}
+    </div>
+  ` : "";
+
   return `
     <div class="card card-sage">
       <h2 class="section-title">${tr.label}</h2>
@@ -1106,14 +1437,13 @@ function toolTabHTML(tool) {
       </p>
     </div>
 
+    ${customIntroBlock}
+
     <div class="card">
       <h3 class="subsection-title" style="margin-bottom:4px;">${t("evaluationTitle")}</h3>
       <p style="color:var(--olive-mid);font-size:14px;margin-top:0;margin-bottom:20px;">${t("evaluationSubtitle")}</p>
       ${starRatingHTML(t("intuitiveLabel"), d.intuitive, "intuitive")}
       ${starRatingHTML(t("usefulLabel"),    d.useful,    "useful")}
-    </div>
-
-    <div class="card">
       ${checkboxGroupHTML(t("experienceQuestion"), experienceOptions, d.experience || [], false, "experience")}
 
       <div class="field">
@@ -1131,13 +1461,291 @@ function toolTabHTML(tool) {
       <button class="submit-btn" id="tool-submit-btn" ${isValid ? "" : "disabled"}>
         ${t("toolSubmit")(tr.label)}
       </button>
-      ${!isValid ? `<p class="field-hint">${t("ratingRequired")}</p>` : ""}
+      ${!isValid ? `<p class="field-hint">${tool.key === "tableauIntro" ? t("dashboardIntroRequired") : t("ratingRequired")}</p>` : ""}
+    </div>
+  `;
+}
+
+function calendarToolHTML(tool, d) {
+  const tr = toolT(tool.key);
+  const experienceOptions = [
+    { value: "perfect",  label: t("expPerfect") },
+    { value: "bug",      label: t("expBug") },
+    { value: "confused", label: t("expConfused") },
+    { value: "loved",    label: t("expLoved") },
+  ];
+  const isValid = d.calendarGoogleAddDone
+    && d.calendarGoogleShow
+    && d.calendarSerenzerClickDone
+    && d.calendarSerenzerCreateDone
+    && d.calendarSerenzerShow
+    && d.calendarGoogleSync
+    && d.intuitive
+    && d.useful;
+
+  return `
+    <div class="card card-sage">
+      <h2 class="section-title">${tr.label}</h2>
+      <p style="color:var(--olive-mid);font-size:15px;line-height:1.65;margin:0;">
+        <strong>${t("missionLabel")}</strong> ${tr.task}
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 class="subsection-title">${t("calendarGoogleTitle")}</h3>
+      <div class="coach-action-list">
+        ${taskItemHTML(t("calendarGoogleAdd"), d.calendarGoogleAddDone, "data-calendar-task", "calendarGoogleAddDone")}
+      </div>
+      ${checkboxGroupHTML(t("calendarGoogleShow"), yesNoOptions(), d.calendarGoogleShow, true, "calendarGoogleShow")}
+    </div>
+
+    <div class="card">
+      <h3 class="subsection-title">${t("calendarSerenzerTitle")}</h3>
+      <div class="coach-action-list">
+        ${taskItemHTML(t("calendarSerenzerClick"), d.calendarSerenzerClickDone, "data-calendar-task", "calendarSerenzerClickDone")}
+        ${taskItemHTML(t("calendarSerenzerCreate"), d.calendarSerenzerCreateDone, "data-calendar-task", "calendarSerenzerCreateDone")}
+      </div>
+      ${checkboxGroupHTML(t("calendarSerenzerShow"), yesNoOptions(), d.calendarSerenzerShow, true, "calendarSerenzerShow")}
+      ${checkboxGroupHTML(t("calendarGoogleSync"), yesNoOptions(), d.calendarGoogleSync, true, "calendarGoogleSync")}
+    </div>
+
+    <div class="card">
+      <h3 class="subsection-title" style="margin-bottom:4px;">${t("evaluationTitle")}</h3>
+      <p style="color:var(--olive-mid);font-size:14px;margin-top:0;margin-bottom:20px;">${t("evaluationSubtitle")}</p>
+      ${starRatingHTML(t("intuitiveLabel"), d.intuitive, "intuitive")}
+      ${starRatingHTML(t("usefulLabel"),    d.useful,    "useful")}
+      ${checkboxGroupHTML(t("experienceQuestion"), experienceOptions, d.experience || [], false, "experience")}
+
+      <div class="field">
+        <label class="field-label" for="inp-description">${t("descriptionLabel")}</label>
+        <textarea class="textarea-input" id="inp-description" rows="3"
+          placeholder="${t("descriptionPlaceholder")}">${esc(d.description)}</textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="inp-suggestions">${t("suggestionsLabel")}</label>
+        <textarea class="textarea-input" id="inp-suggestions" rows="3"
+          placeholder="${t("suggestionsPlaceholder")}">${esc(d.suggestions)}</textarea>
+      </div>
+
+      <button class="submit-btn" id="tool-submit-btn" ${isValid ? "" : "disabled"}>
+        ${t("toolSubmit")(tr.label)}
+      </button>
+      ${!isValid ? `<p class="field-hint">${t("calendarRequired")}</p>` : ""}
+    </div>
+  `;
+}
+
+function ritualsToolHTML(tool, d) {
+  const tr = toolT(tool.key);
+  const experienceOptions = [
+    { value: "perfect",  label: t("expPerfect") },
+    { value: "bug",      label: t("expBug") },
+    { value: "confused", label: t("expConfused") },
+    { value: "loved",    label: t("expLoved") },
+  ];
+  const isValid = d.ritualNewActionDone
+    && d.ritualNewWorks
+    && String(d.ritualNewSense || "").trim()
+    && d.ritualNewCalendar
+    && d.ritualNewMine
+    && d.ritualAiOpenDone
+    && d.ritualAiLoad
+    && String(d.ritualAiSense || "").trim()
+    && d.ritualAiAcceptDone
+    && d.ritualAiCalendar
+    && d.ritualAiMine
+    && d.intuitive
+    && d.useful;
+
+  return `
+    <div class="card card-sage">
+      <h2 class="section-title">${tr.label}</h2>
+      <p style="color:var(--olive-mid);font-size:15px;line-height:1.65;margin:0;">
+        <strong>${t("missionLabel")}</strong> ${tr.task}
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 class="subsection-title">${t("ritualNewTitle")}</h3>
+      <div class="coach-action-list">
+        ${taskItemHTML(t("ritualNewAction"), d.ritualNewActionDone, "data-ritual-task", "ritualNewActionDone")}
+      </div>
+      ${checkboxGroupHTML(t("ritualNewWorks"), yesNoOptions(), d.ritualNewWorks, true, "ritualNewWorks")}
+      <div class="field">
+        <label class="field-label" for="inp-ritualNewSense">${t("ritualNewSense")}</label>
+        <textarea class="textarea-input" id="inp-ritualNewSense" rows="4">${esc(d.ritualNewSense)}</textarea>
+      </div>
+      ${checkboxGroupHTML(t("ritualNewCalendar"), yesNoOptions(), d.ritualNewCalendar, true, "ritualNewCalendar")}
+      ${checkboxGroupHTML(t("ritualNewMine"), yesNoOptions(), d.ritualNewMine, true, "ritualNewMine")}
+    </div>
+
+    <div class="card">
+      <h3 class="subsection-title">${t("ritualAiTitle")}</h3>
+      <div class="coach-action-list">
+        ${taskItemHTML(t("ritualAiOpen"), d.ritualAiOpenDone, "data-ritual-task", "ritualAiOpenDone")}
+      </div>
+      ${checkboxGroupHTML(t("ritualAiLoad"), yesNoOptions(), d.ritualAiLoad, true, "ritualAiLoad")}
+      <div class="field">
+        <label class="field-label" for="inp-ritualAiSense">${t("ritualAiSense")}</label>
+        <textarea class="textarea-input" id="inp-ritualAiSense" rows="4">${esc(d.ritualAiSense)}</textarea>
+      </div>
+      <div class="coach-action-list">
+        ${taskItemHTML(t("ritualAiAccept"), d.ritualAiAcceptDone, "data-ritual-task", "ritualAiAcceptDone")}
+      </div>
+      ${checkboxGroupHTML(t("ritualAiCalendar"), yesNoOptions(), d.ritualAiCalendar, true, "ritualAiCalendar")}
+      ${checkboxGroupHTML(t("ritualAiMine"), yesNoOptions(), d.ritualAiMine, true, "ritualAiMine")}
+    </div>
+
+    <div class="card">
+      <h3 class="subsection-title" style="margin-bottom:4px;">${t("evaluationTitle")}</h3>
+      <p style="color:var(--olive-mid);font-size:14px;margin-top:0;margin-bottom:20px;">${t("evaluationSubtitle")}</p>
+      ${starRatingHTML(t("intuitiveLabel"), d.intuitive, "intuitive")}
+      ${starRatingHTML(t("usefulLabel"),    d.useful,    "useful")}
+      ${checkboxGroupHTML(t("experienceQuestion"), experienceOptions, d.experience || [], false, "experience")}
+
+      <div class="field">
+        <label class="field-label" for="inp-description">${t("descriptionLabel")}</label>
+        <textarea class="textarea-input" id="inp-description" rows="3"
+          placeholder="${t("descriptionPlaceholder")}">${esc(d.description)}</textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="inp-suggestions">${t("suggestionsLabel")}</label>
+        <textarea class="textarea-input" id="inp-suggestions" rows="3"
+          placeholder="${t("suggestionsPlaceholder")}">${esc(d.suggestions)}</textarea>
+      </div>
+
+      <button class="submit-btn" id="tool-submit-btn" ${isValid ? "" : "disabled"}>
+        ${t("toolSubmit")(tr.label)}
+      </button>
+      ${!isValid ? `<p class="field-hint">${t("ritualRequired")}</p>` : ""}
+    </div>
+  `;
+}
+
+function taskItemHTML(label, checked, attrName, key) {
+  return `
+    <label class="coach-action-item ${checked ? "checked" : ""}">
+      <input type="checkbox" ${attrName}="${key}" ${checked ? "checked" : ""}>
+      <span>${label}</span>
+    </label>
+  `;
+}
+
+function coachToolHTML(tool, d) {
+  const tr = toolT(tool.key);
+  const actionKeys = ["coachAction1Done", "coachAction2Done", "coachAction3Done"];
+  const observationKeys = ["coachObs1", "coachObs2", "coachObs3", "coachObs4", "coachObs5"];
+  const experienceOptions = [
+    { value: "perfect",  label: t("expPerfect") },
+    { value: "bug",      label: t("expBug") },
+    { value: "confused", label: t("expConfused") },
+    { value: "loved",    label: t("expLoved") },
+  ];
+  const isValid = actionKeys.every(key => !!d[key])
+    && observationKeys.every(key => d[`${key}Answer`])
+    && d.intuitive && d.useful;
+
+  return `
+    <div class="card card-sage">
+      <div class="coach-intro-kicker">${t("coachKicker")}</div>
+      <h2 class="section-title" style="margin-bottom:8px;">${tr.label}</h2>
+      <p style="color:var(--olive-mid);font-size:15px;line-height:1.65;margin:0 0 4px;">${tr.task}</p>
+      <p class="coach-duration">${t("coachDuration")}</p>
+    </div>
+
+    <div class="card">
+      <div class="coach-section-title">${t("coachActionsTitle")}</div>
+      <div class="coach-action-list">
+        ${actionKeys.map((key, index) => `
+          <label class="coach-action-item ${d[key] ? "checked" : ""}">
+            <input type="checkbox" data-coach-action="${key}" ${d[key] ? "checked" : ""}>
+            <span>${t(`coachAction${index + 1}`)}</span>
+          </label>
+        `).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="coach-section-title">${t("coachObservationsTitle")}</div>
+      <div class="coach-table-head">
+        <div>${t("coachColObservation")}</div>
+        <div>${t("coachColResponse")}</div>
+        <div>${t("coachColComment")}</div>
+      </div>
+      <div class="coach-table-body">
+        ${observationKeys.map(key => coachObservationRowHTML(key, d)).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="subsection-title" style="margin-bottom:4px;">${t("evaluationTitle")}</h3>
+      <p style="color:var(--olive-mid);font-size:14px;margin-top:0;margin-bottom:20px;">${t("evaluationSubtitle")}</p>
+      ${starRatingHTML(t("intuitiveLabel"), d.intuitive, "intuitive")}
+      ${starRatingHTML(t("usefulLabel"),    d.useful,    "useful")}
+      ${checkboxGroupHTML(t("experienceQuestion"), experienceOptions, d.experience || [], false, "experience")}
+
+      <div class="field">
+        <label class="field-label" for="inp-description">${t("descriptionLabel")}</label>
+        <textarea class="textarea-input" id="inp-description" rows="3"
+          placeholder="${t("descriptionPlaceholder")}">${esc(d.description)}</textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="inp-suggestions">${t("suggestionsLabel")}</label>
+        <textarea class="textarea-input" id="inp-suggestions" rows="3"
+          placeholder="${t("suggestionsPlaceholder")}">${esc(d.suggestions)}</textarea>
+      </div>
+
+      <button class="submit-btn" id="tool-submit-btn" ${isValid ? "" : "disabled"}>
+        ${t("toolSubmit")(tr.label)}
+      </button>
+      ${!isValid ? `<p class="field-hint">${t("coachRequired")}</p>` : ""}
+    </div>
+  `;
+}
+
+function coachObservationRowHTML(baseKey, d) {
+  const answerKey = `${baseKey}Answer`;
+  const commentKey = `${baseKey}Comment`;
+  const responseOptions = [
+    { value: "yes", label: t("yesOption") },
+    { value: "no", label: t("noOption") },
+    { value: "maybe", label: t("coachMaybeOption") },
+  ];
+
+  return `
+    <div class="coach-row">
+      <div class="coach-row-label">${t(baseKey)}</div>
+      <div class="coach-row-responses">
+        ${responseOptions.map(opt => `
+          <button
+            class="coach-pill ${d[answerKey] === opt.value ? "active" : ""}"
+            type="button"
+            data-coach-answer-key="${answerKey}"
+            data-coach-answer-value="${opt.value}"
+          >${opt.label}</button>
+        `).join("")}
+      </div>
+      <div class="coach-row-comment">
+        <textarea
+          class="textarea-input coach-comment-input"
+          rows="2"
+          id="inp-${commentKey}"
+          placeholder="${t("coachPlaceholder")}"
+        >${esc(d[commentKey])}</textarea>
+      </div>
     </div>
   `;
 }
 
 function attachToolListeners(tool) {
   const key = tool.key;
+  if (key === "coach") {
+    attachCoachListeners(tool);
+    return;
+  }
 
   document.querySelectorAll(".star-rating").forEach(ratingEl => {
     const ratingKey = ratingEl.dataset.ratingKey;
@@ -1157,6 +1765,162 @@ function attachToolListeners(tool) {
 
   document.querySelectorAll(".checkbox-group").forEach(group => {
     const groupKey = group.dataset.groupKey;
+    const isSingle = !!group.querySelector('input[type="radio"]');
+    group.querySelectorAll("input").forEach(input => {
+      input.addEventListener("change", () => {
+        if (!state.toolData[key]) state.toolData[key] = {};
+        if (isSingle) {
+          const checked = group.querySelector("input:checked");
+          state.toolData[key][groupKey] = checked ? checked.value : "";
+        } else {
+          const cur = state.toolData[key][groupKey] || [];
+          state.toolData[key][groupKey] = input.checked
+            ? [...cur, input.value]
+            : cur.filter(v => v !== input.value);
+        }
+        group.querySelectorAll(".checkbox-option").forEach(lbl => {
+          lbl.classList.toggle("checked", lbl.querySelector("input").checked);
+        });
+        schedulePersist();
+        refreshToolSubmit(tool);
+      });
+    });
+  });
+
+  ["description", "suggestions"].forEach(field => {
+    const el = document.getElementById(`inp-${field}`);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      if (!state.toolData[key]) state.toolData[key] = {};
+      state.toolData[key][field] = el.value;
+      schedulePersist();
+    });
+  });
+
+  if (tool.key === "tableauIntro") {
+    const detailsEl = document.getElementById("inp-pageDetailsSense");
+    detailsEl?.addEventListener("input", () => {
+      if (!state.toolData[key]) state.toolData[key] = {};
+      state.toolData[key].pageDetailsSense = detailsEl.value;
+      schedulePersist();
+      refreshToolSubmit(tool);
+    });
+  }
+
+  if (tool.key === "calendrier") {
+    document.querySelectorAll("[data-calendar-task]").forEach(input => {
+      input.addEventListener("change", () => {
+        if (!state.toolData[key]) state.toolData[key] = {};
+        state.toolData[key][input.dataset.calendarTask] = input.checked;
+        input.closest(".coach-action-item")?.classList.toggle("checked", input.checked);
+        schedulePersist();
+        refreshToolSubmit(tool);
+      });
+    });
+  }
+
+  if (tool.key === "rituels") {
+    document.querySelectorAll("[data-ritual-task]").forEach(input => {
+      input.addEventListener("change", () => {
+        if (!state.toolData[key]) state.toolData[key] = {};
+        state.toolData[key][input.dataset.ritualTask] = input.checked;
+        input.closest(".coach-action-item")?.classList.toggle("checked", input.checked);
+        schedulePersist();
+        refreshToolSubmit(tool);
+      });
+    });
+
+    ["ritualNewSense", "ritualAiSense"].forEach(field => {
+      const el = document.getElementById(`inp-${field}`);
+      if (!el) return;
+      el.addEventListener("input", () => {
+        if (!state.toolData[key]) state.toolData[key] = {};
+        state.toolData[key][field] = el.value;
+        schedulePersist();
+        refreshToolSubmit(tool);
+      });
+    });
+  }
+
+  document.getElementById("tool-submit-btn")?.addEventListener("click", () => {
+    const fields = tool.key === "tableauIntro"
+      ? ["description", "suggestions", "pageDetailsSense"]
+      : tool.key === "calendrier"
+        ? ["description", "suggestions"]
+      : tool.key === "rituels"
+        ? ["description", "suggestions", "ritualNewSense", "ritualAiSense"]
+        : ["description", "suggestions"];
+
+    fields.forEach(field => {
+      const el = document.getElementById(`inp-${field}`);
+      if (el) {
+        if (!state.toolData[key]) state.toolData[key] = {};
+        state.toolData[key][field] = el.value;
+      }
+    });
+    persistNow();
+    setAutosaveStatus("saved");
+    markComplete(state.activeTab);
+  });
+}
+
+function attachCoachListeners(tool) {
+  const key = tool.key;
+  const observationKeys = ["coachObs1", "coachObs2", "coachObs3", "coachObs4", "coachObs5"];
+
+  document.querySelectorAll("[data-coach-action]").forEach(input => {
+    input.addEventListener("change", () => {
+      if (!state.toolData[key]) state.toolData[key] = {};
+      state.toolData[key][input.dataset.coachAction] = input.checked;
+      input.closest(".coach-action-item")?.classList.toggle("checked", input.checked);
+      schedulePersist();
+      refreshToolSubmit(tool);
+    });
+  });
+
+  document.querySelectorAll("[data-coach-answer-key]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (!state.toolData[key]) state.toolData[key] = {};
+      state.toolData[key][btn.dataset.coachAnswerKey] = btn.dataset.coachAnswerValue;
+      const selector = `[data-coach-answer-key="${btn.dataset.coachAnswerKey}"]`;
+      document.querySelectorAll(selector).forEach(el => {
+        el.classList.toggle("active", el === btn);
+      });
+      schedulePersist();
+      refreshToolSubmit(tool);
+    });
+  });
+
+  observationKeys.forEach(baseKey => {
+    const commentKey = `${baseKey}Comment`;
+    const el = document.getElementById(`inp-${commentKey}`);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      if (!state.toolData[key]) state.toolData[key] = {};
+      state.toolData[key][commentKey] = el.value;
+      schedulePersist();
+    });
+  });
+
+  document.querySelectorAll(".star-rating").forEach(ratingEl => {
+    const ratingKey = ratingEl.dataset.ratingKey;
+    ratingEl.querySelectorAll(".star-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const val = parseInt(btn.dataset.star);
+        if (!state.toolData[key]) state.toolData[key] = {};
+        state.toolData[key][ratingKey] = val;
+        ratingEl.querySelectorAll(".star-btn").forEach(s => {
+          s.classList.toggle("active", parseInt(s.dataset.star) <= val);
+        });
+        schedulePersist();
+        refreshToolSubmit(tool);
+      });
+    });
+  });
+
+  document.querySelectorAll(".checkbox-group").forEach(group => {
+    const groupKey = group.dataset.groupKey;
+    if (groupKey.startsWith("coachObs")) return;
     group.querySelectorAll("input").forEach(input => {
       input.addEventListener("change", () => {
         if (!state.toolData[key]) state.toolData[key] = {};
@@ -1183,6 +1947,14 @@ function attachToolListeners(tool) {
   });
 
   document.getElementById("tool-submit-btn")?.addEventListener("click", () => {
+    observationKeys.forEach(baseKey => {
+      const commentKey = `${baseKey}Comment`;
+      const el = document.getElementById(`inp-${commentKey}`);
+      if (el) {
+        if (!state.toolData[key]) state.toolData[key] = {};
+        state.toolData[key][commentKey] = el.value;
+      }
+    });
     ["description", "suggestions"].forEach(field => {
       const el = document.getElementById(`inp-${field}`);
       if (el) {
@@ -1198,11 +1970,52 @@ function attachToolListeners(tool) {
 
 function refreshToolSubmit(tool) {
   const d = state.toolData[tool.key] || {};
-  const isValid = d.intuitive && d.useful;
+  const isValid = tool.key === "tableauIntro"
+    ? d.intuitive && d.useful && d.dateTimeCorrect && d.greetingMatchesTime && d.startConversationWorks && String(d.pageDetailsSense || "").trim()
+    : tool.key === "coach"
+      ? ["coachAction1Done", "coachAction2Done", "coachAction3Done"].every(key => !!d[key])
+        && ["coachObs1", "coachObs2", "coachObs3", "coachObs4", "coachObs5"].every(key => d[`${key}Answer`])
+        && d.intuitive && d.useful
+      : tool.key === "calendrier"
+        ? d.calendarGoogleAddDone
+          && d.calendarGoogleShow
+          && d.calendarSerenzerClickDone
+          && d.calendarSerenzerCreateDone
+          && d.calendarSerenzerShow
+          && d.calendarGoogleSync
+          && d.intuitive
+          && d.useful
+      : tool.key === "rituels"
+        ? d.ritualNewActionDone
+          && d.ritualNewWorks
+          && String(d.ritualNewSense || "").trim()
+          && d.ritualNewCalendar
+          && d.ritualNewMine
+          && d.ritualAiOpenDone
+          && d.ritualAiLoad
+          && String(d.ritualAiSense || "").trim()
+          && d.ritualAiAcceptDone
+          && d.ritualAiCalendar
+          && d.ritualAiMine
+          && d.intuitive
+          && d.useful
+      : d.intuitive && d.useful;
   const btn  = document.getElementById("tool-submit-btn");
   const hint = document.querySelector(".field-hint");
   if (btn) btn.disabled = !isValid;
   if (isValid && hint) hint.remove();
+  if (!isValid && !hint && btn && tool.key === "tableauIntro") {
+    btn.insertAdjacentHTML("afterend", `<p class="field-hint">${t("dashboardIntroRequired")}</p>`);
+  }
+  if (!isValid && !hint && btn && tool.key === "coach") {
+    btn.insertAdjacentHTML("afterend", `<p class="field-hint">${t("coachRequired")}</p>`);
+  }
+  if (!isValid && !hint && btn && tool.key === "calendrier") {
+    btn.insertAdjacentHTML("afterend", `<p class="field-hint">${t("calendarRequired")}</p>`);
+  }
+  if (!isValid && !hint && btn && tool.key === "rituels") {
+    btn.insertAdjacentHTML("afterend", `<p class="field-hint">${t("ritualRequired")}</p>`);
+  }
 }
 
 // ── Shared components ─────────────────────────────────────────────────────────
@@ -1241,18 +2054,25 @@ function checkboxGroupHTML(label, options, values, single, key) {
   `;
 }
 
+function yesNoOptions() {
+  return [
+    { value: "yes", label: t("yesOption") },
+    { value: "no",  label: t("noOption") },
+  ];
+}
+
 // ── SERVER INTEGRATION ───────────────────────────────────────────────────────
 //
 // 1. Replace the body of submitToServer() with your fetch/axios call.
 // 2. That's it — buildPayload() and the call site in markComplete() are wired up.
 //
 // submitToServer() is called after every tab submission.
-// When the user completes all 10 tabs, payload.isComplete is true.
+  // When the user completes all 11 tabs, payload.isComplete is true.
 //
 // Full payload shape:
 // {
 //   lang:         string,           // "fr" | "en" | "it" | "nl" | "de" | "es"
-//   isComplete:   boolean,          // true only when all 10 tabs are done
+  //   isComplete:   boolean,          // true only when all 11 tabs are done
 //   onboarding: {
 //     firstName:        string,
 //     lastName:         string,
@@ -1264,8 +2084,8 @@ function checkboxGroupHTML(label, options, values, single, key) {
 //     hopes:            string,
 //   },
 //   tools: {
-//     [toolKey: string]: {          // keys: tableau, coach, rituels, challenges,
-//       intuitive:   number,        //   calendrier, organisation, progression, notifications
+  //     [toolKey: string]: {          // keys: tableauIntro, coach, rituels, challenges,
+  //       intuitive:   number,        //   calendrier, organisation, progression, notifications, tableauFinal
 //       useful:      number,        // intuitive + useful: 1–5 star rating
 //       experience:  Array<"perfect" | "bug" | "confused" | "loved">,
 //       description: string,
@@ -1276,7 +2096,7 @@ function checkboxGroupHTML(label, options, values, single, key) {
 // }
 
 function buildPayload() {
-  const isComplete = Object.keys(state.completed).length === 10;
+  const isComplete = Object.keys(state.completed).length === 11;
   return {
     lang:          state.lang,
     isComplete,
@@ -1310,7 +2130,7 @@ function markComplete(tabId) {
   persistNow();
   setAutosaveStatus("saved");
   submitToServer(buildPayload());
-  if (tabId < 10) state.activeTab = tabId + 1;
+  if (tabId < 11) state.activeTab = tabId + 1;
   renderAll();
 }
 
