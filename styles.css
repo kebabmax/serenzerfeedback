@@ -478,6 +478,12 @@ body {
   border: 1.5px solid rgba(107, 143, 113, 0.25);
 }
 
+.card-context {
+  background: #f8f2e8;
+  border: 1.5px solid #cdb59a;
+  box-shadow: none;
+}
+
 /* ── Typography ── */
 
 .section-title {
@@ -701,6 +707,11 @@ body {
 .welcome-header img {
   height: 52px;
   border-radius: 12px;
+}
+
+.welcome-title {
+  margin: 0;
+  line-height: 1;
 }
 
 /* ── Tool header ── */
