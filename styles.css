@@ -960,6 +960,24 @@ body {
   cursor: pointer;
 }
 
+.debug-admin-btn {
+  border: 2px solid #8f1111;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 16px;
+  padding: 14px 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  box-shadow: 0 10px 26px rgba(143, 17, 17, 0.35);
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+}
+
 .debug-unlock-btn {
   border: 2px solid #8f1111;
   background: #ff3b30;
@@ -1035,6 +1053,19 @@ body {
   text-transform: none;
 }
 
+.debug-admin-btn span {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: none;
+}
+
+.debug-admin-btn:hover {
+  background: #db241a;
+}
+
 .debug-unlock-btn:hover {
   background: #db241a;
 }
@@ -1066,7 +1097,14 @@ body {
     bottom: 72px;
   }
 
+  .admin-link-btn {
+    left: 12px;
+    bottom: 72px;
+    min-width: 104px;
+  }
+
   .debug-unlock-btn,
+  .debug-admin-btn,
   .debug-deadline-btn,
   .debug-deadline-reset-btn,
   .debug-wipe-btn {

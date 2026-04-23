@@ -292,6 +292,33 @@
       margin-bottom: 10px;
     }
 
+    .qa-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .qa-item {
+      border: 1px solid rgba(217, 210, 196, 0.8);
+      border-radius: 14px;
+      background: #f8f4ec;
+      padding: 12px 14px;
+    }
+
+    .qa-question {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .qa-answer {
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     pre {
       margin: 0;
       white-space: pre-wrap;
@@ -385,6 +412,81 @@
       detailCache: {},
     };
 
+    const ONBOARDING_FIELDS = [
+      ["firstName", "First name"],
+      ["lastName", "Last name"],
+      ["email", "Email"],
+      ["invitationNumber", "Invitation number"],
+      ["tech", "Tech level"],
+      ["devices", "Devices"],
+      ["time", "Time available"],
+      ["hopes", "Expectations"],
+    ];
+
+    const TOOL_LABELS = {
+      tableauIntro: "Dashboard pt. 1",
+      coach: "My Coach",
+      calendrier: "Calendar",
+      rituels: "Rituals",
+      challenges: "Challenges",
+      organisation: "Organisation",
+      progression: "Progress",
+      notifications: "Notifications",
+      tableauFinal: "Dashboard pt. 2",
+    };
+
+    const TOOL_FIELDS = {
+      tableauIntro: [
+        ["dateTimeCorrect", "Are the date and time displayed correctly?"],
+        ["greetingMatchesTime", "Is the welcome sentence consistent with the time of day?"],
+        ["pageDetailsSense", "Do the details on this page make sense to you?"],
+        ["startConversationWorks", "Does the \"Start a conversation\" button work properly?"],
+      ],
+      coach: [
+        ["coachAction1Done", "Start a text conversation with The AI"],
+        ["coachAction2Done", "Talk about a real personal topic"],
+        ["coachAction3Done", "Complete a session of at least 10 minutes"],
+        ["coachObs1Answer", "The AI understands what I say well"],
+        ["coachObs1Comment", "Comment - The AI understands what I say well"],
+        ["coachObs2Answer", "The responses are relevant"],
+        ["coachObs2Comment", "Comment - The responses are relevant"],
+        ["coachObs3Answer", "The tone is appropriate and caring"],
+        ["coachObs3Comment", "Comment - The tone is appropriate and caring"],
+        ["coachObs4Answer", "The conversation feels natural"],
+        ["coachObs4Comment", "Comment - The conversation feels natural"],
+        ["coachObs5Answer", "I feel comfortable opening up"],
+        ["coachObs5Comment", "Comment - I feel comfortable opening up"],
+      ],
+      calendrier: [
+        ["calendarGoogleAddDone", "Add your Google Calendar."],
+        ["calendarGoogleShow", "Do your events show on the Serenzer Calendar?"],
+        ["calendarSerenzerClickDone", "Click on a date in the calendar."],
+        ["calendarSerenzerCreateDone", "Create a new event."],
+        ["calendarSerenzerShow", "Does the event show on the Serenzer Calendar?"],
+        ["calendarGoogleSync", "Does the event show on your Google Calendar?"],
+      ],
+      rituels: [
+        ["ritualNewActionDone", "Create a new ritual."],
+        ["ritualNewWorks", "Does the \"New Ritual\" form work?"],
+        ["ritualNewSense", "Does the \"New Ritual\" form make sense to you?"],
+        ["ritualNewCalendar", "Is the new ritual added to your calendar?"],
+        ["ritualNewMine", "Is the new ritual added to \"My Rituals\"?"],
+        ["ritualAiOpenDone", "Click on \"AI Suggestions\"."],
+        ["ritualAiLoad", "Do the suggestions load?"],
+        ["ritualAiSense", "Do the suggestions make sense to you?"],
+        ["ritualAiAcceptDone", "Accept one of the suggestions."],
+        ["ritualAiCalendar", "Is the new ritual added to your calendar?"],
+        ["ritualAiMine", "Is the new ritual added to \"My Rituals\"?"],
+      ],
+      generic: [
+        ["intuitive", "Intuitivity rating"],
+        ["useful", "Usefulness rating"],
+        ["experience", "Experience tags"],
+        ["description", "Describe your experience"],
+        ["suggestions", "Suggestions or improvement ideas"],
+      ],
+    };
+
     function esc(value) {
       return String(value ?? "")
         .replace(/&/g, "&amp;")
@@ -400,6 +502,54 @@
       } catch (_) {
         return value;
       }
+    }
+
+    function humanizeKey(key) {
+      return key
+        .replace(/([A-Z])/g, " $1")
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/^./, char => char.toUpperCase());
+    }
+
+    function formatValue(value) {
+      if (value === true) return "Done";
+      if (value === false) return "Not done";
+      if (value === "yes") return "Yes";
+      if (value === "no") return "No";
+      if (value === "maybe") return "?";
+      if (value === null || value === undefined || value === "") return "—";
+      if (Array.isArray(value)) return value.length ? value.join(", ") : "—";
+      if (typeof value === "object") return JSON.stringify(value, null, 2);
+      return String(value);
+    }
+
+    function questionAnswerHTML(label, value) {
+      return `
+        <div class="qa-item">
+          <div class="qa-question">${esc(label)}</div>
+          <div class="qa-answer">${esc(formatValue(value))}</div>
+        </div>
+      `;
+    }
+
+    function renderFieldList(data, fields) {
+      const handled = new Set();
+      const html = [];
+
+      fields.forEach(([key, label]) => {
+        if (!(key in data)) return;
+        handled.add(key);
+        html.push(questionAnswerHTML(label, data[key]));
+      });
+
+      Object.entries(data).forEach(([key, value]) => {
+        if (handled.has(key)) return;
+        html.push(questionAnswerHTML(humanizeKey(key), value));
+      });
+
+      return html.length ? `<div class="qa-list">${html.join("")}</div>` : `<div class="muted">No answers saved yet.</div>`;
     }
 
     function renderStats() {
@@ -507,7 +657,7 @@
 
         <div class="detail-card">
           <h3>Onboarding</h3>
-          <pre>${esc(JSON.stringify(onboarding, null, 2))}</pre>
+          ${renderFieldList(onboarding, ONBOARDING_FIELDS)}
         </div>
 
         <div class="detail-card">
@@ -515,8 +665,8 @@
           ${Object.keys(tools).length
             ? Object.entries(tools).map(([toolKey, value]) => `
               <div class="tool-block">
-                <div class="tool-title">${esc(toolKey)}</div>
-                <pre>${esc(JSON.stringify(value, null, 2))}</pre>
+                <div class="tool-title">${esc(TOOL_LABELS[toolKey] || humanizeKey(toolKey))}</div>
+                ${renderFieldList(value, [...(TOOL_FIELDS[toolKey] || []), ...TOOL_FIELDS.generic])}
               </div>
             `).join("")
             : `<div class="muted">No tool responses saved yet.</div>`
@@ -540,13 +690,13 @@
       applyFilters();
     }
 
-    async function loadDetail(submissionId) {
+    async function loadDetail(submissionId, forceRefresh = false) {
       if (!submissionId) return;
-      if (state.detailCache[submissionId]) {
+      if (!forceRefresh && state.detailCache[submissionId]) {
         renderDetail(state.detailCache[submissionId]);
         return;
       }
-      renderEmptyDetail("Loading submission…");
+      if (!forceRefresh) renderEmptyDetail("Loading submission…");
       const response = await fetch(`/api/feedback/${encodeURIComponent(submissionId)}`);
       if (!response.ok) {
         renderEmptyDetail(`Could not load submission ${submissionId}.`);
@@ -557,12 +707,16 @@
       renderDetail(detail);
     }
 
-    async function refreshAll() {
-      document.getElementById("submission-list").innerHTML = `<div class="empty-state">Loading submissions…</div>`;
-      renderEmptyDetail("Loading details…");
-      state.detailCache = {};
+    async function refreshAll(silent = false) {
+      if (!silent) {
+        document.getElementById("submission-list").innerHTML = `<div class="empty-state">Loading submissions…</div>`;
+        renderEmptyDetail("Loading details…");
+      }
       try {
         await loadList();
+        if (state.activeId) {
+          await loadDetail(state.activeId, true);
+        }
       } catch (error) {
         document.getElementById("submission-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
         renderEmptyDetail("The admin page could not reach the feedback API.");
@@ -572,9 +726,10 @@
     document.getElementById("search-input").addEventListener("input", applyFilters);
     document.getElementById("status-filter").addEventListener("change", applyFilters);
     document.getElementById("lang-filter").addEventListener("change", applyFilters);
-    document.getElementById("refresh-btn").addEventListener("click", refreshAll);
+    document.getElementById("refresh-btn").addEventListener("click", () => refreshAll(false));
 
     refreshAll();
+    setInterval(() => refreshAll(true), 2000);
   </script>
 </body>
 </html>

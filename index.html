@@ -57,6 +57,11 @@
 
   <div class="debug-menu" id="debug-menu">
     <div class="debug-menu-panel hidden" id="debug-menu-panel">
+      <a class="debug-admin-btn" href="admin.html" target="_blank" rel="noreferrer">
+        ADMIN
+        <span>Open live feedback dashboard</span>
+      </a>
+
       <button class="debug-unlock-btn" id="debug-unlock-btn" type="button">
         TEMP UNLOCK ALL TABS
         <span>Bypass steps 1 and 2 for testing</span>
@@ -984,6 +989,12 @@ function makeSubmissionId() {
   return `sub_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function hasMeaningfulProgress() {
+  return Object.keys(state.completed).length > 0
+    || Object.keys(state.onboardingData).some(key => String(state.onboardingData[key] || "").trim())
+    || Object.keys(state.toolData).some(key => Object.keys(state.toolData[key] || {}).length > 0);
+}
+
 const state = {
   activeTab: 1,
   completed: {},
@@ -999,6 +1010,7 @@ const state = {
 };
 
 let autosaveTimer = null;
+let remoteSyncToken = 0;
 
 // ── Translation helper ────────────────────────────────────────────────────────
 
@@ -1035,7 +1047,7 @@ function loadFromStorage() {
   } catch (_) {}
 }
 
-function persistNow() {
+async function persistNow() {
   clearTimeout(autosaveTimer);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -1047,6 +1059,18 @@ function persistNow() {
       langSelected:   state.langSelected,
     }));
   } catch (_) {}
+
+  if (!hasMeaningfulProgress()) {
+    setAutosaveStatus("saved");
+    return true;
+  }
+
+  const token = ++remoteSyncToken;
+  const ok = await submitToServer(buildPayload());
+  if (token === remoteSyncToken && ok) {
+    setAutosaveStatus("saved");
+  }
+  return ok;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1124,9 +1148,8 @@ function setAutosaveStatus(status) {
 function schedulePersist() {
   setAutosaveStatus("saving");
   clearTimeout(autosaveTimer);
-  autosaveTimer = setTimeout(() => {
-    persistNow();
-    setAutosaveStatus("saved");
+  autosaveTimer = setTimeout(async () => {
+    await persistNow();
   }, 1500);
 }
 
@@ -1868,8 +1891,6 @@ function attachToolListeners(tool) {
         state.toolData[key][field] = el.value;
       }
     });
-    persistNow();
-    setAutosaveStatus("saved");
     markComplete(state.activeTab);
   });
 }
@@ -1972,8 +1993,6 @@ function attachCoachListeners(tool) {
         state.toolData[key][field] = el.value;
       }
     });
-    persistNow();
-    setAutosaveStatus("saved");
     markComplete(state.activeTab);
   });
 }
@@ -2125,8 +2144,10 @@ async function submitToServer(payload) {
       body:    JSON.stringify(payload),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return true;
   } catch (err) {
     console.error("[Serenzer] feedback submit failed:", err);
+    return false;
   }
 }
 
@@ -2141,9 +2162,8 @@ function handleTabClick(tabId) {
 
 function markComplete(tabId) {
   state.completed[tabId] = true;
+  setAutosaveStatus("saving");
   persistNow();
-  setAutosaveStatus("saved");
-  submitToServer(buildPayload());
   if (tabId < 11) state.activeTab = tabId + 1;
   renderAll();
 }
