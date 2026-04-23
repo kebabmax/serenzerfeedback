@@ -979,11 +979,17 @@ const T = {
 
 const STORAGE_KEY = "serenzer_feedback_v2";
 
+function makeSubmissionId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `sub_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
 const state = {
   activeTab: 1,
   completed: {},
   onboardingData: {},
   toolData: {},
+  submissionId: makeSubmissionId(),
   mobileOpen: false,
   debugMenuOpen: false,
   debugUnlockAllTabs: false,
@@ -1022,6 +1028,7 @@ function loadFromStorage() {
       state.completed      = saved.completed      || {};
       state.onboardingData = saved.onboardingData || {};
       state.toolData       = saved.toolData       || {};
+      state.submissionId   = saved.submissionId   || makeSubmissionId();
       if (saved.lang && T[saved.lang]) state.lang = saved.lang;
       if (saved.langSelected) state.langSelected = true;
     }
@@ -1035,6 +1042,7 @@ function persistNow() {
       completed:      state.completed,
       onboardingData: state.onboardingData,
       toolData:       state.toolData,
+      submissionId:   state.submissionId,
       lang:           state.lang,
       langSelected:   state.langSelected,
     }));
@@ -1130,6 +1138,7 @@ function resetAppState() {
   state.completed = {};
   state.onboardingData = {};
   state.toolData = {};
+  state.submissionId = makeSubmissionId();
   state.mobileOpen = false;
   state.lang = "en";
   state.langSelected = false;
@@ -2099,6 +2108,7 @@ function yesNoOptions() {
 function buildPayload() {
   const isComplete = Object.keys(state.completed).length === 11;
   return {
+    submissionId:  state.submissionId,
     lang:          state.lang,
     isComplete,
     onboarding:    { ...state.onboardingData },
@@ -2108,13 +2118,16 @@ function buildPayload() {
 }
 
 async function submitToServer(payload) {
-  // ↓ Replace this with your actual endpoint ↓
-  // await fetch("/api/feedback", {
-  //   method:  "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body:    JSON.stringify(payload),
-  // });
-  console.log("[Serenzer] payload:", payload);
+  try {
+    const res = await fetch("/api/feedback", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  } catch (err) {
+    console.error("[Serenzer] feedback submit failed:", err);
+  }
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
