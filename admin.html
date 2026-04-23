@@ -152,6 +152,105 @@
       color: var(--text);
     }
 
+    .left-stack {
+      display: grid;
+      gap: 20px;
+    }
+
+    .invite-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .invite-form textarea,
+    .invite-form button {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 253, 248, 0.95);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 12px 14px;
+    }
+
+    .invite-form textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .invite-form button {
+      cursor: pointer;
+      font-weight: 700;
+      width: fit-content;
+    }
+
+    .invite-form button:hover {
+      border-color: var(--sage-dark);
+    }
+
+    .invite-helper {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .invite-status {
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 20px;
+    }
+
+    .invite-list {
+      display: grid;
+      gap: 10px;
+      padding: 18px 20px 20px;
+      max-height: 320px;
+      overflow: auto;
+    }
+
+    .invite-row {
+      border: 1px solid rgba(217, 210, 196, 0.8);
+      border-radius: 16px;
+      background: var(--card);
+      padding: 12px 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .invite-row-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .invite-code {
+      font-weight: 700;
+      font-size: 15px;
+      word-break: break-word;
+    }
+
+    .invite-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .invite-row button {
+      width: fit-content;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(201, 74, 67, 0.08);
+      color: var(--red);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+
     .submission-list {
       max-height: calc(100vh - 260px);
       overflow: auto;
@@ -386,11 +485,28 @@
     </section>
 
     <section class="layout">
-      <div class="panel">
-        <div class="panel-header">
-          <h2 class="panel-title">Submissions</h2>
+      <div class="left-stack">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Invitation Codes</h2>
+          </div>
+          <div style="padding:18px 20px 0;">
+            <div class="invite-form">
+              <textarea id="invite-input" placeholder="Enter one or more codes, separated by commas or new lines"></textarea>
+              <div class="invite-helper">Example: <code>BETA-001</code>, <code>BETA-002</code>, <code>FAMILY-ALPHA</code></div>
+              <button id="invite-create-btn" type="button">Create codes</button>
+              <div class="invite-status" id="invite-status"></div>
+            </div>
+          </div>
+          <div class="invite-list" id="invite-list"></div>
         </div>
-        <div class="submission-list" id="submission-list"></div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Submissions</h2>
+          </div>
+          <div class="submission-list" id="submission-list"></div>
+        </div>
       </div>
 
       <div class="panel">
@@ -410,6 +526,7 @@
       filtered: [],
       activeId: null,
       detailCache: {},
+      invites: [],
     };
 
     const ONBOARDING_FIELDS = [
@@ -559,6 +676,33 @@
       document.getElementById("stat-incomplete").textContent = total - complete;
     }
 
+    function renderInvites() {
+      const list = document.getElementById("invite-list");
+      if (!state.invites.length) {
+        list.innerHTML = `<div class="empty-state">No invitation codes yet.</div>`;
+        return;
+      }
+
+      list.innerHTML = state.invites.map(item => `
+        <div class="invite-row">
+          <div class="invite-row-top">
+            <div class="invite-code">${esc(item.code)}</div>
+            <span class="badge ${item.isActive ? "complete" : "incomplete"}">${item.isActive ? "Active" : "Disabled"}</span>
+          </div>
+          <div class="invite-meta">
+            <span>Uses: ${esc(item.useCount)}</span>
+            <span>Bound: ${esc(item.boundSubmissionId || "—")}</span>
+            <span>Used: ${esc(formatDate(item.usedAt))}</span>
+          </div>
+          ${item.isActive ? `<button type="button" data-disable-invite="${esc(item.code)}">Disable</button>` : ``}
+        </div>
+      `).join("");
+
+      list.querySelectorAll("[data-disable-invite]").forEach(button => {
+        button.addEventListener("click", () => disableInvite(button.dataset.disableInvite));
+      });
+    }
+
     function renderLanguageOptions() {
       const select = document.getElementById("lang-filter");
       const current = select.value || "all";
@@ -689,6 +833,70 @@
       applyFilters();
     }
 
+    async function loadInvites() {
+      const response = await fetch("/api/invitations");
+      if (!response.ok) throw new Error(`Failed to load invitation codes (${response.status})`);
+      const data = await response.json();
+      state.invites = data.items || [];
+      renderInvites();
+    }
+
+    async function createInvites() {
+      const input = document.getElementById("invite-input");
+      const status = document.getElementById("invite-status");
+      const button = document.getElementById("invite-create-btn");
+      const raw = input.value.trim();
+      if (!raw) {
+        status.textContent = "Enter at least one code.";
+        return;
+      }
+
+      button.disabled = true;
+      status.textContent = "Creating invitation codes...";
+      try {
+        const response = await fetch("/api/invitations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ codes: raw }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          status.textContent = data.error || "Could not create invitation codes.";
+          return;
+        }
+        state.invites = data.items || [];
+        renderInvites();
+        input.value = "";
+        status.textContent = `Created/updated ${data.created?.length || 0} code(s).`;
+      } catch (_) {
+        status.textContent = "Could not create invitation codes.";
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function disableInvite(code) {
+      const status = document.getElementById("invite-status");
+      status.textContent = `Disabling ${code}...`;
+      try {
+        const response = await fetch("/api/invitations/disable", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          status.textContent = data.error || `Could not disable ${code}.`;
+          return;
+        }
+        state.invites = data.items || [];
+        renderInvites();
+        status.textContent = `${code} disabled.`;
+      } catch (_) {
+        status.textContent = `Could not disable ${code}.`;
+      }
+    }
+
     async function loadDetail(submissionId, forceRefresh = false) {
       if (!submissionId) return;
       if (!forceRefresh && state.detailCache[submissionId]) {
@@ -709,15 +917,17 @@
     async function refreshAll(silent = false) {
       if (!silent) {
         document.getElementById("submission-list").innerHTML = `<div class="empty-state">Loading submissions…</div>`;
+        document.getElementById("invite-list").innerHTML = `<div class="empty-state">Loading invitation codes…</div>`;
         renderEmptyDetail("Loading details…");
       }
       try {
-        await loadList();
+        await Promise.all([loadList(), loadInvites()]);
         if (state.activeId) {
           await loadDetail(state.activeId, true);
         }
       } catch (error) {
         document.getElementById("submission-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
+        document.getElementById("invite-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
         renderEmptyDetail("The admin page could not reach the feedback API.");
       }
     }
@@ -726,6 +936,7 @@
     document.getElementById("status-filter").addEventListener("change", applyFilters);
     document.getElementById("lang-filter").addEventListener("change", applyFilters);
     document.getElementById("refresh-btn").addEventListener("click", () => refreshAll(false));
+    document.getElementById("invite-create-btn").addEventListener("click", createInvites);
 
     refreshAll();
     setInterval(() => refreshAll(true), 2000);

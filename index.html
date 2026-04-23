@@ -62,6 +62,11 @@
         <span>Open live feedback dashboard</span>
       </a>
 
+      <button class="debug-invite-btn" id="debug-invite-btn" type="button">
+        TEMP BYPASS INVITE
+        <span>Skip invitation code for testing</span>
+      </button>
+
       <button class="debug-unlock-btn" id="debug-unlock-btn" type="button">
         TEMP UNLOCK ALL TABS
         <span>Bypass steps 1 and 2 for testing</span>
@@ -111,6 +116,17 @@ const T = {
     betaFeedback: "Beta Feedback",
     completed:    n => `${n}/10 complétés`,
     autosave:     "Sauvegarde automatique",
+    inviteTitle:  "Code d'invitation",
+    inviteSubtitle:"Entre ton code d'invitation pour accéder au formulaire de feedback Serenzer.",
+    inviteLabel:  "Code d'invitation",
+    invitePlaceholder: "Ex. BETA-001",
+    inviteButton: "Entrer",
+    inviteHint:   "Ton code t'a été envoyé avec l'invitation au test.",
+    inviteErrorRequired: "Entre un code d'invitation pour continuer.",
+    inviteErrorInvalid: "Ce code n'est pas valide ou a déjà été utilisé.",
+    inviteValidating: "Vérification du code...",
+    inviteLocked: "Accès verrouillé jusqu'à validation du code",
+    onboardingInviteLabel: "Code d'invitation validé",
 
     tabTutorial:   "Tutoriel",
     tabOnboarding: "Onboarding",
@@ -255,6 +271,17 @@ const T = {
     betaFeedback: "Beta Feedback",
     completed:    n => `${n}/10 completed`,
     autosave:     "Automatic save",
+    inviteTitle:  "Invitation code",
+    inviteSubtitle:"Enter your invitation code to access the Serenzer feedback form.",
+    inviteLabel:  "Invitation code",
+    invitePlaceholder: "Ex. BETA-001",
+    inviteButton: "Enter",
+    inviteHint:   "Your code was sent with your beta invitation.",
+    inviteErrorRequired: "Enter an invitation code to continue.",
+    inviteErrorInvalid: "This code is invalid or has already been used.",
+    inviteValidating: "Checking code...",
+    inviteLocked: "Access locked until code validation",
+    onboardingInviteLabel: "Validated invitation code",
 
     tabTutorial:   "Tutorial",
     tabOnboarding: "Onboarding",
@@ -399,6 +426,17 @@ const T = {
     betaFeedback: "Beta Feedback",
     completed:    n => `${n}/10 completati`,
     autosave:     "Salvataggio automatico",
+    inviteTitle:  "Codice d'invito",
+    inviteSubtitle:"Inserisci il tuo codice d'invito per accedere al modulo di feedback Serenzer.",
+    inviteLabel:  "Codice d'invito",
+    invitePlaceholder: "Es. BETA-001",
+    inviteButton: "Entra",
+    inviteHint:   "Il tuo codice ti è stato inviato con l'invito alla beta.",
+    inviteErrorRequired: "Inserisci un codice d'invito per continuare.",
+    inviteErrorInvalid: "Questo codice non è valido o è già stato usato.",
+    inviteValidating: "Verifica del codice...",
+    inviteLocked: "Accesso bloccato finché il codice non viene validato",
+    onboardingInviteLabel: "Codice d'invito convalidato",
 
     tabTutorial:   "Tutorial",
     tabOnboarding: "Onboarding",
@@ -543,6 +581,17 @@ const T = {
     betaFeedback: "Beta Feedback",
     completed:    n => `${n}/10 voltooid`,
     autosave:     "Automatisch opslaan",
+    inviteTitle:  "Uitnodigingscode",
+    inviteSubtitle:"Voer je uitnodigingscode in om toegang te krijgen tot het Serenzer-feedbackformulier.",
+    inviteLabel:  "Uitnodigingscode",
+    invitePlaceholder: "Bijv. BETA-001",
+    inviteButton: "Doorgaan",
+    inviteHint:   "Je code werd meegestuurd met je bèta-uitnodiging.",
+    inviteErrorRequired: "Voer een uitnodigingscode in om verder te gaan.",
+    inviteErrorInvalid: "Deze code is ongeldig of al gebruikt.",
+    inviteValidating: "Code wordt gecontroleerd...",
+    inviteLocked: "Toegang vergrendeld tot de code is gevalideerd",
+    onboardingInviteLabel: "Gevalideerde uitnodigingscode",
 
     tabTutorial:   "Tutorial",
     tabOnboarding: "Onboarding",
@@ -687,6 +736,17 @@ const T = {
     betaFeedback: "Beta Feedback",
     completed:    n => `${n}/10 abgeschlossen`,
     autosave:     "Automatisch gespeichert",
+    inviteTitle:  "Einladungscode",
+    inviteSubtitle:"Gib deinen Einladungscode ein, um auf das Serenzer-Feedbackformular zuzugreifen.",
+    inviteLabel:  "Einladungscode",
+    invitePlaceholder: "Z. B. BETA-001",
+    inviteButton: "Weiter",
+    inviteHint:   "Dein Code wurde mit deiner Beta-Einladung gesendet.",
+    inviteErrorRequired: "Gib einen Einladungscode ein, um fortzufahren.",
+    inviteErrorInvalid: "Dieser Code ist ungültig oder wurde bereits verwendet.",
+    inviteValidating: "Code wird geprüft...",
+    inviteLocked: "Zugang gesperrt, bis der Code validiert ist",
+    onboardingInviteLabel: "Validierter Einladungscode",
 
     tabTutorial:   "Tutorial",
     tabOnboarding: "Onboarding",
@@ -831,6 +891,17 @@ const T = {
     betaFeedback: "Beta Feedback",
     completed:    n => `${n}/10 completados`,
     autosave:     "Guardado automático",
+    inviteTitle:  "Código de invitación",
+    inviteSubtitle:"Introduce tu código de invitación para acceder al formulario de feedback de Serenzer.",
+    inviteLabel:  "Código de invitación",
+    invitePlaceholder: "Ej. BETA-001",
+    inviteButton: "Entrar",
+    inviteHint:   "Tu código se envió con tu invitación a la beta.",
+    inviteErrorRequired: "Introduce un código de invitación para continuar.",
+    inviteErrorInvalid: "Este código no es válido o ya fue utilizado.",
+    inviteValidating: "Comprobando código...",
+    inviteLocked: "Acceso bloqueado hasta validar el código",
+    onboardingInviteLabel: "Código de invitación validado",
 
     tabTutorial:   "Tutorial",
     tabOnboarding: "Onboarding",
@@ -983,7 +1054,8 @@ function makeSubmissionId() {
 }
 
 function hasMeaningfulProgress() {
-  return Object.keys(state.completed).length > 0
+  return state.invitationValidated
+    || Object.keys(state.completed).length > 0
     || Object.keys(state.onboardingData).some(key => String(state.onboardingData[key] || "").trim())
     || Object.keys(state.toolData).some(key => Object.keys(state.toolData[key] || {}).length > 0);
 }
@@ -993,6 +1065,7 @@ const state = {
   completed: {},
   onboardingData: {},
   toolData: {},
+  invitationValidated: false,
   submissionId: makeSubmissionId(),
   mobileOpen: false,
   debugMenuOpen: false,
@@ -1004,6 +1077,7 @@ const state = {
 
 let autosaveTimer = null;
 let remoteSyncToken = 0;
+let invitationRestorePromise = null;
 
 // ── Translation helper ────────────────────────────────────────────────────────
 
@@ -1033,6 +1107,7 @@ function loadFromStorage() {
       state.completed      = saved.completed      || {};
       state.onboardingData = saved.onboardingData || {};
       state.toolData       = saved.toolData       || {};
+      state.invitationValidated = !!saved.invitationValidated;
       state.submissionId   = saved.submissionId   || makeSubmissionId();
       if (saved.lang && T[saved.lang]) state.lang = saved.lang;
       if (saved.langSelected) state.langSelected = true;
@@ -1047,6 +1122,7 @@ async function persistNow() {
       completed:      state.completed,
       onboardingData: state.onboardingData,
       toolData:       state.toolData,
+      invitationValidated: state.invitationValidated,
       submissionId:   state.submissionId,
       lang:           state.lang,
       langSelected:   state.langSelected,
@@ -1064,6 +1140,12 @@ async function persistNow() {
     setAutosaveStatus("saved");
   }
   return ok;
+}
+
+async function clearInvitationSession() {
+  try {
+    await fetch("/api/invitations/session/clear", { method: "POST" });
+  } catch (_) {}
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1149,11 +1231,13 @@ function schedulePersist() {
 function resetAppState() {
   clearTimeout(autosaveTimer);
   localStorage.removeItem(STORAGE_KEY);
+  clearInvitationSession();
 
   state.activeTab = 1;
   state.completed = {};
   state.onboardingData = {};
   state.toolData = {};
+  state.invitationValidated = false;
   state.submissionId = makeSubmissionId();
   state.mobileOpen = false;
   state.lang = "en";
@@ -1181,9 +1265,11 @@ function renderSidebarContent(containerId) {
         <div class="sidebar-progress-fill" style="width:${progressPct()}%"></div>
       </div>
     </div>
-    <nav class="sidebar-nav">
-      ${getNavTabs().map(tab => navItemHTML(tab)).join("")}
-    </nav>
+    ${state.invitationValidated ? `
+      <nav class="sidebar-nav">
+        ${getNavTabs().map(tab => navItemHTML(tab)).join("")}
+      </nav>
+    ` : `<div class="sidebar-locked-note">${t("inviteLocked")}</div>`}
     <div class="sidebar-footer">
       <a class="sidebar-email-link" href="mailto:noejore@serenzer.com">
         ${emailIconSVG("sidebar-email-icon")}
@@ -1223,7 +1309,9 @@ function navItemHTML(tab) {
 
 function updateTopBar() {
   const tab = getNavTabs().find(tb => tb.id === state.activeTab);
-  document.getElementById("topbar-title").textContent = tab ? tab.label : "";
+  document.getElementById("topbar-title").textContent = state.invitationValidated
+    ? (tab ? tab.label : "")
+    : t("inviteTitle");
   document.getElementById("progress-text").textContent = `${totalCompleted()}/10`;
   document.getElementById("progress-fill").style.width = `${progressPct()}%`;
   document.getElementById("lang-select").value = state.lang;
@@ -1235,7 +1323,11 @@ function renderContent() {
   const container = document.getElementById("tab-content");
   if (!container) return;
 
-  if (state.activeTab === 1) {
+  if (!state.invitationValidated) {
+    container.innerHTML = invitationHTML();
+    attachInvitationListeners();
+
+  } else if (state.activeTab === 1) {
     container.innerHTML = tutorielHTML();
     document.getElementById("tutoriel-start-btn").addEventListener("click", () => markComplete(1));
 
@@ -1250,6 +1342,21 @@ function renderContent() {
       attachToolListeners(tool);
     }
   }
+}
+
+function invitationHTML() {
+  return `
+    <div class="card card-sage invitation-card">
+      <h2 class="section-title">${t("inviteTitle")}</h2>
+      <p style="color:var(--olive-mid);font-size:15px;line-height:1.7;margin:8px 0 18px;">${t("inviteSubtitle")}</p>
+      <div class="field">
+        <label class="field-label" for="inp-invitation-gate">${t("inviteLabel")}</label>
+        <input class="text-input" id="inp-invitation-gate" type="text" placeholder="${t("invitePlaceholder")}" value="${esc(state.onboardingData.invitationNumber)}" autocomplete="off" autocapitalize="characters">
+      </div>
+      <p class="field-hint" id="invite-status-text">${t("inviteHint")}</p>
+      <button class="submit-btn" id="invite-submit-btn">${t("inviteButton")}</button>
+    </div>
+  `;
 }
 
 // ── Tutorial tab ──────────────────────────────────────────────────────────────
@@ -1324,7 +1431,7 @@ function onboardingHTML() {
     { value: "3hplus", label: t("time3hplus") },
   ];
 
-  const isValid = d.firstName && d.lastName && d.email && d.invitationNumber && d.tech && (d.devices || []).length > 0 && d.time;
+  const isValid = d.firstName && d.lastName && d.email && d.tech && (d.devices || []).length > 0 && d.time;
 
   return `
     <div class="card">
@@ -1345,8 +1452,8 @@ function onboardingHTML() {
         <input class="text-input" id="inp-email" type="email" placeholder="${t("placeholderEmail")}" value="${esc(d.email)}">
       </div>
       <div class="field">
-        <label class="field-label" for="inp-invitationNumber">${t("labelInvitation")}</label>
-        <input class="text-input" id="inp-invitationNumber" type="text" placeholder="${t("placeholderInvitation")}" value="${esc(d.invitationNumber)}">
+        <label class="field-label">${t("onboardingInviteLabel")}</label>
+        <input class="text-input" type="text" value="${esc(d.invitationNumber)}" disabled>
       </div>
     </div>
 
@@ -1371,7 +1478,7 @@ function onboardingHTML() {
 }
 
 function attachOnboardingListeners() {
-  ["firstName", "lastName", "email", "invitationNumber", "hopes"].forEach(field => {
+  ["firstName", "lastName", "email", "hopes"].forEach(field => {
     const el = document.getElementById(`inp-${field}`);
     if (!el) return;
     el.addEventListener("input", () => {
@@ -1405,9 +1512,45 @@ function attachOnboardingListeners() {
   document.getElementById("onboarding-submit-btn")?.addEventListener("click", () => markComplete(2));
 }
 
+function attachInvitationListeners() {
+  const input = document.getElementById("inp-invitation-gate");
+  const status = document.getElementById("invite-status-text");
+  const button = document.getElementById("invite-submit-btn");
+  if (!input || !status || !button) return;
+
+  input.addEventListener("input", () => {
+    status.textContent = t("inviteHint");
+  });
+
+  button.addEventListener("click", async () => {
+    const code = String(input.value || "").trim().toUpperCase();
+    if (!code) {
+      status.textContent = t("inviteErrorRequired");
+      return;
+    }
+
+    button.disabled = true;
+    status.textContent = t("inviteValidating");
+
+    const result = await validateInvitationCode(code);
+    if (!result.ok) {
+      status.textContent = result.data?.error || t("inviteErrorInvalid");
+      button.disabled = false;
+      return;
+    }
+
+    state.onboardingData.invitationNumber = result.data.code || code;
+    state.invitationValidated = true;
+    state.activeTab = 1;
+    setAutosaveStatus("saving");
+    await persistNow();
+    renderAll();
+  });
+}
+
 function refreshOnboardingSubmit() {
   const d = state.onboardingData;
-  const isValid = d.firstName && d.lastName && d.email && d.invitationNumber && d.tech && (d.devices || []).length > 0 && d.time;
+  const isValid = d.firstName && d.lastName && d.email && d.tech && (d.devices || []).length > 0 && d.time;
   const btn  = document.getElementById("onboarding-submit-btn");
   const hint = document.querySelector(".field-hint");
   if (btn) btn.disabled = !isValid;
@@ -2144,9 +2287,56 @@ async function submitToServer(payload) {
   }
 }
 
+async function validateInvitationCode(code) {
+  try {
+    const res = await fetch("/api/invitations/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        submissionId: state.submissionId,
+        code,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, data };
+  } catch (_) {
+    return { ok: false, data: { error: t("inviteErrorInvalid") } };
+  }
+}
+
+async function restoreInvitationSession() {
+  if (state.invitationValidated) return true;
+  if (invitationRestorePromise) return invitationRestorePromise;
+
+  invitationRestorePromise = (async () => {
+    try {
+      const res = await fetch("/api/invitations/session/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          submissionId: state.submissionId,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return false;
+      state.invitationValidated = true;
+      state.onboardingData.invitationNumber = data.code || state.onboardingData.invitationNumber || "";
+      await persistNow();
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      invitationRestorePromise = null;
+    }
+  })();
+
+  return invitationRestorePromise;
+}
+
 // ── Navigation ────────────────────────────────────────────────────────────────
 
 function handleTabClick(tabId) {
+  if (!state.invitationValidated) return;
   if (isLocked(tabId)) return;
   state.activeTab = tabId;
   state.mobileOpen = false;
@@ -2279,8 +2469,9 @@ function resetDebugDeadline() {
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   loadFromStorage();
+  await restoreInvitationSession();
 
   document.getElementById("hamburger-btn").addEventListener("click", () => {
     state.mobileOpen = true;
@@ -2306,6 +2497,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("debug-wipe-btn").addEventListener("click", () => {
     resetAppState();
+  });
+
+  document.getElementById("debug-invite-btn").addEventListener("click", () => {
+    state.invitationValidated = true;
+    if (!state.onboardingData.invitationNumber) {
+      state.onboardingData.invitationNumber = "TEMP-BYPASS";
+    }
+    state.activeTab = 1;
+    renderAll();
   });
 
   document.getElementById("debug-unlock-btn").addEventListener("click", () => {

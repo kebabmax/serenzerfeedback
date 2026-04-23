@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import json
 import os
+import secrets
 import sqlite3
 from datetime import datetime, timezone
+from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -17,6 +19,14 @@ PORT = int(os.environ.get("SERENZER_PORT", "8000"))
 
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
+
+
+def normalize_code(value):
+    return str(value or "").strip().upper()
+
+
+def make_remember_token():
+    return secrets.token_urlsafe(32)
 
 
 def get_db():
@@ -40,7 +50,146 @@ def get_db():
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS invitation_codes (
+            code TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            bound_submission_id TEXT,
+            use_count INTEGER NOT NULL DEFAULT 0,
+            used_at TEXT
+        )
+        """
+    )
+    existing_columns = {row["name"] for row in conn.execute("PRAGMA table_info(invitation_codes)").fetchall()}
+    if "remember_token" not in existing_columns:
+        conn.execute("ALTER TABLE invitation_codes ADD COLUMN remember_token TEXT")
     return conn
+
+
+def claim_invitation_code(conn, code, submission_id):
+    normalized = normalize_code(code)
+    if not normalized or not submission_id:
+        return False, "Invitation code is required"
+
+    row = conn.execute(
+        """
+        SELECT code, is_active, bound_submission_id, use_count
+        FROM invitation_codes
+        WHERE code = ?
+        """,
+        (normalized,),
+    ).fetchone()
+
+    if row is None or not row["is_active"]:
+        return False, "Invalid invitation code"
+
+    if row["bound_submission_id"] and row["bound_submission_id"] != submission_id:
+        return False, "This invitation code is already in use"
+
+    timestamp = now_iso()
+    conn.execute(
+        """
+        UPDATE invitation_codes
+        SET updated_at = ?,
+            bound_submission_id = ?,
+            use_count = CASE WHEN use_count < 1 THEN 1 ELSE use_count END,
+            used_at = COALESCE(used_at, ?)
+        WHERE code = ?
+        """,
+        (timestamp, submission_id, timestamp, normalized),
+    )
+    return True, normalized
+
+
+def restore_invitation_session(conn, remember_token, submission_id):
+    token = str(remember_token or "").strip()
+    if not token or not submission_id:
+        return False, "Missing remember token"
+
+    row = conn.execute(
+        """
+        SELECT code, is_active
+        FROM invitation_codes
+        WHERE remember_token = ?
+        """,
+        (token,),
+    ).fetchone()
+
+    if row is None or not row["is_active"]:
+        return False, "No remembered invitation session found"
+
+    timestamp = now_iso()
+    conn.execute(
+        """
+        UPDATE invitation_codes
+        SET updated_at = ?,
+            bound_submission_id = ?
+        WHERE remember_token = ?
+        """,
+        (timestamp, submission_id, token),
+    )
+    return True, row["code"]
+
+
+def list_invitation_codes(conn):
+    rows = conn.execute(
+        """
+        SELECT code, created_at, updated_at, is_active, bound_submission_id, use_count, used_at
+        FROM invitation_codes
+        ORDER BY created_at DESC, code ASC
+        """
+    ).fetchall()
+    return [
+        {
+            "code": row["code"],
+            "createdAt": row["created_at"],
+            "updatedAt": row["updated_at"],
+            "isActive": bool(row["is_active"]),
+            "boundSubmissionId": row["bound_submission_id"],
+            "useCount": row["use_count"],
+            "usedAt": row["used_at"],
+        }
+        for row in rows
+    ]
+
+
+def upsert_invitation_codes(conn, codes):
+    timestamp = now_iso()
+    normalized_codes = []
+    for raw_code in codes:
+        code = normalize_code(raw_code)
+        if not code:
+            continue
+        normalized_codes.append(code)
+        conn.execute(
+            """
+            INSERT INTO invitation_codes (code, created_at, updated_at, is_active)
+            VALUES (?, ?, ?, 1)
+            ON CONFLICT(code) DO UPDATE SET
+                updated_at = excluded.updated_at,
+                is_active = 1
+            """,
+            (code, timestamp, timestamp),
+        )
+    return normalized_codes
+
+
+def disable_invitation_code(conn, code):
+    normalized = normalize_code(code)
+    if not normalized:
+        return False
+    cursor = conn.execute(
+        """
+        UPDATE invitation_codes
+        SET is_active = 0, updated_at = ?
+        WHERE code = ?
+        """,
+        (now_iso(), normalized),
+    )
+    return cursor.rowcount > 0
 
 
 class FeedbackHandler(BaseHTTPRequestHandler):
@@ -61,6 +210,12 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/health":
             self._send_json(200, {"ok": True})
             return
+        if parsed.path == "/api/invitations":
+            self._handle_invitation_list()
+            return
+        if parsed.path == "/api/invitations/session":
+            self._send_json(405, {"error": "Use POST"})
+            return
         if parsed.path == "/api/feedback":
             self._handle_feedback_list()
             return
@@ -72,18 +227,154 @@ class FeedbackHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
-        if parsed.path != "/api/feedback":
-            self._send_json(404, {"error": "Not found"})
+        if parsed.path == "/api/feedback":
+            self._handle_feedback_upsert()
             return
-        self._handle_feedback_upsert()
+        if parsed.path == "/api/invitations":
+            self._handle_invitation_create()
+            return
+        if parsed.path == "/api/invitations/validate":
+            self._handle_invitation_validate()
+            return
+        if parsed.path == "/api/invitations/session/restore":
+            self._handle_invitation_restore()
+            return
+        if parsed.path == "/api/invitations/session/clear":
+            self._handle_invitation_clear()
+            return
+        if parsed.path == "/api/invitations/disable":
+            self._handle_invitation_disable()
+            return
+        self._send_json(404, {"error": "Not found"})
 
-    def _handle_feedback_upsert(self):
+    def _read_json_body(self):
         try:
             content_length = int(self.headers.get("Content-Length", "0"))
             raw = self.rfile.read(content_length)
-            payload = json.loads(raw.decode("utf-8"))
+            return json.loads(raw.decode("utf-8")), None
         except (ValueError, json.JSONDecodeError):
-            self._send_json(400, {"error": "Invalid JSON body"})
+            return None, {"error": "Invalid JSON body"}
+
+    def _handle_invitation_validate(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+
+        submission_id = str(payload.get("submissionId", "")).strip()
+        conn = get_db()
+        try:
+            ok, result = claim_invitation_code(conn, payload.get("code"), submission_id)
+            if not ok:
+                conn.rollback()
+                self._send_json(403, {"ok": False, "error": result})
+                return
+            remember_token = make_remember_token()
+            conn.execute(
+                """
+                UPDATE invitation_codes
+                SET remember_token = ?, updated_at = ?
+                WHERE code = ?
+                """,
+                (remember_token, now_iso(), result),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        self._send_json(
+            200,
+            {"ok": True, "code": result},
+            extra_headers=[
+                ("Set-Cookie", f"serenzer_invite={remember_token}; Path=/; Max-Age=31536000; SameSite=Lax; HttpOnly")
+            ],
+        )
+
+    def _handle_invitation_list(self):
+        conn = get_db()
+        try:
+            items = list_invitation_codes(conn)
+        finally:
+            conn.close()
+        self._send_json(200, {"count": len(items), "items": items})
+
+    def _handle_invitation_create(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+
+        raw_codes = payload.get("codes")
+        if isinstance(raw_codes, str):
+            raw_codes = [part for part in raw_codes.replace("\n", ",").split(",")]
+        if not isinstance(raw_codes, list):
+            self._send_json(400, {"error": "codes must be a list or comma-separated string"})
+            return
+
+        conn = get_db()
+        try:
+            created = upsert_invitation_codes(conn, raw_codes)
+            conn.commit()
+            items = list_invitation_codes(conn)
+        finally:
+            conn.close()
+
+        self._send_json(200, {"ok": True, "created": created, "items": items})
+
+    def _handle_invitation_disable(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+
+        conn = get_db()
+        try:
+            ok = disable_invitation_code(conn, payload.get("code"))
+            if not ok:
+                conn.rollback()
+                self._send_json(404, {"ok": False, "error": "Invitation code not found"})
+                return
+            conn.commit()
+            items = list_invitation_codes(conn)
+        finally:
+            conn.close()
+
+        self._send_json(200, {"ok": True, "items": items})
+
+    def _handle_invitation_restore(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+
+        submission_id = str(payload.get("submissionId", "")).strip()
+        remember_token = self._get_cookie("serenzer_invite")
+        conn = get_db()
+        try:
+            ok, result = restore_invitation_session(conn, remember_token, submission_id)
+            if not ok:
+                conn.rollback()
+                self._send_json(404, {"ok": False, "error": result})
+                return
+            conn.commit()
+        finally:
+            conn.close()
+
+        self._send_json(200, {"ok": True, "code": result})
+
+    def _handle_invitation_clear(self):
+        self._send_json(
+            200,
+            {"ok": True},
+            extra_headers=[
+                ("Set-Cookie", "serenzer_invite=; Path=/; Max-Age=0; SameSite=Lax; HttpOnly")
+            ],
+        )
+
+    def _handle_feedback_upsert(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
             return
 
         submission_id = str(payload.get("submissionId", "")).strip()
@@ -95,9 +386,20 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         tools = payload.get("tools") or {}
         completed_tabs = payload.get("completedTabs") or []
         timestamp = now_iso()
+        invitation_number = normalize_code(onboarding.get("invitationNumber"))
+
+        if not invitation_number:
+            self._send_json(403, {"error": "A valid invitation code is required"})
+            return
 
         conn = get_db()
         try:
+            ok, result = claim_invitation_code(conn, invitation_number, submission_id)
+            if not ok:
+                conn.rollback()
+                self._send_json(403, {"error": result})
+                return
+
             conn.execute(
                 """
                 INSERT INTO feedback_submissions (
@@ -131,7 +433,7 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                     payload.get("lang"),
                     1 if payload.get("isComplete") else 0,
                     onboarding.get("email"),
-                    onboarding.get("invitationNumber"),
+                    result,
                     json.dumps(completed_tabs, ensure_ascii=False),
                     json.dumps(onboarding, ensure_ascii=False),
                     json.dumps(tools, ensure_ascii=False),
@@ -211,11 +513,19 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             },
         )
 
-    def _send_json(self, status_code, body):
+    def _get_cookie(self, name):
+        cookie = SimpleCookie()
+        cookie.load(self.headers.get("Cookie", ""))
+        morsel = cookie.get(name)
+        return morsel.value if morsel else None
+
+    def _send_json(self, status_code, body, extra_headers=None):
         payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(payload)))
+        for header_name, header_value in (extra_headers or []):
+            self.send_header(header_name, header_value)
         self.end_headers()
         self.wfile.write(payload)
 
