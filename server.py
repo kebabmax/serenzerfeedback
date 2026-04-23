@@ -64,6 +64,10 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/feedback":
             self._handle_feedback_list()
             return
+        if parsed.path.startswith("/api/feedback/"):
+            submission_id = parsed.path.removeprefix("/api/feedback/")
+            self._handle_feedback_detail(submission_id)
+            return
         self._send_json(404, {"error": "Not found"})
 
     def do_POST(self):
@@ -166,6 +170,46 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             for row in rows
         ]
         self._send_json(200, {"count": len(items), "items": items})
+
+    def _handle_feedback_detail(self, submission_id):
+        if not submission_id:
+            self._send_json(400, {"error": "submissionId is required"})
+            return
+
+        conn = get_db()
+        try:
+            row = conn.execute(
+                """
+                SELECT submission_id, created_at, updated_at, lang, is_complete, email,
+                       invitation_number, completed_tabs_json, onboarding_json, tools_json, payload_json
+                FROM feedback_submissions
+                WHERE submission_id = ?
+                """,
+                (submission_id,),
+            ).fetchone()
+        finally:
+            conn.close()
+
+        if row is None:
+            self._send_json(404, {"error": "Submission not found"})
+            return
+
+        self._send_json(
+            200,
+            {
+                "submissionId": row["submission_id"],
+                "createdAt": row["created_at"],
+                "updatedAt": row["updated_at"],
+                "lang": row["lang"],
+                "isComplete": bool(row["is_complete"]),
+                "email": row["email"],
+                "invitationNumber": row["invitation_number"],
+                "completedTabs": json.loads(row["completed_tabs_json"]),
+                "onboarding": json.loads(row["onboarding_json"]),
+                "tools": json.loads(row["tools_json"]),
+                "payload": json.loads(row["payload_json"]),
+            },
+        )
 
     def _send_json(self, status_code, body):
         payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
