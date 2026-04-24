@@ -280,7 +280,6 @@ def get_ghost_feedback_detail(conn, code):
         "usedAt": row["used_at"],
         "appUserId": row["app_user_id"],
         "source": row["source"],
-        "messages": list_messages_for_code(conn, row["code"], include_dismissed=True),
         "payload": {
             "kind": "ghost",
             "invitationCode": row["code"],
