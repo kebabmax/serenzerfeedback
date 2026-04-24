@@ -95,6 +95,7 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 20px;
+      margin-top: 16px;
       margin-bottom: 20px;
     }
 
@@ -188,6 +189,10 @@
       background: rgba(144, 176, 144, 0.18);
       border-color: rgba(107, 143, 113, 0.4);
       color: var(--sage-dark);
+    }
+
+    .hidden {
+      display: none !important;
     }
 
     .layout {
@@ -602,6 +607,7 @@
     <section class="view-switcher">
       <button class="view-tab active" id="participants-tab" type="button">Participants</button>
       <button class="view-tab" id="bug-reports-tab" type="button">Bug Reports</button>
+      <button class="view-tab" id="stats-tab" type="button">Stats</button>
     </section>
 
     <section class="toolbar" id="participants-toolbar">
@@ -675,50 +681,52 @@
       </div>
     </section>
 
-    <section class="hero-meta" style="margin-top: 24px;">
-      <div class="stat-card">
-        <div class="stat-label">Participants</div>
-        <div class="stat-value" id="stat-total">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Completed</div>
-        <div class="stat-value" id="stat-complete">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">In Progress</div>
-        <div class="stat-value" id="stat-incomplete">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Invite Codes</div>
-        <div class="stat-value" id="stat-invites">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Completion Rate</div>
-        <div class="stat-value" id="stat-completion-rate">0%</div>
-      </div>
-    </section>
-
-    <section class="stats-grid">
-      <div class="panel">
-        <div class="panel-header">
-          <h2 class="panel-title">Invite Overview</h2>
+    <section id="stats-view" class="hidden">
+      <section class="hero-meta" style="margin-top: 24px;">
+        <div class="stat-card">
+          <div class="stat-label">Participants</div>
+          <div class="stat-value" id="stat-total">0</div>
         </div>
-        <div class="stats-panel-body stats-list" id="invite-overview"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <h2 class="panel-title">Language Split</h2>
+        <div class="stat-card">
+          <div class="stat-label">Completed</div>
+          <div class="stat-value" id="stat-complete">0</div>
         </div>
-        <div class="stats-panel-body stats-list" id="language-breakdown"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <h2 class="panel-title">Progress Snapshot</h2>
+        <div class="stat-card">
+          <div class="stat-label">In Progress</div>
+          <div class="stat-value" id="stat-incomplete">0</div>
         </div>
-        <div class="stats-panel-body stats-list" id="progress-breakdown"></div>
-      </div>
+        <div class="stat-card">
+          <div class="stat-label">Invite Codes</div>
+          <div class="stat-value" id="stat-invites">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completion Rate</div>
+          <div class="stat-value" id="stat-completion-rate">0%</div>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Invite Overview</h2>
+          </div>
+          <div class="stats-panel-body stats-list" id="invite-overview"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Language Split</h2>
+          </div>
+          <div class="stats-panel-body stats-list" id="language-breakdown"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Progress Snapshot</h2>
+          </div>
+          <div class="stats-panel-body stats-list" id="progress-breakdown"></div>
+        </div>
+      </section>
     </section>
   </div>
 
@@ -1348,9 +1356,11 @@
       state.activeView = view;
       document.getElementById("participants-tab").classList.toggle("active", view === "participants");
       document.getElementById("bug-reports-tab").classList.toggle("active", view === "bugs");
+      document.getElementById("stats-tab").classList.toggle("active", view === "stats");
       document.getElementById("participants-toolbar").classList.toggle("hidden", view !== "participants");
       document.getElementById("participants-view").classList.toggle("hidden", view !== "participants");
       document.getElementById("bug-reports-view").classList.toggle("hidden", view !== "bugs");
+      document.getElementById("stats-view").classList.toggle("hidden", view !== "stats");
     }
 
     function toggleInviteCreatePanel() {
@@ -1374,6 +1384,7 @@
     document.getElementById("invite-toggle-btn").addEventListener("click", toggleInviteCreatePanel);
     document.getElementById("participants-tab").addEventListener("click", () => setActiveView("participants"));
     document.getElementById("bug-reports-tab").addEventListener("click", () => setActiveView("bugs"));
+    document.getElementById("stats-tab").addEventListener("click", () => setActiveView("stats"));
 
     setActiveView("participants");
     refreshAll();
