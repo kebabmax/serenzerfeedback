@@ -30,6 +30,30 @@ def make_remember_token():
     return secrets.token_urlsafe(32)
 
 
+def is_meaningful_value(value):
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return value.strip() != ""
+    if isinstance(value, (list, tuple, set, dict)):
+        return len(value) > 0
+    return True
+
+
+def merge_saved_value(existing, incoming):
+    if isinstance(existing, dict) and isinstance(incoming, dict):
+        merged = dict(existing)
+        for key, value in incoming.items():
+            if key in merged:
+                merged[key] = merge_saved_value(merged[key], value)
+            elif is_meaningful_value(value):
+                merged[key] = value
+        return merged
+    if isinstance(existing, list) and isinstance(incoming, list):
+        return incoming if incoming else existing
+    return incoming if is_meaningful_value(incoming) else existing
+
+
 def get_db():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
@@ -632,6 +656,33 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                 self._send_json(403, {"error": result})
                 return
 
+            existing_row = conn.execute(
+                """
+                SELECT lang, is_complete, email, completed_tabs_json, onboarding_json, tools_json, payload_json
+                FROM feedback_submissions
+                WHERE submission_id = ?
+                """,
+                (submission_id,),
+            ).fetchone()
+
+            existing_completed_tabs = json.loads(existing_row["completed_tabs_json"]) if existing_row else []
+            existing_onboarding = json.loads(existing_row["onboarding_json"]) if existing_row else {}
+            existing_tools = json.loads(existing_row["tools_json"]) if existing_row else {}
+            existing_payload = json.loads(existing_row["payload_json"]) if existing_row else {}
+
+            merged_onboarding = merge_saved_value(existing_onboarding, onboarding)
+            merged_tools = merge_saved_value(existing_tools, tools)
+            merged_completed_tabs = sorted({*existing_completed_tabs, *[int(tab) for tab in completed_tabs]})
+            merged_payload = merge_saved_value(existing_payload, payload)
+            merged_lang = payload.get("lang") or existing_payload.get("lang") or (existing_row["lang"] if existing_row else None)
+            merged_is_complete = bool(payload.get("isComplete") or (existing_row["is_complete"] if existing_row else 0))
+            merged_payload["submissionId"] = submission_id
+            merged_payload["lang"] = merged_lang
+            merged_payload["onboarding"] = merged_onboarding
+            merged_payload["tools"] = merged_tools
+            merged_payload["completedTabs"] = merged_completed_tabs
+            merged_payload["isComplete"] = merged_is_complete
+
             conn.execute(
                 """
                 INSERT INTO feedback_submissions (
@@ -662,14 +713,14 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                     submission_id,
                     timestamp,
                     timestamp,
-                    payload.get("lang"),
-                    1 if payload.get("isComplete") else 0,
-                    onboarding.get("email"),
+                    merged_lang,
+                    1 if merged_is_complete else 0,
+                    merged_onboarding.get("email"),
                     result["code"],
-                    json.dumps(completed_tabs, ensure_ascii=False),
-                    json.dumps(onboarding, ensure_ascii=False),
-                    json.dumps(tools, ensure_ascii=False),
-                    json.dumps(payload, ensure_ascii=False),
+                    json.dumps(merged_completed_tabs, ensure_ascii=False),
+                    json.dumps(merged_onboarding, ensure_ascii=False),
+                    json.dumps(merged_tools, ensure_ascii=False),
+                    json.dumps(merged_payload, ensure_ascii=False),
                 ),
             )
             conn.commit()
