@@ -166,6 +166,32 @@ def list_invitation_codes(conn):
     ]
 
 
+def list_feedback_submissions(conn):
+    rows = conn.execute(
+        """
+        SELECT submission_id, created_at, updated_at, lang, is_complete, email, invitation_number, completed_tabs_json
+        FROM feedback_submissions
+        ORDER BY updated_at DESC
+        """
+    ).fetchall()
+    items = []
+    for row in rows:
+        completed_tabs = json.loads(row["completed_tabs_json"])
+        items.append(
+            {
+                "submissionId": row["submission_id"],
+                "createdAt": row["created_at"],
+                "updatedAt": row["updated_at"],
+                "lang": row["lang"],
+                "isComplete": bool(row["is_complete"]),
+                "email": row["email"],
+                "invitationNumber": row["invitation_number"],
+                "completedTabsCount": len(completed_tabs),
+            }
+        )
+    return items
+
+
 def upsert_invitation_codes(conn, codes):
     timestamp = now_iso()
     normalized_codes = []
@@ -551,28 +577,9 @@ class FeedbackHandler(BaseHTTPRequestHandler):
     def _handle_feedback_list(self):
         conn = get_db()
         try:
-            rows = conn.execute(
-                """
-                SELECT submission_id, created_at, updated_at, lang, is_complete, email, invitation_number
-                FROM feedback_submissions
-                ORDER BY updated_at DESC
-                """
-            ).fetchall()
+            items = list_feedback_submissions(conn)
         finally:
             conn.close()
-
-        items = [
-            {
-                "submissionId": row["submission_id"],
-                "createdAt": row["created_at"],
-                "updatedAt": row["updated_at"],
-                "lang": row["lang"],
-                "isComplete": bool(row["is_complete"]),
-                "email": row["email"],
-                "invitationNumber": row["invitation_number"],
-            }
-            for row in rows
-        ]
         self._send_json(200, {"count": len(items), "items": items})
 
     def _handle_feedback_detail(self, submission_id):
