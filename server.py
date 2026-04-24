@@ -192,6 +192,103 @@ def list_feedback_submissions(conn):
     return items
 
 
+def list_feedback_entries(conn):
+    submissions = list_feedback_submissions(conn)
+    submission_invites = {
+        normalize_code(item.get("invitationNumber")): item
+        for item in submissions
+        if normalize_code(item.get("invitationNumber"))
+    }
+    items = []
+
+    for submission in submissions:
+        submission["entryType"] = "submission"
+        items.append(submission)
+
+    invite_rows = conn.execute(
+        """
+        SELECT code, created_at, updated_at, is_active, bound_submission_id, use_count, used_at, email, app_user_id, source
+        FROM invitation_codes
+        ORDER BY updated_at DESC, created_at DESC, code ASC
+        """
+    ).fetchall()
+
+    for row in invite_rows:
+        code = row["code"]
+        if code in submission_invites:
+            continue
+        items.append(
+            {
+                "submissionId": f"ghost:{code}",
+                "createdAt": row["created_at"],
+                "updatedAt": row["updated_at"],
+                "lang": None,
+                "isComplete": False,
+                "email": row["email"],
+                "invitationNumber": code,
+                "completedTabsCount": 0,
+                "entryType": "ghost",
+                "isActive": bool(row["is_active"]),
+                "boundSubmissionId": row["bound_submission_id"],
+                "useCount": row["use_count"],
+                "usedAt": row["used_at"],
+                "appUserId": row["app_user_id"],
+                "source": row["source"],
+            }
+        )
+
+    items.sort(key=lambda item: item.get("updatedAt") or item.get("createdAt") or "", reverse=True)
+    return items
+
+
+def get_ghost_feedback_detail(conn, code):
+    normalized = normalize_code(code)
+    if not normalized:
+        return None
+    row = conn.execute(
+        """
+        SELECT code, created_at, updated_at, is_active, bound_submission_id, use_count, used_at, email, app_user_id, source
+        FROM invitation_codes
+        WHERE code = ?
+        """,
+        (normalized,),
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "submissionId": f"ghost:{row['code']}",
+        "entryType": "ghost",
+        "createdAt": row["created_at"],
+        "updatedAt": row["updated_at"],
+        "lang": None,
+        "isComplete": False,
+        "email": row["email"],
+        "invitationNumber": row["code"],
+        "completedTabs": [],
+        "onboarding": {},
+        "tools": {},
+        "isActive": bool(row["is_active"]),
+        "boundSubmissionId": row["bound_submission_id"],
+        "useCount": row["use_count"],
+        "usedAt": row["used_at"],
+        "appUserId": row["app_user_id"],
+        "source": row["source"],
+        "payload": {
+            "kind": "ghost",
+            "invitationCode": row["code"],
+            "email": row["email"],
+            "appUserId": row["app_user_id"],
+            "source": row["source"],
+            "isActive": bool(row["is_active"]),
+            "boundSubmissionId": row["bound_submission_id"],
+            "useCount": row["use_count"],
+            "usedAt": row["used_at"],
+            "createdAt": row["created_at"],
+            "updatedAt": row["updated_at"],
+        },
+    }
+
+
 def upsert_invitation_codes(conn, codes):
     timestamp = now_iso()
     normalized_codes = []
@@ -577,7 +674,7 @@ class FeedbackHandler(BaseHTTPRequestHandler):
     def _handle_feedback_list(self):
         conn = get_db()
         try:
-            items = list_feedback_submissions(conn)
+            items = list_feedback_entries(conn)
         finally:
             conn.close()
         self._send_json(200, {"count": len(items), "items": items})
@@ -585,6 +682,18 @@ class FeedbackHandler(BaseHTTPRequestHandler):
     def _handle_feedback_detail(self, submission_id):
         if not submission_id:
             self._send_json(400, {"error": "submissionId is required"})
+            return
+
+        if submission_id.startswith("ghost:"):
+            conn = get_db()
+            try:
+                detail = get_ghost_feedback_detail(conn, submission_id.removeprefix("ghost:"))
+            finally:
+                conn.close()
+            if detail is None:
+                self._send_json(404, {"error": "Submission not found"})
+                return
+            self._send_json(200, detail)
             return
 
         conn = get_db()

@@ -395,6 +395,11 @@
       color: var(--red);
     }
 
+    .badge.ghost {
+      background: rgba(63, 74, 67, 0.08);
+      color: var(--text);
+    }
+
     .detail-scroll {
       max-height: calc(100vh - 260px);
       overflow: auto;
@@ -533,7 +538,7 @@
       </div>
       <div class="hero-meta">
         <div class="stat-card">
-          <div class="stat-label">Submissions</div>
+          <div class="stat-label">Participants</div>
           <div class="stat-value" id="stat-total">0</div>
         </div>
         <div class="stat-card">
@@ -615,7 +620,7 @@
 
         <div class="panel">
           <div class="panel-header">
-            <h2 class="panel-title">Submissions</h2>
+            <h2 class="panel-title">Participants</h2>
           </div>
           <div class="submission-list" id="submission-list"></div>
         </div>
@@ -783,6 +788,8 @@
     function renderStats() {
       const total = state.list.length;
       const complete = state.list.filter(item => item.isComplete).length;
+      const ghosts = state.list.filter(item => item.entryType === "ghost").length;
+      const started = Math.max(total - ghosts, 0);
       const invites = state.invites.length;
       const completionRate = total ? `${Math.round((complete / total) * 100)}%` : "0%";
       document.getElementById("stat-total").textContent = total;
@@ -791,7 +798,7 @@
       document.getElementById("stat-invites").textContent = invites;
       document.getElementById("stat-completion-rate").textContent = completionRate;
 
-      renderInviteOverview(total, complete);
+      renderInviteOverview(total, started, complete, ghosts);
       renderLanguageBreakdown(total);
       renderProgressBreakdown(total);
     }
@@ -805,22 +812,24 @@
       `;
     }
 
-    function renderInviteOverview(submissionCount, completeCount) {
+    function renderInviteOverview(participantCount, startedCount, completeCount, ghostCount) {
       const activeInvites = state.invites.filter(item => item.isActive).length;
       const usedInvites = state.invites.filter(item => item.useCount > 0 || item.boundSubmissionId).length;
       const unusedInvites = Math.max(state.invites.length - usedInvites, 0);
-      const startedNotComplete = Math.max(submissionCount - completeCount, 0);
+      const startedNotComplete = Math.max(startedCount - completeCount, 0);
       const recent24h = state.list.filter(item => {
         const updated = new Date(item.updatedAt).getTime();
         return Number.isFinite(updated) && (Date.now() - updated) <= 24 * 60 * 60 * 1000;
       }).length;
 
       document.getElementById("invite-overview").innerHTML = [
+        statsRowHTML("Total participants", participantCount),
         statsRowHTML("Total invite codes", state.invites.length),
         statsRowHTML("Active invite codes", activeInvites),
         statsRowHTML("Used invite codes", usedInvites),
         statsRowHTML("Unused invite codes", unusedInvites),
-        statsRowHTML("Started testers", submissionCount),
+        statsRowHTML("Ghost forms", ghostCount),
+        statsRowHTML("Started testers", startedCount),
         statsRowHTML("Started, not complete", startedNotComplete),
         statsRowHTML("Completed testers", completeCount),
         statsRowHTML("Updated in last 24h", recent24h),
@@ -829,16 +838,18 @@
 
     function renderLanguageBreakdown(total) {
       const counts = {};
-      state.list.forEach(item => {
+      state.list
+        .filter(item => item.entryType !== "ghost")
+        .forEach(item => {
         const lang = (item.lang || "unknown").toUpperCase();
         counts[lang] = (counts[lang] || 0) + 1;
-      });
+        });
       const rows = Object.entries(counts)
         .sort((a, b) => b[1] - a[1])
         .map(([lang, count]) => statsRowHTML(lang, total ? `${count} (${Math.round((count / total) * 100)}%)` : String(count)));
       document.getElementById("language-breakdown").innerHTML = rows.length
         ? rows.join("")
-        : `<div class="empty-state">No submission languages yet.</div>`;
+        : `<div class="empty-state">No started participant languages yet.</div>`;
     }
 
     function renderProgressBreakdown(total) {
@@ -930,14 +941,14 @@
       if (state.activeId) {
         loadDetail(state.activeId);
       } else {
-        renderEmptyDetail("No submissions match the current filters.");
+        renderEmptyDetail("No participants match the current filters.");
       }
     }
 
     function renderList() {
       const list = document.getElementById("submission-list");
       if (!state.filtered.length) {
-        list.innerHTML = `<div class="empty-state">No submissions found yet.</div>`;
+        list.innerHTML = `<div class="empty-state">No participants found yet.</div>`;
         return;
       }
 
@@ -945,11 +956,12 @@
         <button class="submission-row ${item.submissionId === state.activeId ? "active" : ""}" data-id="${esc(item.submissionId)}" type="button">
           <div class="submission-topline">
             <div class="submission-email">${esc(item.email || item.invitationNumber || item.submissionId)}</div>
-            <span class="badge ${item.isComplete ? "complete" : "incomplete"}">${item.isComplete ? "Complete" : "In progress"}</span>
+            <span class="badge ${item.entryType === "ghost" ? "ghost" : item.isComplete ? "complete" : "incomplete"}">${item.entryType === "ghost" ? "Ghost form" : item.isComplete ? "Complete" : "In progress"}</span>
           </div>
           <div class="submission-meta">
             <span>${esc((item.lang || "—").toUpperCase())}</span>
             <span>${esc(item.invitationNumber || "No invitation")}</span>
+            <span>${esc(item.entryType === "ghost" ? "Not started" : "Started")}</span>
             <span>${esc(formatDate(item.updatedAt))}</span>
           </div>
         </button>
@@ -968,7 +980,42 @@
       document.getElementById("detail-pane").innerHTML = `<div class="empty-state">${esc(message)}</div>`;
     }
 
+    function renderGhostDetail(detail) {
+      document.getElementById("detail-pane").innerHTML = `
+        <div class="detail-card">
+          <h3>Overview</h3>
+          <div class="kv-grid">
+            <div class="kv-item"><div class="kv-label">Ghost form ID</div><div class="kv-value">${esc(detail.submissionId)}</div></div>
+            <div class="kv-item"><div class="kv-label">Invitation #</div><div class="kv-value">${esc(detail.invitationNumber || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Status</div><div class="kv-value">${detail.isActive ? "Invited, not started" : "Disabled"}</div></div>
+            <div class="kv-item"><div class="kv-label">Email</div><div class="kv-value">${esc(detail.email || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Source</div><div class="kv-value">${esc(detail.source || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">App User ID</div><div class="kv-value">${esc(detail.appUserId || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Bound Submission</div><div class="kv-value">${esc(detail.boundSubmissionId || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Use Count</div><div class="kv-value">${esc(detail.useCount ?? "0")}</div></div>
+            <div class="kv-item"><div class="kv-label">Used At</div><div class="kv-value">${esc(formatDate(detail.usedAt))}</div></div>
+            <div class="kv-item"><div class="kv-label">Created</div><div class="kv-value">${esc(formatDate(detail.createdAt))}</div></div>
+            <div class="kv-item"><div class="kv-label">Updated</div><div class="kv-value">${esc(formatDate(detail.updatedAt))}</div></div>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <h3>Ghost Form</h3>
+          <div class="muted">This invitation code exists, but the tester has not started the feedback form yet. Once they enter the code and save progress, this ghost form will turn into a live submission.</div>
+        </div>
+
+        <div class="detail-card">
+          <h3>Raw Invite Data</h3>
+          <pre>${esc(JSON.stringify(detail.payload || detail, null, 2))}</pre>
+        </div>
+      `;
+    }
+
     function renderDetail(detail) {
+      if (detail.entryType === "ghost") {
+        renderGhostDetail(detail);
+        return;
+      }
       const completedTabs = Array.isArray(detail.completedTabs) ? detail.completedTabs.join(", ") : "—";
       const tools = detail.tools || {};
       const onboarding = detail.onboarding || {};
@@ -1015,7 +1062,7 @@
 
     async function loadList() {
       const response = await fetch("/api/admin/feedback");
-      if (!response.ok) throw new Error(`Failed to load submissions (${response.status})`);
+      if (!response.ok) throw new Error(`Failed to load participants (${response.status})`);
       const data = await response.json();
       state.list = data.items || [];
       renderStats();
@@ -1106,7 +1153,7 @@
 
     async function refreshAll(silent = false) {
       if (!silent) {
-        document.getElementById("submission-list").innerHTML = `<div class="empty-state">Loading submissions…</div>`;
+        document.getElementById("submission-list").innerHTML = `<div class="empty-state">Loading participants…</div>`;
         document.getElementById("invite-list").innerHTML = `<div class="empty-state">Loading invitation codes…</div>`;
         renderEmptyDetail("Loading details…");
       }
