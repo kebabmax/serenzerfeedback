@@ -11,6 +11,7 @@ Restart=always
 RestartSec=3
 Environment=SERENZER_HOST=127.0.0.1
 Environment=SERENZER_PORT=8000
+Environment=SERENZER_IMPORT_API_KEY=replace-with-shared-secret
 
 [Install]
 WantedBy=multi-user.target

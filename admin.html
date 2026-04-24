@@ -692,6 +692,8 @@
           <div class="invite-meta">
             <span>Uses: ${esc(item.useCount)}</span>
             <span>Bound: ${esc(item.boundSubmissionId || "—")}</span>
+            <span>Email: ${esc(item.email || "—")}</span>
+            <span>Source: ${esc(item.source || "—")}</span>
             <span>Used: ${esc(formatDate(item.usedAt))}</span>
           </div>
           ${item.isActive ? `<button type="button" data-disable-invite="${esc(item.code)}">Disable</button>` : ``}

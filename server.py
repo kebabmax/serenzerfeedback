@@ -15,6 +15,7 @@ DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "feedback.sqlite3"
 HOST = os.environ.get("SERENZER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("SERENZER_PORT", "8000"))
+IMPORT_API_KEY = os.environ.get("SERENZER_IMPORT_API_KEY", "").strip()
 
 
 def now_iso():
@@ -66,6 +67,12 @@ def get_db():
     existing_columns = {row["name"] for row in conn.execute("PRAGMA table_info(invitation_codes)").fetchall()}
     if "remember_token" not in existing_columns:
         conn.execute("ALTER TABLE invitation_codes ADD COLUMN remember_token TEXT")
+    if "email" not in existing_columns:
+        conn.execute("ALTER TABLE invitation_codes ADD COLUMN email TEXT")
+    if "app_user_id" not in existing_columns:
+        conn.execute("ALTER TABLE invitation_codes ADD COLUMN app_user_id TEXT")
+    if "source" not in existing_columns:
+        conn.execute("ALTER TABLE invitation_codes ADD COLUMN source TEXT")
     return conn
 
 
@@ -137,7 +144,7 @@ def restore_invitation_session(conn, remember_token, submission_id):
 def list_invitation_codes(conn):
     rows = conn.execute(
         """
-        SELECT code, created_at, updated_at, is_active, bound_submission_id, use_count, used_at
+        SELECT code, created_at, updated_at, is_active, bound_submission_id, use_count, used_at, email, app_user_id, source
         FROM invitation_codes
         ORDER BY created_at DESC, code ASC
         """
@@ -151,6 +158,9 @@ def list_invitation_codes(conn):
             "boundSubmissionId": row["bound_submission_id"],
             "useCount": row["use_count"],
             "usedAt": row["used_at"],
+            "email": row["email"],
+            "appUserId": row["app_user_id"],
+            "source": row["source"],
         }
         for row in rows
     ]
@@ -175,6 +185,38 @@ def upsert_invitation_codes(conn, codes):
             (code, timestamp, timestamp),
         )
     return normalized_codes
+
+
+def import_invitation_entries(conn, entries):
+    timestamp = now_iso()
+    imported = []
+    for entry in entries:
+        if isinstance(entry, str):
+            entry = {"code": entry}
+        if not isinstance(entry, dict):
+            continue
+        code = normalize_code(entry.get("code"))
+        if not code:
+            continue
+        email = str(entry.get("email") or "").strip() or None
+        app_user_id = str(entry.get("appUserId") or entry.get("app_user_id") or "").strip() or None
+        source = str(entry.get("source") or "serenzer-app").strip() or None
+        imported.append(code)
+        conn.execute(
+            """
+            INSERT INTO invitation_codes (
+                code, created_at, updated_at, is_active, email, app_user_id, source
+            ) VALUES (?, ?, ?, 1, ?, ?, ?)
+            ON CONFLICT(code) DO UPDATE SET
+                updated_at = excluded.updated_at,
+                is_active = 1,
+                email = COALESCE(excluded.email, invitation_codes.email),
+                app_user_id = COALESCE(excluded.app_user_id, invitation_codes.app_user_id),
+                source = COALESCE(excluded.source, invitation_codes.source)
+            """,
+            (code, timestamp, timestamp, email, app_user_id, source),
+        )
+    return imported
 
 
 def disable_invitation_code(conn, code):
@@ -230,6 +272,9 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/feedback":
             self._handle_feedback_upsert()
             return
+        if parsed.path == "/api/invitations/import":
+            self._handle_invitation_import()
+            return
         if parsed.path == "/api/invitations":
             self._handle_invitation_create()
             return
@@ -254,6 +299,21 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             return json.loads(raw.decode("utf-8")), None
         except (ValueError, json.JSONDecodeError):
             return None, {"error": "Invalid JSON body"}
+
+    def _read_bearer_token(self):
+        auth = self.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            return auth.removeprefix("Bearer ").strip()
+        return self.headers.get("X-API-Key", "").strip()
+
+    def _require_import_auth(self):
+        if not IMPORT_API_KEY:
+            self._send_json(500, {"error": "Import API key is not configured on the server"})
+            return False
+        if self._read_bearer_token() != IMPORT_API_KEY:
+            self._send_json(401, {"error": "Unauthorized"})
+            return False
+        return True
 
     def _handle_invitation_validate(self):
         payload, error = self._read_json_body()
@@ -297,6 +357,32 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         finally:
             conn.close()
         self._send_json(200, {"count": len(items), "items": items})
+
+    def _handle_invitation_import(self):
+        if not self._require_import_auth():
+            return
+
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+
+        entries = payload.get("codes")
+        if entries is None and payload.get("code"):
+            entries = [payload]
+        if not isinstance(entries, list):
+            self._send_json(400, {"error": "codes must be a list of code strings or objects"})
+            return
+
+        conn = get_db()
+        try:
+            imported = import_invitation_entries(conn, entries)
+            conn.commit()
+            items = list_invitation_codes(conn)
+        finally:
+            conn.close()
+
+        self._send_json(200, {"ok": True, "imported": imported, "items": items})
 
     def _handle_invitation_create(self):
         payload, error = self._read_json_body()
