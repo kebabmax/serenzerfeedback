@@ -1041,8 +1041,6 @@ const T = {
 // ── State ─────────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "serenzer_feedback_v2";
-const DEBUG_UNLOCK_CODE = "JULIENDORE";
-
 function makeSubmissionId() {
   if (window.crypto?.randomUUID) return window.crypto.randomUUID();
   return `sub_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
@@ -1064,7 +1062,6 @@ const state = {
   submissionId: makeSubmissionId(),
   mobileOpen: false,
   debugMenuOpen: false,
-  debugMenuEnabled: false,
   debugUnlockAllTabs: false,
   lang: "en",
   langSelected: false,
@@ -1237,7 +1234,6 @@ function resetAppState() {
   state.submissionId = makeSubmissionId();
   state.mobileOpen = false;
   state.debugMenuOpen = false;
-  state.debugMenuEnabled = false;
   state.lang = "en";
   state.langSelected = false;
   state.autosaveStatus = "saved";
@@ -1517,22 +1513,11 @@ function attachInvitationListeners() {
   if (!input || !status || !button) return;
 
   input.addEventListener("input", () => {
-    const normalized = String(input.value || "").trim().toUpperCase();
-    if (normalized === DEBUG_UNLOCK_CODE) {
-      state.debugMenuEnabled = true;
-      renderAll();
-    }
     status.textContent = t("inviteHint");
   });
 
   button.addEventListener("click", async () => {
     const code = String(input.value || "").trim().toUpperCase();
-    if (code === DEBUG_UNLOCK_CODE) {
-      state.debugMenuEnabled = true;
-      status.textContent = t("inviteHint");
-      renderAll();
-      return;
-    }
     if (!code) {
       status.textContent = t("inviteErrorRequired");
       return;
@@ -2370,7 +2355,6 @@ function renderAll() {
 
   document.getElementById("overlay").classList.toggle("hidden", !state.mobileOpen);
   document.getElementById("mobile-sidebar").classList.toggle("hidden", !state.mobileOpen);
-  document.getElementById("debug-menu").classList.toggle("hidden", !state.debugMenuEnabled);
   document.getElementById("debug-menu-panel").classList.toggle("hidden", !state.debugMenuOpen);
   document.getElementById("debug-menu-toggle").setAttribute("aria-expanded", state.debugMenuOpen ? "true" : "false");
 }
