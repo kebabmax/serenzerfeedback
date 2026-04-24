@@ -92,6 +92,8 @@
       <span class="debug-menu-icon">!</span>
     </button>
   </div>
+
+  <div class="participant-message-layer hidden" id="participant-message-layer"></div>
 </div>
 
 <script>
@@ -1063,6 +1065,7 @@ const state = {
   mobileOpen: false,
   debugMenuOpen: false,
   debugUnlockAllTabs: false,
+  participantMessage: null,
   lang: "en",
   langSelected: false,
   autosaveStatus: "saved",
@@ -1141,6 +1144,43 @@ async function clearInvitationSession() {
   } catch (_) {}
 }
 
+function normalizeClientCode(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
+async function refreshParticipantMessage() {
+  const invitationCode = normalizeClientCode(state.onboardingData.invitationNumber);
+  if (!state.invitationValidated || !invitationCode) {
+    state.participantMessage = null;
+    renderParticipantMessageOverlay();
+    return;
+  }
+  try {
+    const res = await fetch(`/api/messages/current?invitationCode=${encodeURIComponent(invitationCode)}`);
+    if (!res.ok) return;
+    const data = await res.json().catch(() => ({}));
+    state.participantMessage = data.item || null;
+    renderParticipantMessageOverlay();
+  } catch (_) {}
+}
+
+async function dismissParticipantMessage() {
+  if (!state.participantMessage?.id) return;
+  const messageId = state.participantMessage.id;
+  state.participantMessage = null;
+  renderParticipantMessageOverlay();
+  try {
+    await fetch("/api/messages/dismiss", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messageId,
+        submissionId: state.submissionId,
+      }),
+    });
+  } catch (_) {}
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function totalCompleted() { return Object.keys(state.completed).length; }
@@ -1208,6 +1248,29 @@ function updateAutosaveIndicators() {
   });
 }
 
+function renderParticipantMessageOverlay() {
+  const layer = document.getElementById("participant-message-layer");
+  if (!layer) return;
+  const msg = state.participantMessage;
+  if (!msg) {
+    layer.classList.add("hidden");
+    layer.innerHTML = "";
+    return;
+  }
+  layer.classList.remove("hidden");
+  layer.innerHTML = `
+    <div class="participant-message-backdrop"></div>
+    <div class="participant-message-card" role="dialog" aria-modal="true" aria-labelledby="participant-message-title">
+      <div class="participant-message-unicorn" aria-hidden="true">🦄</div>
+      <div class="participant-message-kicker">Message from Serenzer</div>
+      <h2 class="participant-message-title" id="participant-message-title">A little note for you</h2>
+      <p class="participant-message-body">${esc(msg.body)}</p>
+      <button class="submit-btn participant-message-btn" id="participant-message-dismiss-btn" type="button">Close unicorn message</button>
+    </div>
+  `;
+  document.getElementById("participant-message-dismiss-btn")?.addEventListener("click", dismissParticipantMessage);
+}
+
 function setAutosaveStatus(status) {
   state.autosaveStatus = status;
   updateAutosaveIndicators();
@@ -1237,6 +1300,7 @@ function resetAppState() {
   state.lang = "en";
   state.langSelected = false;
   state.autosaveStatus = "saved";
+  state.participantMessage = null;
 
   document.documentElement.lang = state.lang;
   renderAll();
@@ -1538,6 +1602,7 @@ function attachInvitationListeners() {
     state.activeTab = 1;
     setAutosaveStatus("saving");
     await persistNow();
+    await refreshParticipantMessage();
     renderAll();
   });
 }
@@ -2315,6 +2380,7 @@ async function restoreInvitationSession() {
       state.invitationValidated = true;
       state.onboardingData.invitationNumber = data.code || state.onboardingData.invitationNumber || "";
       await persistNow();
+      await refreshParticipantMessage();
       return true;
     } catch (_) {
       return false;
@@ -2357,6 +2423,7 @@ function renderAll() {
   document.getElementById("mobile-sidebar").classList.toggle("hidden", !state.mobileOpen);
   document.getElementById("debug-menu-panel").classList.toggle("hidden", !state.debugMenuOpen);
   document.getElementById("debug-menu-toggle").setAttribute("aria-expanded", state.debugMenuOpen ? "true" : "false");
+  renderParticipantMessageOverlay();
 }
 
 // ── Language splash ───────────────────────────────────────────────────────────
@@ -2522,8 +2589,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   window.addEventListener("resize", () => renderAll());
 
   renderAll();
+  refreshParticipantMessage();
   updateCountdown();
   setInterval(updateCountdown, 1000);
+  setInterval(refreshParticipantMessage, 5000);
 
   if (!state.langSelected) {
     document.getElementById("lang-splash").classList.remove("hidden");

@@ -498,6 +498,71 @@
       word-break: break-word;
     }
 
+    .message-composer {
+      display: grid;
+      gap: 12px;
+    }
+
+    .message-composer textarea,
+    .message-composer button {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 253, 248, 0.95);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 12px 14px;
+    }
+
+    .message-composer textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .message-composer button {
+      width: fit-content;
+      cursor: pointer;
+      font-weight: 700;
+      background: rgba(144, 176, 144, 0.14);
+      border-color: rgba(107, 143, 113, 0.3);
+    }
+
+    .message-status {
+      min-height: 20px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .message-history {
+      display: grid;
+      gap: 10px;
+    }
+
+    .message-history-item {
+      border: 1px solid rgba(217, 210, 196, 0.8);
+      border-radius: 14px;
+      background: #f8f4ec;
+      padding: 12px 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .message-history-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .message-history-body {
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     pre {
       margin: 0;
       white-space: pre-wrap;
@@ -786,6 +851,49 @@
       return html.length ? `<div class="qa-list">${html.join("")}</div>` : `<div class="muted">No answers saved yet.</div>`;
     }
 
+    function messageHistoryHTML(messages) {
+      if (!messages?.length) {
+        return `<div class="muted">No participant messages yet.</div>`;
+      }
+      return `
+        <div class="message-history">
+          ${messages.map(item => `
+            <div class="message-history-item">
+              <div class="message-history-top">
+                <strong>${item.isActive ? "Live message" : "Dismissed message"}</strong>
+                <span class="badge ${item.isActive ? "complete" : "ghost"}">${item.isActive ? "Visible" : "Closed"}</span>
+              </div>
+              <div class="message-history-body">${esc(item.body)}</div>
+              <div class="submission-meta">
+                <span>Sent ${esc(formatDate(item.createdAt))}</span>
+                ${item.dismissedAt ? `<span>Dismissed ${esc(formatDate(item.dismissedAt))}</span>` : ``}
+                ${item.dismissedBySubmissionId ? `<span>By ${esc(item.dismissedBySubmissionId)}</span>` : ``}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function messageComposerHTML(invitationCode, messages) {
+      if (!invitationCode) return "";
+      return `
+        <div class="detail-card">
+          <h3>Participant message</h3>
+          <div class="message-composer">
+            <textarea id="detail-message-input" placeholder="Write a message that will pop up in the middle of their form."></textarea>
+            <button id="detail-message-send" type="button" data-invitation-code="${esc(invitationCode)}">Send unicorn message</button>
+            <div class="message-status" id="detail-message-status"></div>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <h3>Message history</h3>
+          ${messageHistoryHTML(messages)}
+        </div>
+      `;
+    }
+
     function renderStats() {
       const total = state.list.length;
       const complete = state.list.filter(item => item.isComplete).length;
@@ -1005,11 +1113,14 @@
           <div class="muted">This invitation code exists, but the tester has not started the feedback form yet. Once they enter the code and save progress, this ghost form will turn into a live submission.</div>
         </div>
 
+        ${messageComposerHTML(detail.invitationNumber, detail.messages)}
+
         <div class="detail-card">
           <h3>Raw Invite Data</h3>
           <pre>${esc(JSON.stringify(detail.payload || detail, null, 2))}</pre>
         </div>
       `;
+      attachDetailActions(detail);
     }
 
     function renderDetail(detail) {
@@ -1054,11 +1165,14 @@
           }
         </div>
 
+        ${messageComposerHTML(detail.invitationNumber, detail.messages)}
+
         <div class="detail-card">
           <h3>Full Payload</h3>
           <pre>${esc(JSON.stringify(detail.payload || detail, null, 2))}</pre>
         </div>
       `;
+      attachDetailActions(detail);
     }
 
     async function loadList() {
@@ -1150,6 +1264,48 @@
       const detail = await response.json();
       state.detailCache[submissionId] = detail;
       renderDetail(detail);
+    }
+
+    async function sendParticipantMessage(invitationCode) {
+      const input = document.getElementById("detail-message-input");
+      const status = document.getElementById("detail-message-status");
+      const button = document.getElementById("detail-message-send");
+      if (!input || !status || !button) return;
+
+      const message = input.value.trim();
+      if (!message) {
+        status.textContent = "Write a message first.";
+        return;
+      }
+
+      button.disabled = true;
+      status.textContent = "Sending unicorn message...";
+      try {
+        const response = await fetch("/api/admin/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invitationCode, message }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          status.textContent = data.error || "Could not send the message.";
+          return;
+        }
+        if (state.activeId) {
+          delete state.detailCache[state.activeId];
+          await loadDetail(state.activeId, true);
+        }
+      } catch (_) {
+        status.textContent = "Could not send the message.";
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function attachDetailActions(detail) {
+      const button = document.getElementById("detail-message-send");
+      if (!button || !detail?.invitationNumber) return;
+      button.addEventListener("click", () => sendParticipantMessage(detail.invitationNumber));
     }
 
     async function refreshAll(silent = false) {
