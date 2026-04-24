@@ -55,6 +55,20 @@
     <div class="sidebar-inner" id="mobile-sidebar-inner"></div>
   </aside>
 
+  <div class="bug-report-modal hidden" id="bug-report-modal">
+    <div class="bug-report-backdrop" id="bug-report-backdrop"></div>
+    <div class="bug-report-card">
+      <h2 class="section-title bug-report-title" id="bug-report-title"></h2>
+      <p class="bug-report-body" id="bug-report-body"></p>
+      <textarea class="textarea-input bug-report-textarea" id="bug-report-input" rows="5"></textarea>
+      <div class="bug-report-actions">
+        <button class="ghost-btn" id="bug-report-cancel-btn" type="button"></button>
+        <button class="submit-btn" id="bug-report-submit-btn" type="button"></button>
+      </div>
+      <div class="field-hint" id="bug-report-status"></div>
+    </div>
+  </div>
+
   <div class="debug-menu" id="debug-menu">
     <div class="debug-menu-panel hidden" id="debug-menu-panel">
       <a class="debug-admin-btn" href="admin.html" target="_blank" rel="noreferrer">
@@ -153,6 +167,13 @@ const T = {
     autosaveText:   "Tes réponses sont enregistrées localement. Tu peux fermer et revenir !",
     sessionEndsOnLabel: "Fin de session :",
     emailUs: "Écrivez-nous",
+    reportBug: "Signaler un bug",
+    reportBugTitle: "Signaler un bug",
+    reportBugBody: "Décris rapidement ce qui ne fonctionne pas. Nous enregistrerons automatiquement qui tu es, quand cela s'est produit et sur quelle page tu étais.",
+    reportBugPlaceholder: "Que s'est-il passé ? Qu'attendais-tu ?",
+    reportBugSubmit: "Envoyer le bug",
+    reportBugCancel: "Annuler",
+    reportBugThanks: "Bug signalé. Merci.",
     startBtn:        "J'ai compris, commencer !",
     langSelectTitle:  "Choisissez votre langue",
     langSelectHint:   "Vous pouvez toujours changer la langue en haut à droite.",
@@ -307,6 +328,13 @@ const T = {
     autosaveText:  "Your answers are saved locally. You can close and come back!",
     sessionEndsOnLabel: "Session ends on:",
     emailUs: "Email us",
+    reportBug: "Report a bug",
+    reportBugTitle: "Report a bug",
+    reportBugBody: "Quickly describe what is not working. We will automatically record who you are, when it happened, and where you were in the form.",
+    reportBugPlaceholder: "What happened? What did you expect instead?",
+    reportBugSubmit: "Send bug report",
+    reportBugCancel: "Cancel",
+    reportBugThanks: "Bug report sent. Thank you.",
     startBtn:        "Got it, let's start!",
     langSelectTitle:  "Choose your language",
     langSelectHint:   "You can always change the language in the top right.",
@@ -461,6 +489,13 @@ const T = {
     autosaveText:  "Le tue risposte vengono salvate localmente. Puoi chiudere e tornare!",
     sessionEndsOnLabel: "La sessione termina il:",
     emailUs: "Scrivici",
+    reportBug: "Segnala un bug",
+    reportBugTitle: "Segnala un bug",
+    reportBugBody: "Descrivi rapidamente cosa non funziona. Registreremo automaticamente chi sei, quando è successo e in quale pagina ti trovavi.",
+    reportBugPlaceholder: "Cosa è successo? Cosa ti aspettavi?",
+    reportBugSubmit: "Invia bug",
+    reportBugCancel: "Annulla",
+    reportBugThanks: "Bug inviato. Grazie.",
     startBtn:        "Ho capito, iniziamo!",
     langSelectTitle:  "Scegli la tua lingua",
     langSelectHint:   "Puoi sempre cambiare la lingua in alto a destra.",
@@ -615,6 +650,13 @@ const T = {
     autosaveText:  "Je antwoorden worden lokaal opgeslagen. Je kunt sluiten en terugkomen!",
     sessionEndsOnLabel: "Sessie eindigt op:",
     emailUs: "Mail ons",
+    reportBug: "Meld een bug",
+    reportBugTitle: "Meld een bug",
+    reportBugBody: "Beschrijf kort wat niet werkt. We slaan automatisch op wie je bent, wanneer het gebeurde en waar je in het formulier was.",
+    reportBugPlaceholder: "Wat gebeurde er? Wat verwachtte je?",
+    reportBugSubmit: "Bug versturen",
+    reportBugCancel: "Annuleren",
+    reportBugThanks: "Bug gemeld. Dank je.",
     startBtn:        "Begrepen, laten we beginnen!",
     langSelectTitle:  "Kies je taal",
     langSelectHint:   "Je kunt de taal altijd rechtsboven wijzigen.",
@@ -769,6 +811,13 @@ const T = {
     autosaveText:  "Deine Antworten werden lokal gespeichert. Du kannst schliessen und zurückkommen!",
     sessionEndsOnLabel: "Sitzung endet am:",
     emailUs: "E-Mail an uns",
+    reportBug: "Bug melden",
+    reportBugTitle: "Bug melden",
+    reportBugBody: "Beschreibe kurz, was nicht funktioniert. Wir erfassen automatisch, wer du bist, wann es passiert ist und wo du dich im Formular befunden hast.",
+    reportBugPlaceholder: "Was ist passiert? Was hast du erwartet?",
+    reportBugSubmit: "Bug senden",
+    reportBugCancel: "Abbrechen",
+    reportBugThanks: "Bug gemeldet. Danke.",
     startBtn:        "Verstanden, los geht's!",
     langSelectTitle:  "Wähle deine Sprache",
     langSelectHint:   "Du kannst die Sprache jederzeit oben rechts ändern.",
@@ -923,6 +972,13 @@ const T = {
     autosaveText:  "Tus respuestas se guardan localmente. Puedes cerrar y volver!",
     sessionEndsOnLabel: "La sesión termina el:",
     emailUs: "Escríbenos",
+    reportBug: "Reportar un bug",
+    reportBugTitle: "Reportar un bug",
+    reportBugBody: "Describe rápidamente lo que no funciona. Guardaremos automáticamente quién eres, cuándo ocurrió y en qué parte del formulario estabas.",
+    reportBugPlaceholder: "¿Qué pasó? ¿Qué esperabas?",
+    reportBugSubmit: "Enviar bug",
+    reportBugCancel: "Cancelar",
+    reportBugThanks: "Bug enviado. Gracias.",
     startBtn:        "Entendido, empezamos!",
     langSelectTitle:  "Elige tu idioma",
     langSelectHint:   "Siempre puedes cambiar el idioma en la parte superior derecha.",
@@ -1064,6 +1120,7 @@ const state = {
   mobileOpen: false,
   debugMenuOpen: false,
   debugUnlockAllTabs: false,
+  bugModalOpen: false,
   lang: "en",
   langSelected: false,
   autosaveStatus: "saved",
@@ -1140,6 +1197,29 @@ async function clearInvitationSession() {
   try {
     await fetch("/api/invitations/session/clear", { method: "POST" });
   } catch (_) {}
+}
+
+async function submitBugReport(message) {
+  const activeTab = getNavTabs().find(tab => tab.id === state.activeTab);
+  try {
+    const res = await fetch("/api/bug-reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        submissionId: state.submissionId,
+        lang: state.lang,
+        onboarding: state.onboardingData,
+        activeTab: state.activeTab,
+        activeTabLabel: activeTab?.label || "",
+        pageUrl: window.location.href,
+        userAgent: navigator.userAgent,
+        message,
+      }),
+    });
+    return { ok: res.ok, data: await res.json().catch(() => ({})) };
+  } catch (_) {
+    return { ok: false, data: {} };
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1235,6 +1315,7 @@ function resetAppState() {
   state.submissionId = makeSubmissionId();
   state.mobileOpen = false;
   state.debugMenuOpen = false;
+  state.bugModalOpen = false;
   state.lang = "en";
   state.langSelected = false;
   state.autosaveStatus = "saved";
@@ -1266,6 +1347,9 @@ function renderSidebarContent(containerId) {
       </nav>
     ` : `<div class="sidebar-locked-note">${t("inviteLocked")}</div>`}
     <div class="sidebar-footer">
+      <button class="sidebar-bug-btn" type="button" data-report-bug>
+        <span>${t("reportBug")}</span>
+      </button>
       <a class="sidebar-email-link" href="mailto:noejore@serenzer.com">
         ${emailIconSVG("sidebar-email-icon")}
         <span>${t("emailUs")}</span>
@@ -1283,6 +1367,9 @@ function renderSidebarContent(containerId) {
 
   el.querySelectorAll(".nav-item").forEach(btn => {
     btn.addEventListener("click", () => handleTabClick(parseInt(btn.dataset.tabId)));
+  });
+  el.querySelectorAll("[data-report-bug]").forEach(btn => {
+    btn.addEventListener("click", openBugReportModal);
   });
 }
 
@@ -2358,6 +2445,24 @@ function renderAll() {
   document.getElementById("mobile-sidebar").classList.toggle("hidden", !state.mobileOpen);
   document.getElementById("debug-menu-panel").classList.toggle("hidden", !state.debugMenuOpen);
   document.getElementById("debug-menu-toggle").setAttribute("aria-expanded", state.debugMenuOpen ? "true" : "false");
+  document.getElementById("bug-report-modal").classList.toggle("hidden", !state.bugModalOpen);
+  document.getElementById("bug-report-title").textContent = t("reportBugTitle");
+  document.getElementById("bug-report-body").textContent = t("reportBugBody");
+  document.getElementById("bug-report-input").placeholder = t("reportBugPlaceholder");
+  document.getElementById("bug-report-cancel-btn").textContent = t("reportBugCancel");
+  document.getElementById("bug-report-submit-btn").textContent = t("reportBugSubmit");
+}
+
+function openBugReportModal() {
+  state.bugModalOpen = true;
+  renderAll();
+  document.getElementById("bug-report-status").textContent = "";
+  document.getElementById("bug-report-input").focus();
+}
+
+function closeBugReportModal() {
+  state.bugModalOpen = false;
+  renderAll();
 }
 
 // ── Language splash ───────────────────────────────────────────────────────────
@@ -2480,6 +2585,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("overlay").addEventListener("click", () => {
     state.mobileOpen = false;
     renderAll();
+  });
+
+  document.getElementById("bug-report-backdrop").addEventListener("click", closeBugReportModal);
+  document.getElementById("bug-report-cancel-btn").addEventListener("click", closeBugReportModal);
+  document.getElementById("bug-report-submit-btn").addEventListener("click", async () => {
+    const input = document.getElementById("bug-report-input");
+    const status = document.getElementById("bug-report-status");
+    const button = document.getElementById("bug-report-submit-btn");
+    const message = input.value.trim();
+    if (!message) {
+      status.textContent = t("reportBugPlaceholder");
+      return;
+    }
+    button.disabled = true;
+    status.textContent = "Sending...";
+    const result = await submitBugReport(message);
+    button.disabled = false;
+    if (!result.ok) {
+      status.textContent = "Could not send bug report.";
+      return;
+    }
+    status.textContent = t("reportBugThanks");
+    input.value = "";
+    setTimeout(() => {
+      closeBugReportModal();
+      status.textContent = "";
+    }, 700);
   });
 
   document.getElementById("lang-select").addEventListener("change", e => {

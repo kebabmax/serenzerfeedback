@@ -163,6 +163,33 @@
       border-color: var(--sage-dark);
     }
 
+    .view-switcher {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .view-tab {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 253, 248, 0.95);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding: 12px 16px;
+      cursor: pointer;
+    }
+
+    .view-tab.active {
+      background: rgba(144, 176, 144, 0.18);
+      border-color: rgba(107, 143, 113, 0.4);
+      color: var(--sage-dark);
+    }
+
     .layout {
       display: grid;
       grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
@@ -427,6 +454,40 @@
       font-weight: 700;
     }
 
+    .bug-list {
+      max-height: calc(100vh - 260px);
+      overflow: auto;
+    }
+
+    .bug-row {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid rgba(217, 210, 196, 0.7);
+      background: transparent;
+      text-align: left;
+      padding: 16px 20px;
+      cursor: pointer;
+      display: grid;
+      gap: 8px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .bug-row:hover,
+    .bug-row.active {
+      background: rgba(201, 74, 67, 0.08);
+    }
+
+    .bug-message-preview {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
     .kv-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -538,7 +599,12 @@
       </div>
     </section>
 
-    <section class="toolbar">
+    <section class="view-switcher">
+      <button class="view-tab active" id="participants-tab" type="button">Participants</button>
+      <button class="view-tab" id="bug-reports-tab" type="button">Bug Reports</button>
+    </section>
+
+    <section class="toolbar" id="participants-toolbar">
       <input id="search-input" type="search" placeholder="Search by email, invitation number, or ID">
       <select id="status-filter">
         <option value="all">All statuses</option>
@@ -551,7 +617,7 @@
       <button id="refresh-btn" type="button">Refresh</button>
     </section>
 
-    <section class="layout">
+    <section class="layout" id="participants-view">
       <div class="left-stack">
         <div class="panel">
           <div class="panel-header">
@@ -587,6 +653,24 @@
         </div>
         <div class="detail-scroll" id="detail-pane">
           <div class="empty-state">Select a submission on the left to inspect the saved feedback.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout hidden" id="bug-reports-view">
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Bug Reports</h2>
+        </div>
+        <div class="bug-list" id="bug-list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Bug Details</h2>
+        </div>
+        <div class="detail-scroll" id="bug-detail-pane">
+          <div class="empty-state">Select a bug report on the left to inspect who reported it, when, and where.</div>
         </div>
       </div>
     </section>
@@ -640,11 +724,14 @@
 
   <script>
     const state = {
+      activeView: "participants",
       list: [],
       filtered: [],
       activeId: null,
       detailCache: {},
       invites: [],
+      bugReports: [],
+      activeBugId: null,
     };
 
     const ONBOARDING_FIELDS = [
@@ -802,6 +889,77 @@
       renderInviteOverview(total, started, complete, ghosts);
       renderLanguageBreakdown(total);
       renderProgressBreakdown(total);
+    }
+
+    function renderBugList() {
+      const list = document.getElementById("bug-list");
+      if (!state.bugReports.length) {
+        list.innerHTML = `<div class="empty-state">No bug reports yet.</div>`;
+        return;
+      }
+      list.innerHTML = state.bugReports.map(item => `
+        <button class="bug-row ${item.id === state.activeBugId ? "active" : ""}" data-bug-id="${esc(item.id)}" type="button">
+          <div class="submission-topline">
+            <div class="submission-email">${esc(item.email || item.invitationNumber || `Bug #${item.id}`)}</div>
+            <span class="badge incomplete">${esc(item.activeTabLabel || "Unknown area")}</span>
+          </div>
+          <div class="submission-meta">
+            <span>${esc((item.lang || "—").toUpperCase())}</span>
+            <span>${esc(item.invitationNumber || "No invitation")}</span>
+            <span>${esc(formatDate(item.createdAt))}</span>
+          </div>
+          <div class="bug-message-preview">${esc(item.message || "")}</div>
+        </button>
+      `).join("");
+
+      list.querySelectorAll("[data-bug-id]").forEach(button => {
+        button.addEventListener("click", () => {
+          state.activeBugId = Number(button.dataset.bugId);
+          renderBugList();
+          renderBugDetail(state.bugReports.find(item => item.id === state.activeBugId));
+        });
+      });
+    }
+
+    function renderBugDetail(item) {
+      const pane = document.getElementById("bug-detail-pane");
+      if (!item) {
+        pane.innerHTML = `<div class="empty-state">Select a bug report on the left to inspect who reported it, when, and where.</div>`;
+        return;
+      }
+      pane.innerHTML = `
+        <div class="detail-card">
+          <h3>Overview</h3>
+          <div class="kv-grid">
+            <div class="kv-item"><div class="kv-label">Reported at</div><div class="kv-value">${esc(formatDate(item.createdAt))}</div></div>
+            <div class="kv-item"><div class="kv-label">Invitation #</div><div class="kv-value">${esc(item.invitationNumber || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Submission ID</div><div class="kv-value">${esc(item.submissionId || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Language</div><div class="kv-value">${esc((item.lang || "—").toUpperCase())}</div></div>
+            <div class="kv-item"><div class="kv-label">Reporter</div><div class="kv-value">${esc([item.firstName, item.lastName].filter(Boolean).join(" ") || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Email</div><div class="kv-value">${esc(item.email || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Where</div><div class="kv-value">${esc(item.activeTabLabel || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Tab ID</div><div class="kv-value">${esc(item.activeTab || "—")}</div></div>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <h3>Bug report</h3>
+          <div class="qa-list">
+            <div class="qa-item">
+              <div class="qa-question">Message</div>
+              <div class="qa-answer">${esc(item.message || "—")}</div>
+            </div>
+            <div class="qa-item">
+              <div class="qa-question">Page URL</div>
+              <div class="qa-answer">${esc(item.pageUrl || "—")}</div>
+            </div>
+            <div class="qa-item">
+              <div class="qa-question">User Agent</div>
+              <div class="qa-answer">${esc(item.userAgent || "—")}</div>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function statsRowHTML(label, value) {
@@ -1079,6 +1237,18 @@
       renderInvites();
     }
 
+    async function loadBugReports() {
+      const response = await fetch("/api/admin/bug-reports", { cache: "no-store" });
+      if (!response.ok) throw new Error(`Failed to load bug reports (${response.status})`);
+      const data = await response.json();
+      state.bugReports = data.items || [];
+      if (!state.bugReports.some(item => item.id === state.activeBugId)) {
+        state.activeBugId = state.bugReports[0]?.id || null;
+      }
+      renderBugList();
+      renderBugDetail(state.bugReports.find(item => item.id === state.activeBugId));
+    }
+
     async function createInvites() {
       const input = document.getElementById("invite-input");
       const status = document.getElementById("invite-status");
@@ -1157,17 +1327,30 @@
         document.getElementById("submission-list").innerHTML = `<div class="empty-state">Loading participants…</div>`;
         document.getElementById("invite-list").innerHTML = `<div class="empty-state">Loading invitation codes…</div>`;
         renderEmptyDetail("Loading details…");
+        document.getElementById("bug-list").innerHTML = `<div class="empty-state">Loading bug reports…</div>`;
+        renderBugDetail(null);
       }
       try {
-        await Promise.all([loadList(), loadInvites()]);
+        await Promise.all([loadList(), loadInvites(), loadBugReports()]);
         if (state.activeId) {
           await loadDetail(state.activeId, true);
         }
       } catch (error) {
         document.getElementById("submission-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
         document.getElementById("invite-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
+        document.getElementById("bug-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
         renderEmptyDetail("The admin page could not reach the feedback API.");
+        renderBugDetail(null);
       }
+    }
+
+    function setActiveView(view) {
+      state.activeView = view;
+      document.getElementById("participants-tab").classList.toggle("active", view === "participants");
+      document.getElementById("bug-reports-tab").classList.toggle("active", view === "bugs");
+      document.getElementById("participants-toolbar").classList.toggle("hidden", view !== "participants");
+      document.getElementById("participants-view").classList.toggle("hidden", view !== "participants");
+      document.getElementById("bug-reports-view").classList.toggle("hidden", view !== "bugs");
     }
 
     function toggleInviteCreatePanel() {
@@ -1189,7 +1372,10 @@
     document.getElementById("refresh-btn").addEventListener("click", () => refreshAll(false));
     document.getElementById("invite-create-btn").addEventListener("click", createInvites);
     document.getElementById("invite-toggle-btn").addEventListener("click", toggleInviteCreatePanel);
+    document.getElementById("participants-tab").addEventListener("click", () => setActiveView("participants"));
+    document.getElementById("bug-reports-tab").addEventListener("click", () => setActiveView("bugs"));
 
+    setActiveView("participants");
     refreshAll();
     setInterval(() => refreshAll(true), 2000);
   </script>

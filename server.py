@@ -88,6 +88,25 @@ def get_db():
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS bug_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            submission_id TEXT,
+            invitation_number TEXT,
+            email TEXT,
+            first_name TEXT,
+            last_name TEXT,
+            lang TEXT,
+            active_tab INTEGER,
+            active_tab_label TEXT,
+            page_url TEXT,
+            user_agent TEXT,
+            message TEXT NOT NULL
+        )
+        """
+    )
     existing_columns = {row["name"] for row in conn.execute("PRAGMA table_info(invitation_codes)").fetchall()}
     if "remember_token" not in existing_columns:
         conn.execute("ALTER TABLE invitation_codes ADD COLUMN remember_token TEXT")
@@ -388,6 +407,77 @@ def disable_invitation_code(conn, code):
     return cursor.rowcount > 0
 
 
+def list_bug_reports(conn):
+    rows = conn.execute(
+        """
+        SELECT id, created_at, submission_id, invitation_number, email, first_name, last_name,
+               lang, active_tab, active_tab_label, page_url, user_agent, message
+        FROM bug_reports
+        ORDER BY created_at DESC, id DESC
+        """
+    ).fetchall()
+    return [
+        {
+            "id": row["id"],
+            "createdAt": row["created_at"],
+            "submissionId": row["submission_id"],
+            "invitationNumber": row["invitation_number"],
+            "email": row["email"],
+            "firstName": row["first_name"],
+            "lastName": row["last_name"],
+            "lang": row["lang"],
+            "activeTab": row["active_tab"],
+            "activeTabLabel": row["active_tab_label"],
+            "pageUrl": row["page_url"],
+            "userAgent": row["user_agent"],
+            "message": row["message"],
+        }
+        for row in rows
+    ]
+
+
+def create_bug_report(conn, payload):
+    message = str(payload.get("message") or "").strip()
+    if not message:
+        return False, "Bug description is required"
+
+    onboarding = payload.get("onboarding") or {}
+    timestamp = now_iso()
+    conn.execute(
+        """
+        INSERT INTO bug_reports (
+            created_at,
+            submission_id,
+            invitation_number,
+            email,
+            first_name,
+            last_name,
+            lang,
+            active_tab,
+            active_tab_label,
+            page_url,
+            user_agent,
+            message
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            timestamp,
+            str(payload.get("submissionId") or "").strip() or None,
+            normalize_code(onboarding.get("invitationNumber")) or None,
+            str(onboarding.get("email") or "").strip() or None,
+            str(onboarding.get("firstName") or "").strip() or None,
+            str(onboarding.get("lastName") or "").strip() or None,
+            str(payload.get("lang") or "").strip() or None,
+            int(payload.get("activeTab")) if str(payload.get("activeTab") or "").isdigit() else None,
+            str(payload.get("activeTabLabel") or "").strip() or None,
+            str(payload.get("pageUrl") or "").strip() or None,
+            str(payload.get("userAgent") or "").strip() or None,
+            message,
+        ),
+    )
+    return True, timestamp
+
+
 class FeedbackHandler(BaseHTTPRequestHandler):
     server_version = "SerenzerFeedback/1.0"
 
@@ -405,6 +495,9 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/api/health":
             self._send_json(200, {"ok": True})
+            return
+        if parsed.path == "/api/admin/bug-reports":
+            self._handle_bug_report_list()
             return
         if parsed.path == "/api/admin/invitations":
             self._handle_invitation_list()
@@ -435,6 +528,9 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/api/feedback":
             self._handle_feedback_upsert()
+            return
+        if parsed.path == "/api/bug-reports":
+            self._handle_bug_report_create()
             return
         if parsed.path == "/api/admin/invitations":
             self._handle_invitation_create()
@@ -736,6 +832,33 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         finally:
             conn.close()
         self._send_json(200, {"count": len(items), "items": items})
+
+    def _handle_bug_report_list(self):
+        conn = get_db()
+        try:
+            items = list_bug_reports(conn)
+        finally:
+            conn.close()
+        self._send_json(200, {"count": len(items), "items": items})
+
+    def _handle_bug_report_create(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+
+        conn = get_db()
+        try:
+            ok, result = create_bug_report(conn, payload)
+            if not ok:
+                conn.rollback()
+                self._send_json(400, {"error": result})
+                return
+            conn.commit()
+        finally:
+            conn.close()
+
+        self._send_json(200, {"ok": True, "createdAt": result})
 
     def _handle_feedback_detail(self, submission_id):
         if not submission_id:
