@@ -252,14 +252,24 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/health":
             self._send_json(200, {"ok": True})
             return
+        if parsed.path == "/api/admin/invitations":
+            self._handle_invitation_list()
+            return
         if parsed.path == "/api/invitations":
             self._handle_invitation_list()
             return
         if parsed.path == "/api/invitations/session":
             self._send_json(405, {"error": "Use POST"})
             return
+        if parsed.path == "/api/admin/feedback":
+            self._handle_feedback_list()
+            return
         if parsed.path == "/api/feedback":
             self._handle_feedback_list()
+            return
+        if parsed.path.startswith("/api/admin/feedback/"):
+            submission_id = parsed.path.removeprefix("/api/admin/feedback/")
+            self._handle_feedback_detail(submission_id)
             return
         if parsed.path.startswith("/api/feedback/"):
             submission_id = parsed.path.removeprefix("/api/feedback/")
@@ -271,6 +281,12 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/api/feedback":
             self._handle_feedback_upsert()
+            return
+        if parsed.path == "/api/admin/invitations":
+            self._handle_invitation_create()
+            return
+        if parsed.path == "/api/admin/invitations/disable":
+            self._handle_invitation_disable()
             return
         if parsed.path == "/api/invitations/import":
             self._handle_invitation_import()

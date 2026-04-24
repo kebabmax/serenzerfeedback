@@ -826,7 +826,7 @@
     }
 
     async function loadList() {
-      const response = await fetch("/api/feedback");
+      const response = await fetch("/api/admin/feedback");
       if (!response.ok) throw new Error(`Failed to load submissions (${response.status})`);
       const data = await response.json();
       state.list = data.items || [];
@@ -836,7 +836,7 @@
     }
 
     async function loadInvites() {
-      const response = await fetch("/api/invitations");
+      const response = await fetch("/api/admin/invitations");
       if (!response.ok) throw new Error(`Failed to load invitation codes (${response.status})`);
       const data = await response.json();
       state.invites = data.items || [];
@@ -856,7 +856,7 @@
       button.disabled = true;
       status.textContent = "Creating invitation codes...";
       try {
-        const response = await fetch("/api/invitations", {
+        const response = await fetch("/api/admin/invitations", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ codes: raw }),
@@ -881,7 +881,7 @@
       const status = document.getElementById("invite-status");
       status.textContent = `Disabling ${code}...`;
       try {
-        const response = await fetch("/api/invitations/disable", {
+        const response = await fetch("/api/admin/invitations/disable", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code }),
@@ -906,7 +906,7 @@
         return;
       }
       if (!forceRefresh) renderEmptyDetail("Loading submission…");
-      const response = await fetch(`/api/feedback/${encodeURIComponent(submissionId)}`);
+      const response = await fetch(`/api/admin/feedback/${encodeURIComponent(submissionId)}`);
       if (!response.ok) {
         renderEmptyDetail(`Could not load submission ${submissionId}.`);
         return;
