@@ -2,11 +2,16 @@
 import json
 import os
 import secrets
+import shutil
 import sqlite3
+import subprocess
+import sys
 from datetime import datetime, timezone
+from email.message import EmailMessage
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import smtplib
 from urllib.parse import urlparse
 
 
@@ -16,6 +21,14 @@ DB_PATH = DATA_DIR / "feedback.sqlite3"
 HOST = os.environ.get("SERENZER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("SERENZER_PORT", "8000"))
 IMPORT_API_KEY = os.environ.get("SERENZER_IMPORT_API_KEY", "").strip()
+NOTIFY_EMAIL_TO = os.environ.get("SERENZER_NOTIFY_EMAIL_TO", "").strip()
+NOTIFY_EMAIL_FROM = os.environ.get("SERENZER_NOTIFY_EMAIL_FROM", "").strip()
+SENDMAIL_PATH = os.environ.get("SERENZER_SENDMAIL_PATH", "").strip()
+SMTP_HOST = os.environ.get("SERENZER_SMTP_HOST", "").strip()
+SMTP_PORT = int(os.environ.get("SERENZER_SMTP_PORT", "587"))
+SMTP_USERNAME = os.environ.get("SERENZER_SMTP_USERNAME", "").strip()
+SMTP_PASSWORD = os.environ.get("SERENZER_SMTP_PASSWORD", "").strip()
+SMTP_USE_TLS = os.environ.get("SERENZER_SMTP_USE_TLS", "1").strip() != "0"
 
 
 def now_iso():
@@ -28,6 +41,82 @@ def normalize_code(value):
 
 def make_remember_token():
     return secrets.token_urlsafe(32)
+
+
+def send_notification_email(subject, body):
+    if not NOTIFY_EMAIL_TO or not NOTIFY_EMAIL_FROM:
+        return False, "Notification email is not configured"
+
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = NOTIFY_EMAIL_FROM
+    message["To"] = NOTIFY_EMAIL_TO
+    message.set_content(body)
+
+    sendmail_path = SENDMAIL_PATH or shutil.which("sendmail") or "/usr/sbin/sendmail"
+    if sendmail_path and Path(sendmail_path).exists():
+        subprocess.run(
+            [sendmail_path, "-t", "-i"],
+            input=message.as_bytes(),
+            check=True,
+        )
+        return True, "sent via sendmail"
+
+    if SMTP_HOST:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as smtp:
+            if SMTP_USE_TLS:
+                smtp.starttls()
+            if SMTP_USERNAME:
+                smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+            smtp.send_message(message)
+        return True, "sent via smtp"
+
+    return False, "No sendmail binary or SMTP settings available"
+
+
+def safe_notify(subject, body):
+    try:
+        return send_notification_email(subject, body)
+    except Exception as exc:  # pragma: no cover - best effort notifications
+        print(f"[notify] {exc}", file=sys.stderr)
+        return False, str(exc)
+
+
+def build_code_summary(codes):
+    normalized_codes = [normalize_code(code) for code in codes if normalize_code(code)]
+    preview = normalized_codes[:20]
+    lines = [f"- {code}" for code in preview]
+    if len(normalized_codes) > len(preview):
+        lines.append(f"- ... and {len(normalized_codes) - len(preview)} more")
+    return "\n".join(lines) if lines else "- None"
+
+
+def notify_codes_created(codes, source_label):
+    normalized_codes = [normalize_code(code) for code in codes if normalize_code(code)]
+    if not normalized_codes:
+        return
+    subject = f"[Serenzer Feedback] {len(normalized_codes)} invitation code(s) added"
+    body = (
+        f"Source: {source_label}\n"
+        f"When: {now_iso()}\n"
+        f"Count: {len(normalized_codes)}\n\n"
+        f"Codes:\n{build_code_summary(normalized_codes)}\n"
+    )
+    safe_notify(subject, body)
+
+
+def notify_code_activated(code, submission_id, email=None, app_user_id=None, source=None):
+    normalized = normalize_code(code)
+    subject = f"[Serenzer Feedback] Invitation code activated: {normalized}"
+    body = (
+        f"Invitation code: {normalized}\n"
+        f"When: {now_iso()}\n"
+        f"Submission ID: {submission_id or '—'}\n"
+        f"Email: {email or '—'}\n"
+        f"App user ID: {app_user_id or '—'}\n"
+        f"Source: {source or '—'}\n"
+    )
+    safe_notify(subject, body)
 
 
 def get_db():
@@ -83,7 +172,7 @@ def claim_invitation_code(conn, code, submission_id):
 
     row = conn.execute(
         """
-        SELECT code, is_active, bound_submission_id, use_count
+        SELECT code, is_active, bound_submission_id, use_count, email, app_user_id, source
         FROM invitation_codes
         WHERE code = ?
         """,
@@ -96,6 +185,7 @@ def claim_invitation_code(conn, code, submission_id):
     if row["bound_submission_id"] and row["bound_submission_id"] != submission_id:
         return False, "This invitation code is already in use"
 
+    first_activation = row["use_count"] < 1 and not row["bound_submission_id"]
     timestamp = now_iso()
     conn.execute(
         """
@@ -108,7 +198,13 @@ def claim_invitation_code(conn, code, submission_id):
         """,
         (timestamp, submission_id, timestamp, normalized),
     )
-    return True, normalized
+    return True, {
+        "code": normalized,
+        "firstActivation": first_activation,
+        "email": row["email"],
+        "appUserId": row["app_user_id"],
+        "source": row["source"],
+    }
 
 
 def restore_invitation_session(conn, remember_token, submission_id):
@@ -475,15 +571,24 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                 SET remember_token = ?, updated_at = ?
                 WHERE code = ?
                 """,
-                (remember_token, now_iso(), result),
+                (remember_token, now_iso(), result["code"]),
             )
             conn.commit()
         finally:
             conn.close()
 
+        if result.get("firstActivation"):
+            notify_code_activated(
+                result["code"],
+                submission_id,
+                email=result.get("email"),
+                app_user_id=result.get("appUserId"),
+                source=result.get("source"),
+            )
+
         self._send_json(
             200,
-            {"ok": True, "code": result},
+            {"ok": True, "code": result["code"]},
             extra_headers=[
                 ("Set-Cookie", f"serenzer_invite={remember_token}; Path=/; Max-Age=31536000; SameSite=Lax; HttpOnly")
             ],
@@ -521,6 +626,8 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         finally:
             conn.close()
 
+        notify_codes_created(imported, "API import")
+
         self._send_json(200, {"ok": True, "imported": imported, "items": items})
 
     def _handle_invitation_create(self):
@@ -543,6 +650,8 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             items = list_invitation_codes(conn)
         finally:
             conn.close()
+
+        notify_codes_created(created, "Admin manual create")
 
         self._send_json(200, {"ok": True, "created": created, "items": items})
 
@@ -658,7 +767,7 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                     payload.get("lang"),
                     1 if payload.get("isComplete") else 0,
                     onboarding.get("email"),
-                    result,
+                    result["code"],
                     json.dumps(completed_tabs, ensure_ascii=False),
                     json.dumps(onboarding, ensure_ascii=False),
                     json.dumps(tools, ensure_ascii=False),

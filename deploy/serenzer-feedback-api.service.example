@@ -12,6 +12,15 @@ RestartSec=3
 Environment=SERENZER_HOST=127.0.0.1
 Environment=SERENZER_PORT=8000
 Environment=SERENZER_IMPORT_API_KEY=replace-with-shared-secret
+Environment=SERENZER_NOTIFY_EMAIL_TO=you@example.com
+Environment=SERENZER_NOTIFY_EMAIL_FROM=feedback@your-domain.com
+Environment=SERENZER_SENDMAIL_PATH=/usr/sbin/sendmail
+# Optional SMTP fallback if you ever want it:
+# Environment=SERENZER_SMTP_HOST=smtp.example.com
+# Environment=SERENZER_SMTP_PORT=587
+# Environment=SERENZER_SMTP_USERNAME=username
+# Environment=SERENZER_SMTP_PASSWORD=password
+# Environment=SERENZER_SMTP_USE_TLS=1
 
 [Install]
 WantedBy=multi-user.target
