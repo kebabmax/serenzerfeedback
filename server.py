@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -61,18 +61,6 @@ def get_db():
             bound_submission_id TEXT,
             use_count INTEGER NOT NULL DEFAULT 0,
             used_at TEXT
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS participant_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            invitation_code TEXT NOT NULL,
-            body TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            dismissed_at TEXT,
-            dismissed_by_submission_id TEXT
         )
         """
     )
@@ -377,74 +365,6 @@ def disable_invitation_code(conn, code):
     return cursor.rowcount > 0
 
 
-def list_messages_for_code(conn, invitation_code, include_dismissed=True):
-    normalized = normalize_code(invitation_code)
-    if not normalized:
-        return []
-    query = """
-        SELECT id, invitation_code, body, created_at, dismissed_at, dismissed_by_submission_id
-        FROM participant_messages
-        WHERE invitation_code = ?
-    """
-    params = [normalized]
-    if not include_dismissed:
-        query += " AND dismissed_at IS NULL"
-    query += " ORDER BY created_at DESC, id DESC"
-    rows = conn.execute(query, params).fetchall()
-    return [
-        {
-            "id": row["id"],
-            "invitationCode": row["invitation_code"],
-            "body": row["body"],
-            "createdAt": row["created_at"],
-            "dismissedAt": row["dismissed_at"],
-            "dismissedBySubmissionId": row["dismissed_by_submission_id"],
-            "isActive": row["dismissed_at"] is None,
-        }
-        for row in rows
-    ]
-
-
-def create_message_for_code(conn, invitation_code, body):
-    normalized = normalize_code(invitation_code)
-    message = str(body or "").strip()
-    if not normalized:
-        return False, "Invitation code is required"
-    if not message:
-        return False, "Message body is required"
-    code_row = conn.execute(
-        """
-        SELECT code
-        FROM invitation_codes
-        WHERE code = ?
-        """,
-        (normalized,),
-    ).fetchone()
-    if code_row is None:
-        return False, "Invitation code not found"
-    conn.execute(
-        """
-        INSERT INTO participant_messages (invitation_code, body, created_at)
-        VALUES (?, ?, ?)
-        """,
-        (normalized, message, now_iso()),
-    )
-    return True, normalized
-
-
-def dismiss_message(conn, message_id, submission_id):
-    cursor = conn.execute(
-        """
-        UPDATE participant_messages
-        SET dismissed_at = COALESCE(dismissed_at, ?),
-            dismissed_by_submission_id = COALESCE(dismissed_by_submission_id, ?)
-        WHERE id = ? AND dismissed_at IS NULL
-        """,
-        (now_iso(), submission_id or None, message_id),
-    )
-    return cursor.rowcount > 0
-
-
 class FeedbackHandler(BaseHTTPRequestHandler):
     server_version = "SerenzerFeedback/1.0"
 
@@ -463,16 +383,8 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/health":
             self._send_json(200, {"ok": True})
             return
-        if parsed.path.startswith("/api/admin/messages/"):
-            invitation_code = parsed.path.removeprefix("/api/admin/messages/")
-            self._handle_message_list(invitation_code)
-            return
         if parsed.path == "/api/admin/invitations":
             self._handle_invitation_list()
-            return
-        if parsed.path == "/api/messages/current":
-            invitation_code = parse_qs(parsed.query).get("invitationCode", [""])[0]
-            self._handle_current_message(invitation_code)
             return
         if parsed.path == "/api/invitations":
             self._handle_invitation_list()
@@ -500,12 +412,6 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/api/feedback":
             self._handle_feedback_upsert()
-            return
-        if parsed.path == "/api/admin/messages":
-            self._handle_message_create()
-            return
-        if parsed.path == "/api/messages/dismiss":
-            self._handle_message_dismiss()
             return
         if parsed.path == "/api/admin/invitations":
             self._handle_invitation_create()
@@ -773,67 +679,6 @@ class FeedbackHandler(BaseHTTPRequestHandler):
 
         self._send_json(200, {"ok": True, "submissionId": submission_id})
 
-    def _handle_message_list(self, invitation_code):
-        conn = get_db()
-        try:
-            items = list_messages_for_code(conn, invitation_code, include_dismissed=True)
-        finally:
-            conn.close()
-        self._send_json(200, {"count": len(items), "items": items})
-
-    def _handle_current_message(self, invitation_code):
-        conn = get_db()
-        try:
-            items = list_messages_for_code(conn, invitation_code, include_dismissed=False)
-        finally:
-            conn.close()
-        self._send_json(200, {"item": items[0] if items else None})
-
-    def _handle_message_create(self):
-        payload, error = self._read_json_body()
-        if error:
-            self._send_json(400, error)
-            return
-
-        conn = get_db()
-        try:
-            ok, result = create_message_for_code(conn, payload.get("invitationCode"), payload.get("message"))
-            if not ok:
-                conn.rollback()
-                self._send_json(400 if result != "Invitation code not found" else 404, {"error": result})
-                return
-            conn.commit()
-            items = list_messages_for_code(conn, result, include_dismissed=True)
-        finally:
-            conn.close()
-
-        self._send_json(200, {"ok": True, "items": items})
-
-    def _handle_message_dismiss(self):
-        payload, error = self._read_json_body()
-        if error:
-            self._send_json(400, error)
-            return
-
-        try:
-            message_id = int(payload.get("messageId"))
-        except (TypeError, ValueError):
-            self._send_json(400, {"error": "messageId is required"})
-            return
-
-        conn = get_db()
-        try:
-            ok = dismiss_message(conn, message_id, str(payload.get("submissionId", "")).strip())
-            if not ok:
-                conn.rollback()
-                self._send_json(404, {"error": "Message not found"})
-                return
-            conn.commit()
-        finally:
-            conn.close()
-
-        self._send_json(200, {"ok": True})
-
     def _handle_feedback_list(self):
         conn = get_db()
         try:
@@ -890,7 +735,6 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                 "completedTabs": json.loads(row["completed_tabs_json"]),
                 "onboarding": json.loads(row["onboarding_json"]),
                 "tools": json.loads(row["tools_json"]),
-                "messages": list_messages_for_code(conn, row["invitation_number"], include_dismissed=True),
                 "payload": json.loads(row["payload_json"]),
             },
         )
@@ -906,6 +750,8 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Pragma", "no-cache")
         for header_name, header_value in (extra_headers or []):
             self.send_header(header_name, header_value)
         self.end_headers()
