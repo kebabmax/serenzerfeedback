@@ -349,6 +349,7 @@ const T = {
     closingBody: "Ton feedback a bien été enregistré. Merci d'avoir pris le temps d'explorer Serenzer avec attention et honnêteté. Tes réponses vont directement nous aider à améliorer l'expérience avant le lancement.",
     closingRewardTitle: "Ton avantage beta",
     closingRewardBody: "Conserve précieusement ton code d'invitation. Lors de la sortie officielle de Serenzer, ce même code te donnera droit à 6 mois de Premium offerts.",
+    closingCodeLabel: "Ton code d'invitation",
     closingFinish: "Terminer le feedback",
 
     tools: {
@@ -583,6 +584,7 @@ const T = {
     closingBody: "Your feedback has been successfully saved. Thank you for exploring Serenzer so carefully and honestly. Your answers will directly help us improve the experience before launch.",
     closingRewardTitle: "Your beta perk",
     closingRewardBody: "Keep your invitation code safe. When Serenzer officially launches, that same code will unlock 6 months of Premium for free.",
+    closingCodeLabel: "Your invitation code",
     closingFinish: "Finish feedback",
 
     tools: {
@@ -817,6 +819,7 @@ const T = {
     closingBody: "Il tuo feedback è stato registrato correttamente. Grazie per aver esplorato Serenzer con attenzione e sincerità. Le tue risposte ci aiuteranno direttamente a migliorare l'esperienza prima del lancio.",
     closingRewardTitle: "Il tuo vantaggio beta",
     closingRewardBody: "Conserva il tuo codice d'invito. Quando Serenzer verrà lanciato ufficialmente, lo stesso codice ti darà diritto a 6 mesi di Premium gratuiti.",
+    closingCodeLabel: "Il tuo codice d'invito",
     closingFinish: "Termina il feedback",
 
     tools: {
@@ -1051,6 +1054,7 @@ const T = {
     closingBody: "Je feedback is goed opgeslagen. Bedankt dat je Serenzer zo aandachtig en eerlijk hebt verkend. Je antwoorden zullen ons rechtstreeks helpen om de ervaring vóór de lancering te verbeteren.",
     closingRewardTitle: "Jouw beta-voordeel",
     closingRewardBody: "Bewaar je uitnodigingscode goed. Zodra Serenzer officieel wordt gelanceerd, geeft diezelfde code je recht op 6 maanden gratis Premium.",
+    closingCodeLabel: "Jouw uitnodigingscode",
     closingFinish: "Feedback afronden",
 
     tools: {
@@ -1285,6 +1289,7 @@ const T = {
     closingBody: "Dein Feedback wurde erfolgreich gespeichert. Danke, dass du Serenzer so aufmerksam und ehrlich erkundet hast. Deine Antworten helfen uns direkt dabei, die Erfahrung vor dem Launch zu verbessern.",
     closingRewardTitle: "Dein Beta-Vorteil",
     closingRewardBody: "Bewahre deinen Einladungscode gut auf. Sobald Serenzer offiziell startet, schaltet derselbe Code 6 Monate Premium kostenlos frei.",
+    closingCodeLabel: "Dein Einladungscode",
     closingFinish: "Feedback abschließen",
 
     tools: {
@@ -1519,6 +1524,7 @@ const T = {
     closingBody: "Tu feedback se ha guardado correctamente. Gracias por explorar Serenzer con tanta atención y honestidad. Tus respuestas nos ayudarán directamente a mejorar la experiencia antes del lanzamiento.",
     closingRewardTitle: "Tu ventaja beta",
     closingRewardBody: "Guarda bien tu código de invitación. Cuando Serenzer se lance oficialmente, ese mismo código te dará derecho a 6 meses de Premium gratis.",
+    closingCodeLabel: "Tu código de invitación",
     closingFinish: "Terminar feedback",
 
     tools: {
@@ -2470,6 +2476,7 @@ function finalThoughtsToolHTML(tool, d) {
 }
 
 function closingToolHTML(tool) {
+  const invitationCode = state.onboardingData.invitationNumber || "—";
   return `
     <div class="card card-sage">
       <h2 class="section-title">${t("closingTitle")}</h2>
@@ -2478,7 +2485,13 @@ function closingToolHTML(tool) {
 
     <div class="card card-context">
       <h3 class="subsection-title">${t("closingRewardTitle")}</h3>
-      <p style="color:var(--olive-mid);font-size:15px;line-height:1.75;margin:0;">${t("closingRewardBody")}</p>
+      <p style="color:var(--olive-mid);font-size:15px;line-height:1.75;margin:0 0 18px;">${t("closingRewardBody")}</p>
+      <div class="qa-list">
+        <div class="qa-item">
+          <div class="qa-question">${t("closingCodeLabel")}</div>
+          <div class="qa-answer">${esc(invitationCode)}</div>
+        </div>
+      </div>
     </div>
 
     <div class="card card-highlight">
