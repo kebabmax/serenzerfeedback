@@ -159,6 +159,26 @@
       gap: 10px;
     }
 
+    .demographics-groups {
+      display: grid;
+      gap: 14px;
+    }
+
+    .demographic-group {
+      border: 1px solid rgba(217, 210, 196, 0.8);
+      border-radius: 16px;
+      background: var(--card);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .demographic-group-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
     .stats-row {
       display: flex;
       justify-content: space-between;
@@ -1402,19 +1422,31 @@
         ["Living situation", "livingSituation"],
         ["Family situation", "familySituation"],
       ];
-      document.getElementById("demographics-breakdown").innerHTML = fields.map(([label, field]) => {
+      const html = fields.map(([label, field]) => {
         const counts = {};
         participants.forEach(item => {
           const key = item[field];
           if (!key) return;
           counts[key] = (counts[key] || 0) + 1;
         });
-        const summary = Object.entries(counts)
+        const totalAnswered = Object.values(counts).reduce((sum, count) => sum + count, 0);
+        const rows = Object.entries(counts)
           .sort((a, b) => b[1] - a[1])
-          .map(([key, count]) => `${formatStatsValue(field, key)}: ${count}`)
-          .join(" | ") || "No data yet";
-        return statsRowHTML(label, summary);
+          .map(([key, count]) => {
+            const pct = totalAnswered ? `${Math.round((count / totalAnswered) * 100)}%` : "0%";
+            return statsRowHTML(formatStatsValue(field, key), `${count} (${pct})`);
+          })
+          .join("");
+
+        return `
+          <div class="demographic-group">
+            <div class="demographic-group-title">${esc(label)}</div>
+            ${rows || `<div class="empty-state" style="padding: 8px 0 0;">No data yet.</div>`}
+          </div>
+        `;
       }).join("");
+
+      document.getElementById("demographics-breakdown").innerHTML = `<div class="demographics-groups">${html}</div>`;
     }
 
     function renderDynamicTable(participants) {
