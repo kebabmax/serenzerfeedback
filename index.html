@@ -121,7 +121,11 @@ const TOOLS = [
   { id: 8,  key: "organisation",},
   { id: 9,  key: "progression",},
   { id: 10, key: "tableauFinal",},
+  { id: 11, key: "finalThoughts",},
+  { id: 12, key: "closing",},
 ];
+
+const TOTAL_TABS = 12;
 
 // ── Translations ──────────────────────────────────────────────────────────────
 
@@ -129,7 +133,7 @@ const T = {
 
   fr: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 complétés`,
+    completed:    n => `${n}/${TOTAL_TABS} complétés`,
     autosave:     "Sauvegarde automatique",
     inviteTitle:  "Code d'invitation",
     inviteSubtitle:"Entre ton code d'invitation pour accéder au formulaire de feedback Serenzer.",
@@ -307,6 +311,45 @@ const T = {
     calendarSerenzerCreate: "Crée un nouvel événement.",
     calendarSerenzerShow: "L'événement s'affiche-t-il sur le calendrier Serenzer ?",
     calendarGoogleSync: "L'événement s'affiche-t-il sur ton Google Calendar ?",
+    challengesRequired: "* Complète au moins la section Challenges et l'évaluation pour continuer",
+    challengesTitle: "Actions à faire - Challenges",
+    challengesOpen: "Ouvre la page Challenges.",
+    challengesJoin: "Rejoins un challenge ou consulte-en un en détail.",
+    challengesRelevant: "Les challenges proposés te semblent-ils pertinents ?",
+    challengesClear: "Est-il clair de comprendre comment participer à un challenge ?",
+    challengesProgress: "Le système de progression / récompense te semble-t-il cohérent ?",
+    organisationRequired: "* Complète au moins la section Organisation et l'évaluation pour continuer",
+    organisationTitle: "Actions à faire - Organisation",
+    organisationCreate: "Crée une tâche ou une note.",
+    organisationComplete: "Marque un élément comme terminé.",
+    organisationEasy: "Est-il facile de comprendre comment organiser tes éléments ?",
+    organisationSense: "Les catégories, listes ou regroupements te semblent-ils clairs ?",
+    organisationReflect: "Quand tu termines un élément, le résultat est-il clairement visible dans l'interface ?",
+    progressionRequired: "* Complète au moins la section Progression et l'évaluation pour continuer",
+    progressionTitle: "Actions à faire - Progression",
+    progressionOpen: "Ouvre la page Progression.",
+    progressionLoad: "Les statistiques et visuels se chargent-ils correctement ?",
+    progressionCoherent: "Les statistiques te semblent-elles cohérentes avec ce que tu as fait dans l'app ?",
+    progressionSense: "Les badges, graphiques ou indicateurs te semblent-ils clairs ?",
+    progressionMotivate: "Cette page te donne-t-elle envie de continuer à utiliser Serenzer ?",
+    dashboardFinalRequired: "* Complète au moins la section Tableau de bord pt. 2 et l'évaluation pour continuer",
+    dashboardFinalTitle: "Observations - Tableau de bord final",
+    dashboardFinalReturn: "Reviens sur le tableau de bord après avoir exploré l'app.",
+    dashboardFinalPersonal: "Tes informations personnelles s'affichent-elles maintenant correctement ?",
+    dashboardFinalUseful: "Le tableau de bord te paraît-il plus riche et plus utile qu'au début ?",
+    dashboardFinalSense: "Les informations affichées sont-elles faciles à comprendre ?",
+    dashboardFinalReflect: "Le tableau de bord reflète-t-il de façon convaincante ton activité dans l'app ?",
+    finalThoughtsTitle: "Dernières pensées",
+    finalThoughtsSubtitle: "Avant de terminer, raconte-nous librement ce que tu retiens de cette première expérience Serenzer.",
+    finalThoughtsPrompt: "Si tu devais écrire une mini note à l'équipe produit, que dirais-tu ?",
+    finalThoughtsPlaceholder: "Parle-nous de ce qui t'a marqué, de ce qui t'a frustré, de ce qui t'a surpris, de ce que tu changerais, et de ce que tu aimerais voir dans Serenzer à l'avenir...",
+    finalThoughtsSubmit: "Envoyer mes dernières pensées",
+    finalThoughtsRequired: "* Écris au moins quelques lignes pour terminer",
+    closingTitle: "Merci pour ton temps",
+    closingBody: "Ton feedback a bien été enregistré. Merci d'avoir pris le temps d'explorer Serenzer avec attention et honnêteté. Tes réponses vont directement nous aider à améliorer l'expérience avant le lancement.",
+    closingRewardTitle: "Ton avantage beta",
+    closingRewardBody: "Conserve précieusement ton code d'invitation. Lors de la sortie officielle de Serenzer, ce même code te donnera droit à 6 mois de Premium offerts.",
+    closingFinish: "Terminer le feedback",
 
     tools: {
       tableauIntro:  { label: "Tableau de bord pt. 1", task: "Bienvenue sur ton tableau de bord. Comme c’est ta première fois sur l’app, il ne devrait pas encore contenir tes données personnalisées. Au fil de ta découverte de Serenzer, des informations viendront s’y ajouter. Le dernier formulaire te demandera si tes informations personnelles s’y affichent correctement. Pour l’instant, réponds à ces quelques questions générales, explore l’app et profite de ta première expérience Serenzer !" },
@@ -317,12 +360,14 @@ const T = {
       organisation:  { label: "Organisation",    task: "Utilise les outils d'organisation : crée une tâche ou une note, classe-la et marque-la comme terminée." },
       progression:   { label: "Progression",     task: "Consulte ta page de progression. Observe tes statistiques, graphiques et badges obtenus." },
       tableauFinal:  { label: "Tableau de bord pt. 2", task: "Reviens au tableau de bord après avoir utilisé les autres outils Serenzer. Observe ce qui a évolué, la richesse des informations affichées et si l'ensemble te paraît maintenant plus utile et vivant." },
+      finalThoughts: { label: "Dernières pensées", task: "Prends un moment pour partager ton ressenti global. C'est l'endroit pour nous dire ce que tu garderais, ce que tu changerais et ce que tu aimerais voir ensuite." },
+      closing:       { label: "Fin", task: "Consulte les dernières informations de clôture et valide la fin de ton feedback." },
     },
   },
 
   en: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 completed`,
+    completed:    n => `${n}/${TOTAL_TABS} completed`,
     autosave:     "Automatic save",
     inviteTitle:  "Invitation code",
     inviteSubtitle:"Enter your invitation code to access the Serenzer feedback form.",
@@ -500,6 +545,45 @@ const T = {
     calendarSerenzerCreate: "Create a new event.",
     calendarSerenzerShow: "Does the event show on the Serenzer Calendar?",
     calendarGoogleSync: "Does the event show on your Google Calendar?",
+    challengesRequired: "* Complete at least the Challenges section and the evaluation to continue",
+    challengesTitle: "Actions to complete - Challenges",
+    challengesOpen: "Open the Challenges page.",
+    challengesJoin: "Join a challenge or inspect one in detail.",
+    challengesRelevant: "Do the available challenges feel relevant to you?",
+    challengesClear: "Is it clear how to participate in a challenge?",
+    challengesProgress: "Does the progress / reward system make sense to you?",
+    organisationRequired: "* Complete at least the Organisation section and the evaluation to continue",
+    organisationTitle: "Actions to complete - Organisation",
+    organisationCreate: "Create a task or a note.",
+    organisationComplete: "Mark one item as completed.",
+    organisationEasy: "Is it easy to understand how to organise your items?",
+    organisationSense: "Do the categories, lists, or groupings make sense to you?",
+    organisationReflect: "When you complete an item, is the result clearly reflected in the interface?",
+    progressionRequired: "* Complete at least the Progress section and the evaluation to continue",
+    progressionTitle: "Actions to complete - Progress",
+    progressionOpen: "Open the Progress page.",
+    progressionLoad: "Do the statistics and visuals load correctly?",
+    progressionCoherent: "Do the statistics seem coherent with what you have done in the app so far?",
+    progressionSense: "Do the badges, graphs, or indicators make sense to you?",
+    progressionMotivate: "Does this page motivate you to keep using Serenzer?",
+    dashboardFinalRequired: "* Complete at least the Dashboard pt. 2 section and the evaluation to continue",
+    dashboardFinalTitle: "Observations - Final dashboard",
+    dashboardFinalReturn: "Return to the dashboard after exploring the app.",
+    dashboardFinalPersonal: "Do your personal details now appear correctly on the dashboard?",
+    dashboardFinalUseful: "Does the dashboard feel richer and more useful than at the beginning?",
+    dashboardFinalSense: "Is the information displayed easy to understand?",
+    dashboardFinalReflect: "Does the dashboard now reflect your activity in the app in a convincing way?",
+    finalThoughtsTitle: "Final thoughts",
+    finalThoughtsSubtitle: "Before we wrap up, tell us freely what stayed with you from this first Serenzer experience.",
+    finalThoughtsPrompt: "If you had to write a short note to the product team, what would you say?",
+    finalThoughtsPlaceholder: "Tell us what stood out, what frustrated you, what surprised you, what you would change, and what you would love to see next in Serenzer...",
+    finalThoughtsSubmit: "Send my final thoughts",
+    finalThoughtsRequired: "* Write at least a few lines to finish",
+    closingTitle: "Thank you for your time",
+    closingBody: "Your feedback has been successfully saved. Thank you for exploring Serenzer so carefully and honestly. Your answers will directly help us improve the experience before launch.",
+    closingRewardTitle: "Your beta perk",
+    closingRewardBody: "Keep your invitation code safe. When Serenzer officially launches, that same code will unlock 6 months of Premium for free.",
+    closingFinish: "Finish feedback",
 
     tools: {
       tableauIntro:  { label: "Dashboard pt. 1", task: "Welcome to your dashboard. Because this is your first time on the app, it should not have any of your personalised data yet. As you discover Serenzer, information will be added to it. The last form will ask you whether your personal details have been properly rendered on the dashboard. For now, answer these few general questions, explore the app, and enjoy your first Serenzer experience!" },
@@ -510,12 +594,14 @@ const T = {
       organisation:  { label: "Organisation",  task: "Use the organisation tools: create a task or note, categorise it and mark it as done." },
       progression:   { label: "Progress",      task: "Check your progress page. Observe your statistics, charts and badges earned." },
       tableauFinal:  { label: "Dashboard pt. 2", task: "Return to the dashboard after using the other Serenzer tools. Observe what has changed, how rich the displayed information feels, and whether the overall page now feels more useful and alive." },
+      finalThoughts: { label: "Final thoughts", task: "Take a moment to share your overall impression. This is where you can tell us what you would keep, what you would change, and what you would want next." },
+      closing:       { label: "Finish", task: "Read the closing information and confirm the end of your feedback journey." },
     },
   },
 
   it: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 completati`,
+    completed:    n => `${n}/${TOTAL_TABS} completati`,
     autosave:     "Salvataggio automatico",
     inviteTitle:  "Codice d'invito",
     inviteSubtitle:"Inserisci il tuo codice d'invito per accedere al modulo di feedback Serenzer.",
@@ -693,6 +779,45 @@ const T = {
     calendarSerenzerCreate: "Crea un nuovo evento.",
     calendarSerenzerShow: "L'evento viene visualizzato sul calendario Serenzer?",
     calendarGoogleSync: "L'evento viene visualizzato sul tuo Google Calendar?",
+    challengesRequired: "* Completa almeno la sezione Sfide e la valutazione per continuare",
+    challengesTitle: "Azioni da fare - Sfide",
+    challengesOpen: "Apri la pagina Sfide.",
+    challengesJoin: "Partecipa a una sfida o consultane una in dettaglio.",
+    challengesRelevant: "Le sfide disponibili ti sembrano pertinenti?",
+    challengesClear: "È chiaro come partecipare a una sfida?",
+    challengesProgress: "Il sistema di progressione / ricompensa ti sembra coerente?",
+    organisationRequired: "* Completa almeno la sezione Organizzazione e la valutazione per continuare",
+    organisationTitle: "Azioni da fare - Organizzazione",
+    organisationCreate: "Crea un'attività o una nota.",
+    organisationComplete: "Segna un elemento come completato.",
+    organisationEasy: "È facile capire come organizzare i tuoi elementi?",
+    organisationSense: "Categorie, liste o raggruppamenti ti sembrano chiari?",
+    organisationReflect: "Quando completi un elemento, il risultato è chiaramente visibile nell'interfaccia?",
+    progressionRequired: "* Completa almeno la sezione Progressi e la valutazione per continuare",
+    progressionTitle: "Azioni da fare - Progressi",
+    progressionOpen: "Apri la pagina Progressi.",
+    progressionLoad: "Statistiche e visual si caricano correttamente?",
+    progressionCoherent: "Le statistiche ti sembrano coerenti con ciò che hai fatto finora nell'app?",
+    progressionSense: "Badge, grafici o indicatori ti sembrano chiari?",
+    progressionMotivate: "Questa pagina ti invoglia a continuare a usare Serenzer?",
+    dashboardFinalRequired: "* Completa almeno la sezione Dashboard pt. 2 e la valutazione per continuare",
+    dashboardFinalTitle: "Osservazioni - Dashboard finale",
+    dashboardFinalReturn: "Torna alla dashboard dopo aver esplorato l'app.",
+    dashboardFinalPersonal: "I tuoi dati personali vengono ora visualizzati correttamente sulla dashboard?",
+    dashboardFinalUseful: "La dashboard ti sembra più ricca e più utile rispetto all'inizio?",
+    dashboardFinalSense: "Le informazioni mostrate sono facili da capire?",
+    dashboardFinalReflect: "La dashboard riflette in modo convincente la tua attività nell'app?",
+    finalThoughtsTitle: "Ultimi pensieri",
+    finalThoughtsSubtitle: "Prima di concludere, raccontaci liberamente cosa ti rimane di questa prima esperienza con Serenzer.",
+    finalThoughtsPrompt: "Se dovessi scrivere una breve nota al team prodotto, cosa diresti?",
+    finalThoughtsPlaceholder: "Raccontaci cosa ti ha colpito, cosa ti ha frustrato, cosa ti ha sorpreso, cosa cambieresti e cosa ti piacerebbe vedere in Serenzer in futuro...",
+    finalThoughtsSubmit: "Invia i miei ultimi pensieri",
+    finalThoughtsRequired: "* Scrivi almeno qualche riga per terminare",
+    closingTitle: "Grazie per il tuo tempo",
+    closingBody: "Il tuo feedback è stato registrato correttamente. Grazie per aver esplorato Serenzer con attenzione e sincerità. Le tue risposte ci aiuteranno direttamente a migliorare l'esperienza prima del lancio.",
+    closingRewardTitle: "Il tuo vantaggio beta",
+    closingRewardBody: "Conserva il tuo codice d'invito. Quando Serenzer verrà lanciato ufficialmente, lo stesso codice ti darà diritto a 6 mesi di Premium gratuiti.",
+    closingFinish: "Termina il feedback",
 
     tools: {
       tableauIntro:  { label: "Dashboard pt. 1", task: "Benvenuto nella tua dashboard. Poiché è la tua prima volta sull’app, non dovrebbe ancora contenere i tuoi dati personalizzati. Man mano che scoprirai Serenzer, vi si aggiungeranno nuove informazioni. L’ultimo modulo ti chiederà se i tuoi dati personali vengono visualizzati correttamente sulla dashboard. Per ora, rispondi a queste poche domande generali, esplora l’app e goditi la tua prima esperienza con Serenzer!" },
@@ -703,12 +828,14 @@ const T = {
       organisation:  { label: "Organizzazione",  task: "Usa gli strumenti di organizzazione: crea un'attività o una nota, classificala e contrassegnala come completata." },
       progression:   { label: "Progressi",       task: "Consulta la tua pagina dei progressi. Osserva le tue statistiche, grafici e badge ottenuti." },
       tableauFinal:  { label: "Dashboard pt. 2", task: "Torna alla dashboard dopo aver usato gli altri strumenti di Serenzer. Osserva cosa è cambiato, quanto sono ricche le informazioni mostrate e se la pagina ti sembra ora più utile e viva." },
+      finalThoughts: { label: "Ultimi pensieri", task: "Prenditi un momento per condividere la tua impressione generale. Qui puoi dirci cosa terresti, cosa cambieresti e cosa ti piacerebbe vedere dopo." },
+      closing:       { label: "Fine", task: "Leggi le ultime informazioni di chiusura e conferma la fine del tuo feedback." },
     },
   },
 
   nl: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 voltooid`,
+    completed:    n => `${n}/${TOTAL_TABS} voltooid`,
     autosave:     "Automatisch opslaan",
     inviteTitle:  "Uitnodigingscode",
     inviteSubtitle:"Voer je uitnodigingscode in om toegang te krijgen tot het Serenzer-feedbackformulier.",
@@ -886,6 +1013,45 @@ const T = {
     calendarSerenzerCreate: "Maak een nieuwe gebeurtenis aan.",
     calendarSerenzerShow: "Wordt de gebeurtenis getoond in de Serenzer-kalender?",
     calendarGoogleSync: "Wordt de gebeurtenis getoond in je Google Calendar?",
+    challengesRequired: "* Vul minstens de sectie Uitdagingen en de evaluatie in om verder te gaan",
+    challengesTitle: "Acties om te voltooien - Uitdagingen",
+    challengesOpen: "Open de pagina Uitdagingen.",
+    challengesJoin: "Doe mee aan een uitdaging of bekijk er een in detail.",
+    challengesRelevant: "Voelen de beschikbare uitdagingen relevant voor jou?",
+    challengesClear: "Is het duidelijk hoe je aan een uitdaging deelneemt?",
+    challengesProgress: "Voelt het voortgangs-/beloningssysteem logisch aan?",
+    organisationRequired: "* Vul minstens de sectie Organisatie en de evaluatie in om verder te gaan",
+    organisationTitle: "Acties om te voltooien - Organisatie",
+    organisationCreate: "Maak een taak of notitie aan.",
+    organisationComplete: "Markeer één item als voltooid.",
+    organisationEasy: "Is het gemakkelijk om te begrijpen hoe je je items organiseert?",
+    organisationSense: "Voelen de categorieën, lijsten of groeperingen logisch aan?",
+    organisationReflect: "Wanneer je een item voltooit, wordt dat dan duidelijk zichtbaar in de interface?",
+    progressionRequired: "* Vul minstens de sectie Voortgang en de evaluatie in om verder te gaan",
+    progressionTitle: "Acties om te voltooien - Voortgang",
+    progressionOpen: "Open de voortgangspagina.",
+    progressionLoad: "Laden de statistieken en visuals correct?",
+    progressionCoherent: "Voelen de statistieken coherent aan met wat je tot nu toe in de app hebt gedaan?",
+    progressionSense: "Voelen de badges, grafieken of indicatoren duidelijk aan?",
+    progressionMotivate: "Geeft deze pagina je zin om Serenzer te blijven gebruiken?",
+    dashboardFinalRequired: "* Vul minstens de sectie Dashboard pt. 2 en de evaluatie in om verder te gaan",
+    dashboardFinalTitle: "Observaties - Einddashboard",
+    dashboardFinalReturn: "Ga terug naar het dashboard nadat je de app hebt verkend.",
+    dashboardFinalPersonal: "Worden je persoonlijke gegevens nu correct op het dashboard weergegeven?",
+    dashboardFinalUseful: "Voelt het dashboard rijker en nuttiger dan aan het begin?",
+    dashboardFinalSense: "Is de getoonde informatie gemakkelijk te begrijpen?",
+    dashboardFinalReflect: "Geeft het dashboard je activiteit in de app nu overtuigend weer?",
+    finalThoughtsTitle: "Laatste gedachten",
+    finalThoughtsSubtitle: "Voordat we afronden, horen we graag vrijuit wat je meeneemt uit deze eerste Serenzer-ervaring.",
+    finalThoughtsPrompt: "Als je een korte nota aan het productteam moest schrijven, wat zou je zeggen?",
+    finalThoughtsPlaceholder: "Vertel ons wat opviel, wat frustrerend was, wat je verraste, wat je zou veranderen en wat je later nog graag in Serenzer zou zien...",
+    finalThoughtsSubmit: "Stuur mijn laatste gedachten",
+    finalThoughtsRequired: "* Schrijf minstens een paar regels om af te ronden",
+    closingTitle: "Bedankt voor je tijd",
+    closingBody: "Je feedback is goed opgeslagen. Bedankt dat je Serenzer zo aandachtig en eerlijk hebt verkend. Je antwoorden zullen ons rechtstreeks helpen om de ervaring vóór de lancering te verbeteren.",
+    closingRewardTitle: "Jouw beta-voordeel",
+    closingRewardBody: "Bewaar je uitnodigingscode goed. Zodra Serenzer officieel wordt gelanceerd, geeft diezelfde code je recht op 6 maanden gratis Premium.",
+    closingFinish: "Feedback afronden",
 
     tools: {
       tableauIntro:  { label: "Dashboard pt. 1", task: "Welkom op je dashboard. Omdat dit je eerste keer in de app is, zou het nog geen persoonlijke gegevens van jou moeten bevatten. Terwijl je Serenzer ontdekt, zal er geleidelijk informatie aan worden toegevoegd. In het laatste formulier vragen we je of jouw persoonlijke gegevens correct op het dashboard zijn weergegeven. Beantwoord voorlopig eerst een paar algemene vragen, verken de app en geniet van je eerste Serenzer-ervaring!" },
@@ -896,12 +1062,14 @@ const T = {
       organisation:  { label: "Organisatie",  task: "Gebruik de organisatietools: maak een taak of notitie, categoriseer deze en markeer als voltooid." },
       progression:   { label: "Voortgang",    task: "Bekijk je voortgangspagina. Observeer je statistieken, grafieken en behaalde badges." },
       tableauFinal:  { label: "Dashboard pt. 2", task: "Ga terug naar het dashboard nadat je de andere Serenzer-tools hebt gebruikt. Kijk wat er is veranderd, hoe rijk de getoonde informatie nu aanvoelt en of de pagina nu nuttiger en levendiger lijkt." },
+      finalThoughts: { label: "Laatste gedachten", task: "Neem even de tijd om je algemene indruk te delen. Hier kun je ons vertellen wat je zou behouden, wat je zou veranderen en wat je hierna zou willen zien." },
+      closing:       { label: "Einde", task: "Lees de laatste afsluitende informatie en bevestig het einde van je feedback." },
     },
   },
 
   de: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 abgeschlossen`,
+    completed:    n => `${n}/${TOTAL_TABS} abgeschlossen`,
     autosave:     "Automatisch gespeichert",
     inviteTitle:  "Einladungscode",
     inviteSubtitle:"Gib deinen Einladungscode ein, um auf das Serenzer-Feedbackformular zuzugreifen.",
@@ -1079,6 +1247,45 @@ const T = {
     calendarSerenzerCreate: "Erstelle ein neues Ereignis.",
     calendarSerenzerShow: "Wird das Ereignis im Serenzer-Kalender angezeigt?",
     calendarGoogleSync: "Wird das Ereignis in deinem Google Calendar angezeigt?",
+    challengesRequired: "* Fülle mindestens den Bereich Herausforderungen und die Bewertung aus, um fortzufahren",
+    challengesTitle: "Zu erledigende Aktionen - Herausforderungen",
+    challengesOpen: "Öffne die Seite Herausforderungen.",
+    challengesJoin: "Nimm an einer Herausforderung teil oder sieh dir eine im Detail an.",
+    challengesRelevant: "Fühlen sich die verfügbaren Herausforderungen für dich relevant an?",
+    challengesClear: "Ist klar, wie man an einer Herausforderung teilnimmt?",
+    challengesProgress: "Erscheint dir das Fortschritts- / Belohnungssystem sinnvoll?",
+    organisationRequired: "* Fülle mindestens den Bereich Organisation und die Bewertung aus, um fortzufahren",
+    organisationTitle: "Zu erledigende Aktionen - Organisation",
+    organisationCreate: "Erstelle eine Aufgabe oder Notiz.",
+    organisationComplete: "Markiere ein Element als erledigt.",
+    organisationEasy: "Ist es leicht zu verstehen, wie du deine Elemente organisierst?",
+    organisationSense: "Erscheinen dir Kategorien, Listen oder Gruppierungen logisch?",
+    organisationReflect: "Wenn du ein Element erledigst, wird das Ergebnis dann klar in der Oberfläche angezeigt?",
+    progressionRequired: "* Fülle mindestens den Bereich Fortschritt und die Bewertung aus, um fortzufahren",
+    progressionTitle: "Zu erledigende Aktionen - Fortschritt",
+    progressionOpen: "Öffne die Fortschrittsseite.",
+    progressionLoad: "Laden die Statistiken und Visualisierungen korrekt?",
+    progressionCoherent: "Erscheinen dir die Statistiken stimmig zu dem, was du bisher in der App gemacht hast?",
+    progressionSense: "Erscheinen dir die Abzeichen, Grafiken oder Indikatoren verständlich?",
+    progressionMotivate: "Motiviert dich diese Seite, Serenzer weiter zu benutzen?",
+    dashboardFinalRequired: "* Fülle mindestens den Bereich Dashboard Teil 2 und die Bewertung aus, um fortzufahren",
+    dashboardFinalTitle: "Beobachtungen - Abschließendes Dashboard",
+    dashboardFinalReturn: "Kehre zum Dashboard zurück, nachdem du die App erkundet hast.",
+    dashboardFinalPersonal: "Werden deine persönlichen Daten jetzt korrekt auf dem Dashboard angezeigt?",
+    dashboardFinalUseful: "Wirkt das Dashboard jetzt reichhaltiger und nützlicher als zu Beginn?",
+    dashboardFinalSense: "Sind die angezeigten Informationen leicht zu verstehen?",
+    dashboardFinalReflect: "Spiegelt das Dashboard deine Aktivität in der App jetzt überzeugend wider?",
+    finalThoughtsTitle: "Letzte Gedanken",
+    finalThoughtsSubtitle: "Bevor wir abschließen, erzähle uns frei, was dir von dieser ersten Serenzer-Erfahrung bleibt.",
+    finalThoughtsPrompt: "Wenn du dem Produktteam eine kurze Notiz schreiben müsstest, was würdest du sagen?",
+    finalThoughtsPlaceholder: "Erzähl uns, was dich beeindruckt hat, was dich frustriert hat, was dich überrascht hat, was du ändern würdest und was du dir als Nächstes in Serenzer wünschen würdest...",
+    finalThoughtsSubmit: "Meine letzten Gedanken senden",
+    finalThoughtsRequired: "* Schreibe mindestens ein paar Zeilen, um abzuschließen",
+    closingTitle: "Danke für deine Zeit",
+    closingBody: "Dein Feedback wurde erfolgreich gespeichert. Danke, dass du Serenzer so aufmerksam und ehrlich erkundet hast. Deine Antworten helfen uns direkt dabei, die Erfahrung vor dem Launch zu verbessern.",
+    closingRewardTitle: "Dein Beta-Vorteil",
+    closingRewardBody: "Bewahre deinen Einladungscode gut auf. Sobald Serenzer offiziell startet, schaltet derselbe Code 6 Monate Premium kostenlos frei.",
+    closingFinish: "Feedback abschließen",
 
     tools: {
       tableauIntro:  { label: "Dashboard Teil 1",      task: "Willkommen auf deinem Dashboard. Da dies dein erstes Mal in der App ist, sollte es noch keine personalisierten Daten von dir enthalten. Während du Serenzer entdeckst, werden nach und nach Informationen hinzugefügt. Im letzten Formular wirst du gefragt, ob deine persönlichen Daten korrekt auf dem Dashboard angezeigt werden. Für den Moment beantworte zuerst ein paar allgemeine Fragen, erkunde die App und genieße deine erste Serenzer-Erfahrung!" },
@@ -1089,12 +1296,14 @@ const T = {
       organisation:  { label: "Organisation",         task: "Verwende die Organisationstools: Erstelle eine Aufgabe oder Notiz, kategorisiere sie und markiere sie als erledigt." },
       progression:   { label: "Fortschritt",          task: "Schau dir deine Fortschrittsseite an. Beobachte deine Statistiken, Diagramme und erhaltenen Abzeichen." },
       tableauFinal:  { label: "Dashboard Teil 2",      task: "Kehre zum Dashboard zurück, nachdem du die anderen Serenzer-Tools genutzt hast. Beobachte, was sich verändert hat, wie reichhaltig die angezeigten Informationen nun wirken und ob die Seite jetzt nützlicher und lebendiger erscheint." },
+      finalThoughts: { label: "Letzte Gedanken", task: "Nimm dir einen Moment, um deinen Gesamteindruck zu teilen. Hier kannst du uns sagen, was du behalten würdest, was du ändern würdest und was du dir als Nächstes wünschen würdest." },
+      closing:       { label: "Ende", task: "Lies die abschließenden Informationen und bestätige das Ende deines Feedbacks." },
     },
   },
 
   es: {
     betaFeedback: "Beta Feedback",
-    completed:    n => `${n}/10 completados`,
+    completed:    n => `${n}/${TOTAL_TABS} completados`,
     autosave:     "Guardado automático",
     inviteTitle:  "Código de invitación",
     inviteSubtitle:"Introduce tu código de invitación para acceder al formulario de feedback de Serenzer.",
@@ -1272,6 +1481,45 @@ const T = {
     calendarSerenzerCreate: "Crea un nuevo evento.",
     calendarSerenzerShow: "¿El evento aparece en el calendario de Serenzer?",
     calendarGoogleSync: "¿El evento aparece en tu Google Calendar?",
+    challengesRequired: "* Completa al menos la sección Retos y la evaluación para continuar",
+    challengesTitle: "Acciones a completar - Retos",
+    challengesOpen: "Abre la página Retos.",
+    challengesJoin: "Únete a un reto o consulta uno en detalle.",
+    challengesRelevant: "¿Los retos disponibles te parecen relevantes?",
+    challengesClear: "¿Queda claro cómo participar en un reto?",
+    challengesProgress: "¿El sistema de progreso / recompensa te parece coherente?",
+    organisationRequired: "* Completa al menos la sección Organización y la evaluación para continuar",
+    organisationTitle: "Acciones a completar - Organización",
+    organisationCreate: "Crea una tarea o una nota.",
+    organisationComplete: "Marca un elemento como completado.",
+    organisationEasy: "¿Es fácil entender cómo organizar tus elementos?",
+    organisationSense: "¿Las categorías, listas o agrupaciones te parecen claras?",
+    organisationReflect: "Cuando completas un elemento, ¿el resultado se refleja claramente en la interfaz?",
+    progressionRequired: "* Completa al menos la sección Progreso y la evaluación para continuar",
+    progressionTitle: "Acciones a completar - Progreso",
+    progressionOpen: "Abre la página Progreso.",
+    progressionLoad: "¿Se cargan correctamente las estadísticas y los visuales?",
+    progressionCoherent: "¿Las estadísticas te parecen coherentes con lo que has hecho hasta ahora en la app?",
+    progressionSense: "¿Las insignias, gráficos o indicadores te parecen claros?",
+    progressionMotivate: "¿Esta página te da ganas de seguir usando Serenzer?",
+    dashboardFinalRequired: "* Completa al menos la sección Panel pt. 2 y la evaluación para continuar",
+    dashboardFinalTitle: "Observaciones - Panel final",
+    dashboardFinalReturn: "Vuelve al panel después de explorar la app.",
+    dashboardFinalPersonal: "¿Tus datos personales se muestran ahora correctamente en el panel?",
+    dashboardFinalUseful: "¿El panel te parece más rico y más útil que al principio?",
+    dashboardFinalSense: "¿La información mostrada es fácil de entender?",
+    dashboardFinalReflect: "¿El panel refleja de forma convincente tu actividad en la app?",
+    finalThoughtsTitle: "Reflexiones finales",
+    finalThoughtsSubtitle: "Antes de terminar, cuéntanos libremente qué te llevas de esta primera experiencia con Serenzer.",
+    finalThoughtsPrompt: "Si tuvieras que escribir una breve nota al equipo de producto, ¿qué dirías?",
+    finalThoughtsPlaceholder: "Cuéntanos qué te llamó la atención, qué te frustró, qué te sorprendió, qué cambiarías y qué te gustaría ver después en Serenzer...",
+    finalThoughtsSubmit: "Enviar mis reflexiones finales",
+    finalThoughtsRequired: "* Escribe al menos unas líneas para terminar",
+    closingTitle: "Gracias por tu tiempo",
+    closingBody: "Tu feedback se ha guardado correctamente. Gracias por explorar Serenzer con tanta atención y honestidad. Tus respuestas nos ayudarán directamente a mejorar la experiencia antes del lanzamiento.",
+    closingRewardTitle: "Tu ventaja beta",
+    closingRewardBody: "Guarda bien tu código de invitación. Cuando Serenzer se lance oficialmente, ese mismo código te dará derecho a 6 meses de Premium gratis.",
+    closingFinish: "Terminar feedback",
 
     tools: {
       tableauIntro:  { label: "Panel pt. 1",      task: "Bienvenido a tu panel. Como es tu primera vez en la app, todavía no debería mostrar tus datos personalizados. A medida que descubras Serenzer, se irán añadiendo informaciones. El último formulario te preguntará si tus datos personales se muestran correctamente en el panel. Por ahora, responde a estas pocas preguntas generales, explora la app y disfruta de tu primera experiencia con Serenzer." },
@@ -1282,6 +1530,8 @@ const T = {
       organisation:  { label: "Organización",    task: "Utiliza las herramientas de organización: crea una tarea o una nota, clasifícala y márcala como completada." },
       progression:   { label: "Progreso",        task: "Consulta tu página de progreso. Observa tus estadísticas, gráficos e insignias obtenidas." },
       tableauFinal:  { label: "Panel pt. 2",      task: "Vuelve al panel después de haber usado las demás herramientas de Serenzer. Observa qué ha cambiado, lo rica que se siente ahora la información mostrada y si la página te parece más útil y viva." },
+      finalThoughts: { label: "Reflexiones finales", task: "Tómate un momento para compartir tu impresión general. Aquí puedes decirnos qué conservarías, qué cambiarías y qué te gustaría ver después." },
+      closing:       { label: "Fin", task: "Lee la información final de cierre y confirma el final de tu feedback." },
     },
   },
 
@@ -1418,7 +1668,7 @@ async function submitBugReport(message) {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function totalCompleted() { return Object.keys(state.completed).length; }
-function progressPct()    { return Math.round((totalCompleted() / 10) * 100); }
+function progressPct()    { return Math.round((totalCompleted() / TOTAL_TABS) * 100); }
 function isLocked(tabId)  { return !state.debugUnlockAllTabs && tabId >= 3 && !(state.completed[1] && state.completed[2]); }
 function shouldEnableDebugMenu() {
   const host = window.location.hostname;
@@ -1596,7 +1846,7 @@ function updateTopBar() {
   document.getElementById("topbar-title").textContent = state.invitationValidated
     ? (tab ? tab.label : "")
     : t("inviteTitle");
-  document.getElementById("progress-text").textContent = `${totalCompleted()}/10`;
+  document.getElementById("progress-text").textContent = `${totalCompleted()}/${TOTAL_TABS}`;
   document.getElementById("progress-fill").style.width = `${progressPct()}%`;
   document.getElementById("lang-select").value = state.lang;
 }
@@ -1902,9 +2152,25 @@ function toolTabHTML(tool) {
   if (tool.key === "rituels") {
     return ritualsToolHTML(tool, d);
   }
-  const isValid = tool.key === "tableauIntro"
-    ? d.intuitive && d.useful && d.dateTimeCorrect && d.greetingMatchesTime && d.startConversationWorks && String(d.pageDetailsSense || "").trim()
-    : d.intuitive && d.useful;
+  if (tool.key === "challenges") {
+    return challengesToolHTML(tool, d);
+  }
+  if (tool.key === "organisation") {
+    return organisationToolHTML(tool, d);
+  }
+  if (tool.key === "progression") {
+    return progressionToolHTML(tool, d);
+  }
+  if (tool.key === "tableauFinal") {
+    return dashboardFinalToolHTML(tool, d);
+  }
+  if (tool.key === "finalThoughts") {
+    return finalThoughtsToolHTML(tool, d);
+  }
+  if (tool.key === "closing") {
+    return closingToolHTML(tool);
+  }
+  const isValid = isToolValid(tool.key, d);
   const tr      = toolT(tool.key);
 
   const experienceOptions = [
@@ -1961,6 +2227,82 @@ function toolTabHTML(tool) {
       </button>
       ${!isValid ? `<p class="field-hint">${tool.key === "tableauIntro" ? t("dashboardIntroRequired") : t("ratingRequired")}</p>` : ""}
     </div>
+  `;
+}
+
+function standardEvaluationCardHTML(tr, d, isValid, requiredText) {
+  const experienceOptions = [
+    { value: "perfect",  label: t("expPerfect") },
+    { value: "bug",      label: t("expBug") },
+    { value: "confused", label: t("expConfused") },
+    { value: "loved",    label: t("expLoved") },
+  ];
+
+  return `
+    <div class="card">
+      <h3 class="subsection-title" style="margin-bottom:4px;">${t("evaluationTitle")}</h3>
+      <p style="color:var(--olive-mid);font-size:14px;margin-top:0;margin-bottom:20px;">${t("evaluationSubtitle")}</p>
+      ${starRatingHTML(t("intuitiveLabel"), d.intuitive, "intuitive")}
+      ${starRatingHTML(t("usefulLabel"), d.useful, "useful")}
+      ${checkboxGroupHTML(t("experienceQuestion"), experienceOptions, d.experience || [], false, "experience")}
+
+      <div class="field">
+        <label class="field-label" for="inp-description">${t("descriptionLabel")}</label>
+        <textarea class="textarea-input" id="inp-description" rows="3"
+          placeholder="${t("descriptionPlaceholder")}">${esc(d.description)}</textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="inp-suggestions">${t("suggestionsLabel")}</label>
+        <textarea class="textarea-input" id="inp-suggestions" rows="3"
+          placeholder="${t("suggestionsPlaceholder")}">${esc(d.suggestions)}</textarea>
+      </div>
+
+      <button class="submit-btn" id="tool-submit-btn" ${isValid ? "" : "disabled"}>
+        ${t("toolSubmit")(tr.label)}
+      </button>
+      ${!isValid ? `<p class="field-hint">${requiredText}</p>` : ""}
+    </div>
+  `;
+}
+
+function sectionQuestionHTML(question, d) {
+  if (question.type === "open") {
+    return `
+      <div class="field">
+        <label class="field-label" for="inp-${question.field}">${t(question.labelKey)}</label>
+        <textarea class="textarea-input" id="inp-${question.field}" rows="4">${esc(d[question.field])}</textarea>
+      </div>
+    `;
+  }
+  return checkboxGroupHTML(t(question.labelKey), yesNoOptions(), d[question.field], true, question.field);
+}
+
+function scenarioToolHTML(tool, d, sections, requiredText) {
+  const tr = toolT(tool.key);
+  const isValid = isToolValid(tool.key, d);
+
+  return `
+    <div class="card card-sage">
+      <h2 class="section-title">${tr.label}</h2>
+      <p style="color:var(--olive-mid);font-size:15px;line-height:1.65;margin:0;">
+        <strong>${t("missionLabel")}</strong> ${tr.task}
+      </p>
+    </div>
+
+    ${sections.map(section => `
+      <div class="card">
+        <h3 class="subsection-title">${t(section.titleKey)}</h3>
+        ${section.tasks?.length ? `
+          <div class="coach-action-list">
+            ${section.tasks.map(task => taskItemHTML(t(task.labelKey), d[task.field], "data-generic-task", task.field)).join("")}
+          </div>
+        ` : ""}
+        ${(section.questions || []).map(question => sectionQuestionHTML(question, d)).join("")}
+      </div>
+    `).join("")}
+
+    ${standardEvaluationCardHTML(tr, d, isValid, requiredText)}
   `;
 }
 
@@ -2030,6 +2372,117 @@ function calendarToolHTML(tool, d) {
         ${t("toolSubmit")(tr.label)}
       </button>
       ${!isValid ? `<p class="field-hint">${t("calendarRequired")}</p>` : ""}
+    </div>
+  `;
+}
+
+function challengesToolHTML(tool, d) {
+  return scenarioToolHTML(tool, d, [
+    {
+      titleKey: "challengesTitle",
+      tasks: [
+        { labelKey: "challengesOpen", field: "challengesOpenDone" },
+        { labelKey: "challengesJoin", field: "challengesJoinDone" },
+      ],
+      questions: [
+        { type: "open", labelKey: "challengesRelevant", field: "challengesRelevant" },
+        { type: "yesNo", labelKey: "challengesClear", field: "challengesClear" },
+        { type: "yesNo", labelKey: "challengesProgress", field: "challengesProgress" },
+      ],
+    },
+  ], t("challengesRequired"));
+}
+
+function organisationToolHTML(tool, d) {
+  return scenarioToolHTML(tool, d, [
+    {
+      titleKey: "organisationTitle",
+      tasks: [
+        { labelKey: "organisationCreate", field: "organisationCreateDone" },
+        { labelKey: "organisationComplete", field: "organisationCompleteDone" },
+      ],
+      questions: [
+        { type: "yesNo", labelKey: "organisationEasy", field: "organisationEasy" },
+        { type: "open", labelKey: "organisationSense", field: "organisationSense" },
+        { type: "yesNo", labelKey: "organisationReflect", field: "organisationReflect" },
+      ],
+    },
+  ], t("organisationRequired"));
+}
+
+function progressionToolHTML(tool, d) {
+  return scenarioToolHTML(tool, d, [
+    {
+      titleKey: "progressionTitle",
+      tasks: [
+        { labelKey: "progressionOpen", field: "progressionOpenDone" },
+      ],
+      questions: [
+        { type: "yesNo", labelKey: "progressionLoad", field: "progressionLoad" },
+        { type: "yesNo", labelKey: "progressionCoherent", field: "progressionCoherent" },
+        { type: "open", labelKey: "progressionSense", field: "progressionSense" },
+        { type: "yesNo", labelKey: "progressionMotivate", field: "progressionMotivate" },
+      ],
+    },
+  ], t("progressionRequired"));
+}
+
+function dashboardFinalToolHTML(tool, d) {
+  return scenarioToolHTML(tool, d, [
+    {
+      titleKey: "dashboardFinalTitle",
+      tasks: [
+        { labelKey: "dashboardFinalReturn", field: "dashboardFinalReturnDone" },
+      ],
+      questions: [
+        { type: "yesNo", labelKey: "dashboardFinalPersonal", field: "dashboardFinalPersonal" },
+        { type: "yesNo", labelKey: "dashboardFinalUseful", field: "dashboardFinalUseful" },
+        { type: "open", labelKey: "dashboardFinalSense", field: "dashboardFinalSense" },
+        { type: "yesNo", labelKey: "dashboardFinalReflect", field: "dashboardFinalReflect" },
+      ],
+    },
+  ], t("dashboardFinalRequired"));
+}
+
+function finalThoughtsToolHTML(tool, d) {
+  const tr = toolT(tool.key);
+  const isValid = isToolValid(tool.key, d);
+
+  return `
+    <div class="card card-sage">
+      <h2 class="section-title">${t("finalThoughtsTitle")}</h2>
+      <p style="color:var(--olive-mid);font-size:15px;line-height:1.7;margin:0;">${t("finalThoughtsSubtitle")}</p>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label class="field-label" for="inp-finalThoughtsEssay">${t("finalThoughtsPrompt")}</label>
+        <textarea class="textarea-input" id="inp-finalThoughtsEssay" rows="10"
+          placeholder="${t("finalThoughtsPlaceholder")}">${esc(d.finalThoughtsEssay)}</textarea>
+      </div>
+
+      <button class="submit-btn" id="tool-submit-btn" ${isValid ? "" : "disabled"}>
+        ${t("finalThoughtsSubmit")}
+      </button>
+      ${!isValid ? `<p class="field-hint">${t("finalThoughtsRequired")}</p>` : ""}
+    </div>
+  `;
+}
+
+function closingToolHTML(tool) {
+  return `
+    <div class="card card-sage">
+      <h2 class="section-title">${t("closingTitle")}</h2>
+      <p style="color:var(--olive-mid);font-size:15px;line-height:1.7;margin:0;">${t("closingBody")}</p>
+    </div>
+
+    <div class="card card-context">
+      <h3 class="subsection-title">${t("closingRewardTitle")}</h3>
+      <p style="color:var(--olive-mid);font-size:15px;line-height:1.75;margin:0;">${t("closingRewardBody")}</p>
+    </div>
+
+    <div class="card card-highlight">
+      <button class="submit-btn" id="tool-submit-btn">${t("closingFinish")}</button>
     </div>
   `;
 }
@@ -2339,6 +2792,33 @@ function attachToolListeners(tool) {
     });
   }
 
+  document.querySelectorAll("[data-generic-task]").forEach(input => {
+    input.addEventListener("change", () => {
+      if (!state.toolData[key]) state.toolData[key] = {};
+      state.toolData[key][input.dataset.genericTask] = input.checked;
+      input.closest(".coach-action-item")?.classList.toggle("checked", input.checked);
+      schedulePersist();
+      refreshToolSubmit(tool);
+    });
+  });
+
+  [
+    "challengesRelevant",
+    "organisationSense",
+    "progressionSense",
+    "dashboardFinalSense",
+    "finalThoughtsEssay",
+  ].forEach(field => {
+    const el = document.getElementById(`inp-${field}`);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      if (!state.toolData[key]) state.toolData[key] = {};
+      state.toolData[key][field] = el.value;
+      schedulePersist();
+      refreshToolSubmit(tool);
+    });
+  });
+
   document.getElementById("tool-submit-btn")?.addEventListener("click", () => {
     const fields = tool.key === "tableauIntro"
       ? ["description", "suggestions", "pageDetailsSense"]
@@ -2346,6 +2826,16 @@ function attachToolListeners(tool) {
         ? ["description", "suggestions"]
       : tool.key === "rituels"
         ? ["description", "suggestions", "ritualNewSense", "ritualAiSense"]
+        : tool.key === "challenges"
+          ? ["description", "suggestions", "challengesRelevant"]
+        : tool.key === "organisation"
+          ? ["description", "suggestions", "organisationSense"]
+        : tool.key === "progression"
+          ? ["description", "suggestions", "progressionSense"]
+        : tool.key === "tableauFinal"
+          ? ["description", "suggestions", "dashboardFinalSense"]
+        : tool.key === "finalThoughts"
+          ? ["finalThoughtsEssay"]
         : ["description", "suggestions"];
 
     fields.forEach(field => {
@@ -2461,38 +2951,81 @@ function attachCoachListeners(tool) {
   });
 }
 
+function isToolValid(toolKey, d) {
+  switch (toolKey) {
+    case "tableauIntro":
+      return d.intuitive && d.useful && d.dateTimeCorrect && d.greetingMatchesTime && d.startConversationWorks && String(d.pageDetailsSense || "").trim();
+    case "coach":
+      return ["coachAction1Done", "coachAction2Done", "coachAction3Done"].every(key => !!d[key])
+        && ["coachObs1", "coachObs2", "coachObs3", "coachObs4", "coachObs5"].every(key => d[`${key}Answer`])
+        && d.intuitive && d.useful;
+    case "calendrier":
+      return d.calendarGoogleAddDone
+        && d.calendarGoogleShow
+        && d.calendarSerenzerClickDone
+        && d.calendarSerenzerCreateDone
+        && d.calendarSerenzerShow
+        && d.calendarGoogleSync
+        && d.intuitive
+        && d.useful;
+    case "rituels":
+      return d.ritualNewActionDone
+        && d.ritualNewWorks
+        && String(d.ritualNewSense || "").trim()
+        && d.ritualNewCalendar
+        && d.ritualNewMine
+        && d.ritualAiOpenDone
+        && d.ritualAiLoad
+        && String(d.ritualAiSense || "").trim()
+        && d.ritualAiAcceptDone
+        && d.ritualAiCalendar
+        && d.ritualAiMine
+        && d.intuitive
+        && d.useful;
+    case "challenges":
+      return d.challengesOpenDone
+        && d.challengesJoinDone
+        && String(d.challengesRelevant || "").trim()
+        && d.challengesClear
+        && d.challengesProgress
+        && d.intuitive
+        && d.useful;
+    case "organisation":
+      return d.organisationCreateDone
+        && d.organisationCompleteDone
+        && d.organisationEasy
+        && String(d.organisationSense || "").trim()
+        && d.organisationReflect
+        && d.intuitive
+        && d.useful;
+    case "progression":
+      return d.progressionOpenDone
+        && d.progressionLoad
+        && d.progressionCoherent
+        && String(d.progressionSense || "").trim()
+        && d.progressionMotivate
+        && d.intuitive
+        && d.useful;
+    case "tableauFinal":
+      return d.dashboardFinalReturnDone
+        && d.dashboardFinalPersonal
+        && d.dashboardFinalUseful
+        && String(d.dashboardFinalSense || "").trim()
+        && d.dashboardFinalReflect
+        && d.intuitive
+        && d.useful;
+    case "finalThoughts":
+      return String(d.finalThoughtsEssay || "").trim().length >= 20;
+    case "closing":
+      return true;
+    default:
+      return d.intuitive && d.useful;
+  }
+}
+
 function refreshToolSubmit(tool) {
   const d = state.toolData[tool.key] || {};
-  const isValid = tool.key === "tableauIntro"
-    ? d.intuitive && d.useful && d.dateTimeCorrect && d.greetingMatchesTime && d.startConversationWorks && String(d.pageDetailsSense || "").trim()
-    : tool.key === "coach"
-      ? ["coachAction1Done", "coachAction2Done", "coachAction3Done"].every(key => !!d[key])
-        && ["coachObs1", "coachObs2", "coachObs3", "coachObs4", "coachObs5"].every(key => d[`${key}Answer`])
-        && d.intuitive && d.useful
-      : tool.key === "calendrier"
-        ? d.calendarGoogleAddDone
-          && d.calendarGoogleShow
-          && d.calendarSerenzerClickDone
-          && d.calendarSerenzerCreateDone
-          && d.calendarSerenzerShow
-          && d.calendarGoogleSync
-          && d.intuitive
-          && d.useful
-      : tool.key === "rituels"
-        ? d.ritualNewActionDone
-          && d.ritualNewWorks
-          && String(d.ritualNewSense || "").trim()
-          && d.ritualNewCalendar
-          && d.ritualNewMine
-          && d.ritualAiOpenDone
-          && d.ritualAiLoad
-          && String(d.ritualAiSense || "").trim()
-          && d.ritualAiAcceptDone
-          && d.ritualAiCalendar
-          && d.ritualAiMine
-          && d.intuitive
-          && d.useful
-      : d.intuitive && d.useful;
+  const isValid = isToolValid(tool.key, d);
   const btn  = document.getElementById("tool-submit-btn");
   const hint = document.querySelector(".field-hint");
   if (btn) btn.disabled = !isValid;
@@ -2508,6 +3041,21 @@ function refreshToolSubmit(tool) {
   }
   if (!isValid && !hint && btn && tool.key === "rituels") {
     btn.insertAdjacentHTML("afterend", `<p class="field-hint">${t("ritualRequired")}</p>`);
+  }
+  if (!isValid && !hint && btn && tool.key === "challenges") {
+    btn.insertAdjacentHTML("afterend", `<p class="field-hint">${t("challengesRequired")}</p>`);
+  }
+  if (!isValid && !hint && btn && tool.key === "organisation") {
+    btn.insertAdjacentHTML("afterend", `<p class="field-hint">${t("organisationRequired")}</p>`);
+  }
+  if (!isValid && !hint && btn && tool.key === "progression") {
+    btn.insertAdjacentHTML("afterend", `<p class="field-hint">${t("progressionRequired")}</p>`);
+  }
+  if (!isValid && !hint && btn && tool.key === "tableauFinal") {
+    btn.insertAdjacentHTML("afterend", `<p class="field-hint">${t("dashboardFinalRequired")}</p>`);
+  }
+  if (!isValid && !hint && btn && tool.key === "finalThoughts") {
+    btn.insertAdjacentHTML("afterend", `<p class="field-hint">${t("finalThoughtsRequired")}</p>`);
   }
 }
 
@@ -2560,12 +3108,12 @@ function yesNoOptions() {
 // 2. That's it — buildPayload() and the call site in markComplete() are wired up.
 //
 // submitToServer() is called after every tab submission.
-  // When the user completes all 10 tabs, payload.isComplete is true.
+  // When the user completes all tabs, payload.isComplete is true.
 //
 // Full payload shape:
 // {
 //   lang:         string,           // "fr" | "en" | "it" | "nl" | "de" | "es"
-  //   isComplete:   boolean,          // true only when all 10 tabs are done
+  //   isComplete:   boolean,          // true only when all tabs are done
 //   onboarding: {
 //     firstName:        string,
 //     lastName:         string,
@@ -2589,7 +3137,7 @@ function yesNoOptions() {
 // }
 
 function buildPayload() {
-  const isComplete = Object.keys(state.completed).length === 10;
+  const isComplete = Object.keys(state.completed).length === TOTAL_TABS;
   return {
     submissionId:  state.submissionId,
     lang:          state.lang,
@@ -2675,7 +3223,7 @@ function markComplete(tabId) {
   state.completed[tabId] = true;
   setAutosaveStatus("saving");
   persistNow();
-  if (tabId < 10) state.activeTab = tabId + 1;
+  if (tabId < TOTAL_TABS) state.activeTab = tabId + 1;
   renderAll();
 }
 
