@@ -349,11 +349,12 @@ def upsert_invitation_codes(conn, codes):
         normalized_codes.append(code)
         conn.execute(
             """
-            INSERT INTO invitation_codes (code, created_at, updated_at, is_active)
-            VALUES (?, ?, ?, 1)
+            INSERT INTO invitation_codes (code, created_at, updated_at, is_active, source)
+            VALUES (?, ?, ?, 1, 'manual')
             ON CONFLICT(code) DO UPDATE SET
                 updated_at = excluded.updated_at,
-                is_active = 1
+                is_active = 1,
+                source = 'manual'
             """,
             (code, timestamp, timestamp),
         )

@@ -627,6 +627,13 @@
       <div class="left-stack">
         <div class="panel">
           <div class="panel-header">
+            <h2 class="panel-title">Participants</h2>
+          </div>
+          <div class="submission-list" id="submission-list"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
             <div class="panel-header-row">
               <h2 class="panel-title">Invitation Codes</h2>
               <button class="panel-header-action" id="invite-toggle-btn" type="button" aria-expanded="false" aria-controls="invite-create-panel">
@@ -643,13 +650,6 @@
             </div>
           </div>
           <div class="invite-list" id="invite-list"></div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">Participants</h2>
-          </div>
-          <div class="submission-list" id="submission-list"></div>
         </div>
       </div>
 
@@ -1098,6 +1098,10 @@
           || (status === "incomplete" && !item.isComplete);
         const matchesLang = lang === "all" || item.lang === lang;
         return matchesQuery && matchesStatus && matchesLang;
+      }).sort((a, b) => {
+        const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
+        const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
+        return bTime - aTime;
       });
 
       if (!state.filtered.some(item => item.submissionId === state.activeId)) {
@@ -1129,7 +1133,7 @@
             <span>${esc((item.lang || "—").toUpperCase())}</span>
             <span>${esc(item.invitationNumber || "No invitation")}</span>
             <span>${esc(item.entryType === "ghost" ? "Not started" : "Started")}</span>
-            <span>${esc(formatDate(item.updatedAt))}</span>
+            <span>Last active: ${esc(formatDate(item.updatedAt))}</span>
           </div>
         </button>
       `).join("");
@@ -1138,6 +1142,15 @@
         button.addEventListener("click", () => {
           state.activeId = button.dataset.id;
           renderList();
+          const item = state.filtered.find(entry => entry.submissionId === state.activeId);
+          if (!item) {
+            renderEmptyDetail("No participants match the current filters.");
+            return;
+          }
+          if (item.entryType === "ghost") {
+            renderGhostDetail(item);
+            return;
+          }
           loadDetail(state.activeId);
         });
       });
@@ -1315,6 +1328,16 @@
 
     async function loadDetail(submissionId, forceRefresh = false) {
       if (!submissionId) return;
+      if (submissionId.startsWith("ghost:")) {
+        const item = state.filtered.find(entry => entry.submissionId === submissionId)
+          || state.list.find(entry => entry.submissionId === submissionId);
+        if (item) {
+          renderGhostDetail(item);
+        } else {
+          renderEmptyDetail("Ghost form not found.");
+        }
+        return;
+      }
       if (!forceRefresh && state.detailCache[submissionId]) {
         renderDetail(state.detailCache[submissionId]);
         return;
@@ -1341,7 +1364,12 @@
       try {
         await Promise.all([loadList(), loadInvites(), loadBugReports()]);
         if (state.activeId) {
-          await loadDetail(state.activeId, true);
+          const item = state.list.find(entry => entry.submissionId === state.activeId);
+          if (item?.entryType === "ghost") {
+            renderGhostDetail(item);
+          } else {
+            await loadDetail(state.activeId, true);
+          }
         }
       } catch (error) {
         document.getElementById("submission-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
