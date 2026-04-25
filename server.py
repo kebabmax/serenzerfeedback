@@ -107,6 +107,27 @@ def get_db():
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS activity_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            action TEXT NOT NULL,
+            request_path TEXT,
+            request_method TEXT,
+            client_ip TEXT,
+            submission_id TEXT,
+            invitation_number TEXT,
+            email TEXT,
+            first_name TEXT,
+            last_name TEXT,
+            lang TEXT,
+            active_tab INTEGER,
+            active_tab_label TEXT,
+            details_json TEXT NOT NULL
+        )
+        """
+    )
     existing_columns = {row["name"] for row in conn.execute("PRAGMA table_info(invitation_codes)").fetchall()}
     if "remember_token" not in existing_columns:
         conn.execute("ALTER TABLE invitation_codes ADD COLUMN remember_token TEXT")
@@ -437,6 +458,83 @@ def list_bug_reports(conn):
     ]
 
 
+def create_activity_log(conn, action, payload):
+    details = payload.get("details")
+    if not isinstance(details, dict):
+        details = {}
+    conn.execute(
+        """
+        INSERT INTO activity_logs (
+            created_at,
+            action,
+            request_path,
+            request_method,
+            client_ip,
+            submission_id,
+            invitation_number,
+            email,
+            first_name,
+            last_name,
+            lang,
+            active_tab,
+            active_tab_label,
+            details_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            payload.get("createdAt") or now_iso(),
+            str(action or "").strip() or "unknown",
+            str(payload.get("requestPath") or "").strip() or None,
+            str(payload.get("requestMethod") or "").strip() or None,
+            str(payload.get("clientIp") or "").strip() or None,
+            str(payload.get("submissionId") or "").strip() or None,
+            normalize_code(payload.get("invitationNumber")) or None,
+            str(payload.get("email") or "").strip() or None,
+            str(payload.get("firstName") or "").strip() or None,
+            str(payload.get("lastName") or "").strip() or None,
+            str(payload.get("lang") or "").strip() or None,
+            int(payload.get("activeTab")) if str(payload.get("activeTab") or "").isdigit() else None,
+            str(payload.get("activeTabLabel") or "").strip() or None,
+            json.dumps(details, ensure_ascii=False),
+        ),
+    )
+
+
+def list_activity_logs(conn):
+    rows = conn.execute(
+        """
+        SELECT id, created_at, action, request_path, request_method, client_ip, submission_id,
+               invitation_number, email, first_name, last_name, lang, active_tab,
+               active_tab_label, details_json
+        FROM activity_logs
+        ORDER BY created_at DESC, id DESC
+        """
+    ).fetchall()
+    items = []
+    for row in rows:
+        details = json.loads(row["details_json"] or "{}")
+        items.append(
+            {
+                "id": row["id"],
+                "createdAt": row["created_at"],
+                "action": row["action"],
+                "requestPath": row["request_path"],
+                "requestMethod": row["request_method"],
+                "clientIp": row["client_ip"],
+                "submissionId": row["submission_id"],
+                "invitationNumber": row["invitation_number"],
+                "email": row["email"],
+                "firstName": row["first_name"],
+                "lastName": row["last_name"],
+                "lang": row["lang"],
+                "activeTab": row["active_tab"],
+                "activeTabLabel": row["active_tab_label"],
+                "details": details,
+            }
+        )
+    return items
+
+
 def create_bug_report(conn, payload):
     message = str(payload.get("message") or "").strip()
     if not message:
@@ -496,6 +594,9 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/api/health":
             self._send_json(200, {"ok": True})
+            return
+        if parsed.path == "/api/admin/logs":
+            self._handle_activity_log_list()
             return
         if parsed.path == "/api/admin/bug-reports":
             self._handle_bug_report_list()
@@ -573,6 +674,28 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             return auth.removeprefix("Bearer ").strip()
         return self.headers.get("X-API-Key", "").strip()
 
+    def _client_ip(self):
+        forwarded = self.headers.get("X-Forwarded-For", "").strip()
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+        real_ip = self.headers.get("X-Real-IP", "").strip()
+        if real_ip:
+            return real_ip
+        return self.client_address[0] if self.client_address else None
+
+    def _log_activity(self, conn, action, **payload):
+        create_activity_log(
+            conn,
+            action,
+            {
+                "createdAt": now_iso(),
+                "requestPath": self.path,
+                "requestMethod": self.command,
+                "clientIp": self._client_ip(),
+                **payload,
+            },
+        )
+
     def _require_import_auth(self):
         if not IMPORT_API_KEY:
             self._send_json(500, {"error": "Import API key is not configured on the server"})
@@ -604,6 +727,18 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                 WHERE code = ?
                 """,
                 (remember_token, now_iso(), result["code"]),
+            )
+            self._log_activity(
+                conn,
+                "invitation_validated",
+                submissionId=submission_id,
+                invitationNumber=result["code"],
+                email=result.get("email"),
+                details={
+                    "firstActivation": bool(result.get("firstActivation")),
+                    "appUserId": result.get("appUserId"),
+                    "source": result.get("source"),
+                },
             )
             conn.commit()
         finally:
@@ -644,6 +779,25 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         conn = get_db()
         try:
             imported = import_invitation_entries(conn, entries)
+            for entry in entries:
+                current = entry
+                if isinstance(current, str):
+                    current = {"code": current}
+                if not isinstance(current, dict):
+                    continue
+                normalized = normalize_code(current.get("code"))
+                if not normalized:
+                    continue
+                self._log_activity(
+                    conn,
+                    "invitation_imported",
+                    invitationNumber=normalized,
+                    email=current.get("email"),
+                    details={
+                        "appUserId": current.get("appUserId") or current.get("app_user_id"),
+                        "source": current.get("source") or "serenzer-app",
+                    },
+                )
             conn.commit()
             items = list_invitation_codes(conn)
         finally:
@@ -667,6 +821,13 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         conn = get_db()
         try:
             created = upsert_invitation_codes(conn, raw_codes)
+            for code in created:
+                self._log_activity(
+                    conn,
+                    "invitation_created_manual",
+                    invitationNumber=code,
+                    details={"source": "manual"},
+                )
             conn.commit()
             items = list_invitation_codes(conn)
         finally:
@@ -687,6 +848,12 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                 conn.rollback()
                 self._send_json(404, {"ok": False, "error": "Invitation code not found"})
                 return
+            self._log_activity(
+                conn,
+                "invitation_disabled",
+                invitationNumber=payload.get("code"),
+                details={"source": "admin"},
+            )
             conn.commit()
             items = list_invitation_codes(conn)
         finally:
@@ -709,6 +876,13 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                 conn.rollback()
                 self._send_json(404, {"ok": False, "error": result})
                 return
+            self._log_activity(
+                conn,
+                "invitation_restored",
+                submissionId=submission_id,
+                invitationNumber=result,
+                details={"rememberedSession": True},
+            )
             conn.commit()
         finally:
             conn.close()
@@ -820,6 +994,24 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                     json.dumps(merged_payload, ensure_ascii=False),
                 ),
             )
+            self._log_activity(
+                conn,
+                "feedback_saved",
+                submissionId=submission_id,
+                invitationNumber=result["code"],
+                email=merged_onboarding.get("email"),
+                firstName=merged_onboarding.get("firstName"),
+                lastName=merged_onboarding.get("lastName"),
+                lang=merged_lang,
+                activeTab=payload.get("activeTab"),
+                activeTabLabel=payload.get("activeTabLabel"),
+                details={
+                    "isComplete": merged_is_complete,
+                    "completedTabsCount": len(merged_completed_tabs),
+                    "completedTabs": merged_completed_tabs,
+                    "pageUrl": payload.get("pageUrl"),
+                },
+            )
             conn.commit()
         finally:
             conn.close()
@@ -830,6 +1022,14 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         conn = get_db()
         try:
             items = list_feedback_entries(conn)
+        finally:
+            conn.close()
+        self._send_json(200, {"count": len(items), "items": items})
+
+    def _handle_activity_log_list(self):
+        conn = get_db()
+        try:
+            items = list_activity_logs(conn)
         finally:
             conn.close()
         self._send_json(200, {"count": len(items), "items": items})
@@ -855,6 +1055,24 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                 conn.rollback()
                 self._send_json(400, {"error": result})
                 return
+            onboarding = payload.get("onboarding") or {}
+            self._log_activity(
+                conn,
+                "bug_report_created",
+                submissionId=payload.get("submissionId"),
+                invitationNumber=onboarding.get("invitationNumber"),
+                email=onboarding.get("email"),
+                firstName=onboarding.get("firstName"),
+                lastName=onboarding.get("lastName"),
+                lang=payload.get("lang"),
+                activeTab=payload.get("activeTab"),
+                activeTabLabel=payload.get("activeTabLabel"),
+                details={
+                    "message": str(payload.get("message") or "").strip(),
+                    "pageUrl": payload.get("pageUrl"),
+                    "userAgent": payload.get("userAgent"),
+                },
+            )
             conn.commit()
         finally:
             conn.close()

@@ -493,6 +493,40 @@
       overflow: hidden;
     }
 
+    .log-list {
+      max-height: calc(100vh - 260px);
+      overflow: auto;
+    }
+
+    .log-row {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid rgba(217, 210, 196, 0.7);
+      background: transparent;
+      text-align: left;
+      padding: 16px 20px;
+      cursor: pointer;
+      display: grid;
+      gap: 8px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .log-row:hover,
+    .log-row.active {
+      background: rgba(63, 74, 67, 0.08);
+    }
+
+    .log-preview {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
     .kv-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -608,6 +642,7 @@
       <button class="view-tab active" id="participants-tab" type="button">Participants</button>
       <button class="view-tab" id="bug-reports-tab" type="button">Bug Reports</button>
       <button class="view-tab" id="stats-tab" type="button">Stats</button>
+      <button class="view-tab" id="logs-tab" type="button">Logs</button>
     </section>
 
     <section class="toolbar" id="participants-toolbar">
@@ -681,6 +716,24 @@
       </div>
     </section>
 
+    <section class="layout hidden" id="logs-view">
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Activity Logs</h2>
+        </div>
+        <div class="log-list" id="log-list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Log Details</h2>
+        </div>
+        <div class="detail-scroll" id="log-detail-pane">
+          <div class="empty-state">Select a log entry on the left to inspect who did what and when.</div>
+        </div>
+      </div>
+    </section>
+
     <section id="stats-view" class="hidden">
       <section class="hero-meta" style="margin-top: 24px;">
         <div class="stat-card">
@@ -740,6 +793,8 @@
       invites: [],
       bugReports: [],
       activeBugId: null,
+      logs: [],
+      activeLogId: null,
     };
 
     const ONBOARDING_FIELDS = [
@@ -966,6 +1021,93 @@
               <div class="qa-answer">${esc(item.userAgent || "—")}</div>
             </div>
           </div>
+        </div>
+      `;
+    }
+
+    function humanizeAction(action) {
+      return String(action || "unknown")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
+    function describeLogActor(item) {
+      const person = [item.firstName, item.lastName].filter(Boolean).join(" ").trim();
+      return person || item.email || item.invitationNumber || item.submissionId || "Unknown actor";
+    }
+
+    function describeLogPreview(item) {
+      const details = item.details || {};
+      if (details.message) return details.message;
+      if (details.pageUrl) return details.pageUrl;
+      const summaryParts = [
+        details.source ? `Source: ${details.source}` : "",
+        details.appUserId ? `App user: ${details.appUserId}` : "",
+        Number.isFinite(details.completedTabsCount) ? `Completed tabs: ${details.completedTabsCount}` : "",
+        details.firstActivation ? "First activation" : "",
+      ].filter(Boolean);
+      return summaryParts.join(" • ") || "No extra details";
+    }
+
+    function renderLogList() {
+      const list = document.getElementById("log-list");
+      if (!state.logs.length) {
+        list.innerHTML = `<div class="empty-state">No activity logs yet.</div>`;
+        return;
+      }
+
+      list.innerHTML = state.logs.map(item => `
+        <button class="log-row ${item.id === state.activeLogId ? "active" : ""}" data-log-id="${esc(item.id)}" type="button">
+          <div class="submission-topline">
+            <div class="submission-email">${esc(humanizeAction(item.action))}</div>
+            <span class="badge ghost">${esc(item.activeTabLabel || "Site event")}</span>
+          </div>
+          <div class="submission-meta">
+            <span>${esc(describeLogActor(item))}</span>
+            <span>${esc((item.lang || "—").toUpperCase())}</span>
+            <span>${esc(formatDate(item.createdAt))}</span>
+          </div>
+          <div class="log-preview">${esc(describeLogPreview(item))}</div>
+        </button>
+      `).join("");
+
+      list.querySelectorAll("[data-log-id]").forEach(button => {
+        button.addEventListener("click", () => {
+          state.activeLogId = Number(button.dataset.logId);
+          renderLogList();
+          renderLogDetail(state.logs.find(item => item.id === state.activeLogId));
+        });
+      });
+    }
+
+    function renderLogDetail(item) {
+      const pane = document.getElementById("log-detail-pane");
+      if (!item) {
+        pane.innerHTML = `<div class="empty-state">Select a log entry on the left to inspect who did what and when.</div>`;
+        return;
+      }
+
+      pane.innerHTML = `
+        <div class="detail-card">
+          <h3>Overview</h3>
+          <div class="kv-grid">
+            <div class="kv-item"><div class="kv-label">When</div><div class="kv-value">${esc(formatDate(item.createdAt))}</div></div>
+            <div class="kv-item"><div class="kv-label">Action</div><div class="kv-value">${esc(humanizeAction(item.action))}</div></div>
+            <div class="kv-item"><div class="kv-label">Who</div><div class="kv-value">${esc(describeLogActor(item))}</div></div>
+            <div class="kv-item"><div class="kv-label">Invitation #</div><div class="kv-value">${esc(item.invitationNumber || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Submission ID</div><div class="kv-value">${esc(item.submissionId || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Language</div><div class="kv-value">${esc((item.lang || "—").toUpperCase())}</div></div>
+            <div class="kv-item"><div class="kv-label">Where</div><div class="kv-value">${esc(item.activeTabLabel || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Tab ID</div><div class="kv-value">${esc(item.activeTab || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Path</div><div class="kv-value">${esc(item.requestPath || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Method</div><div class="kv-value">${esc(item.requestMethod || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">IP</div><div class="kv-value">${esc(item.clientIp || "—")}</div></div>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <h3>Details</h3>
+          <pre>${esc(JSON.stringify(item.details || {}, null, 2))}</pre>
         </div>
       `;
     }
@@ -1270,6 +1412,18 @@
       renderBugDetail(state.bugReports.find(item => item.id === state.activeBugId));
     }
 
+    async function loadLogs() {
+      const response = await fetch("/api/admin/logs", { cache: "no-store" });
+      if (!response.ok) throw new Error(`Failed to load activity logs (${response.status})`);
+      const data = await response.json();
+      state.logs = data.items || [];
+      if (!state.logs.some(item => item.id === state.activeLogId)) {
+        state.activeLogId = state.logs[0]?.id || null;
+      }
+      renderLogList();
+      renderLogDetail(state.logs.find(item => item.id === state.activeLogId));
+    }
+
     async function createInvites() {
       const input = document.getElementById("invite-input");
       const status = document.getElementById("invite-status");
@@ -1360,9 +1514,11 @@
         renderEmptyDetail("Loading details…");
         document.getElementById("bug-list").innerHTML = `<div class="empty-state">Loading bug reports…</div>`;
         renderBugDetail(null);
+        document.getElementById("log-list").innerHTML = `<div class="empty-state">Loading activity logs…</div>`;
+        renderLogDetail(null);
       }
       try {
-        await Promise.all([loadList(), loadInvites(), loadBugReports()]);
+        await Promise.all([loadList(), loadInvites(), loadBugReports(), loadLogs()]);
         if (state.activeId) {
           const item = state.list.find(entry => entry.submissionId === state.activeId);
           if (item?.entryType === "ghost") {
@@ -1375,8 +1531,10 @@
         document.getElementById("submission-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
         document.getElementById("invite-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
         document.getElementById("bug-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
+        document.getElementById("log-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
         renderEmptyDetail("The admin page could not reach the feedback API.");
         renderBugDetail(null);
+        renderLogDetail(null);
       }
     }
 
@@ -1385,10 +1543,12 @@
       document.getElementById("participants-tab").classList.toggle("active", view === "participants");
       document.getElementById("bug-reports-tab").classList.toggle("active", view === "bugs");
       document.getElementById("stats-tab").classList.toggle("active", view === "stats");
+      document.getElementById("logs-tab").classList.toggle("active", view === "logs");
       document.getElementById("participants-toolbar").classList.toggle("hidden", view !== "participants");
       document.getElementById("participants-view").classList.toggle("hidden", view !== "participants");
       document.getElementById("bug-reports-view").classList.toggle("hidden", view !== "bugs");
       document.getElementById("stats-view").classList.toggle("hidden", view !== "stats");
+      document.getElementById("logs-view").classList.toggle("hidden", view !== "logs");
     }
 
     function toggleInviteCreatePanel() {
@@ -1413,6 +1573,7 @@
     document.getElementById("participants-tab").addEventListener("click", () => setActiveView("participants"));
     document.getElementById("bug-reports-tab").addEventListener("click", () => setActiveView("bugs"));
     document.getElementById("stats-tab").addEventListener("click", () => setActiveView("stats"));
+    document.getElementById("logs-tab").addEventListener("click", () => setActiveView("logs"));
 
     setActiveView("participants");
     refreshAll();
