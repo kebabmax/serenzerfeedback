@@ -240,7 +240,8 @@ def list_invitation_codes(conn):
 def list_feedback_submissions(conn):
     rows = conn.execute(
         """
-        SELECT submission_id, created_at, updated_at, lang, is_complete, email, invitation_number, completed_tabs_json
+        SELECT submission_id, created_at, updated_at, lang, is_complete, email,
+               invitation_number, completed_tabs_json, onboarding_json
         FROM feedback_submissions
         ORDER BY updated_at DESC
         """
@@ -248,6 +249,7 @@ def list_feedback_submissions(conn):
     items = []
     for row in rows:
         completed_tabs = json.loads(row["completed_tabs_json"])
+        onboarding = json.loads(row["onboarding_json"] or "{}")
         items.append(
             {
                 "submissionId": row["submission_id"],
@@ -258,6 +260,13 @@ def list_feedback_submissions(conn):
                 "email": row["email"],
                 "invitationNumber": row["invitation_number"],
                 "completedTabsCount": len(completed_tabs),
+                "tech": onboarding.get("tech"),
+                "time": onboarding.get("time"),
+                "ageRange": onboarding.get("ageRange"),
+                "gender": onboarding.get("gender"),
+                "workSituation": onboarding.get("workSituation"),
+                "livingSituation": onboarding.get("livingSituation"),
+                "familySituation": onboarding.get("familySituation"),
             }
         )
     return items
@@ -427,6 +436,71 @@ def disable_invitation_code(conn, code):
         (now_iso(), normalized),
     )
     return cursor.rowcount > 0
+
+
+def delete_participant_entry(conn, submission_id):
+    identifier = str(submission_id or "").strip()
+    if not identifier:
+        return False, "submissionId is required"
+
+    if identifier.startswith("ghost:"):
+        code = normalize_code(identifier.removeprefix("ghost:"))
+        if not code:
+            return False, "Invalid ghost participant"
+        invite_row = conn.execute(
+            """
+            SELECT code, email, source
+            FROM invitation_codes
+            WHERE code = ?
+            """,
+            (code,),
+        ).fetchone()
+        if invite_row is None:
+            return False, "Participant not found"
+        conn.execute("DELETE FROM invitation_codes WHERE code = ?", (code,))
+        return True, {
+            "entryType": "ghost",
+            "submissionId": identifier,
+            "invitationNumber": code,
+            "email": invite_row["email"],
+            "source": invite_row["source"],
+        }
+
+    row = conn.execute(
+        """
+        SELECT submission_id, invitation_number, email
+        FROM feedback_submissions
+        WHERE submission_id = ?
+        """,
+        (identifier,),
+    ).fetchone()
+    if row is None:
+        return False, "Participant not found"
+
+    invitation_number = normalize_code(row["invitation_number"])
+    conn.execute("DELETE FROM feedback_submissions WHERE submission_id = ?", (identifier,))
+
+    if invitation_number:
+        conn.execute(
+            """
+            UPDATE invitation_codes
+            SET bound_submission_id = NULL,
+                use_count = 0,
+                used_at = NULL,
+                remember_token = NULL,
+                updated_at = ?,
+                is_active = 1
+            WHERE code = ?
+            """,
+            (now_iso(), invitation_number),
+        )
+
+    return True, {
+        "entryType": "submission",
+        "submissionId": identifier,
+        "invitationNumber": invitation_number,
+        "email": row["email"],
+    }
 
 
 def list_bug_reports(conn):
@@ -630,6 +704,9 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/api/feedback":
             self._handle_feedback_upsert()
+            return
+        if parsed.path == "/api/admin/participants/delete":
+            self._handle_participant_delete()
             return
         if parsed.path == "/api/bug-reports":
             self._handle_bug_report_create()
@@ -1033,6 +1110,34 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         finally:
             conn.close()
         self._send_json(200, {"count": len(items), "items": items})
+
+    def _handle_participant_delete(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+
+        submission_id = payload.get("submissionId")
+        conn = get_db()
+        try:
+            ok, result = delete_participant_entry(conn, submission_id)
+            if not ok:
+                conn.rollback()
+                self._send_json(404, {"ok": False, "error": result})
+                return
+            self._log_activity(
+                conn,
+                "participant_deleted",
+                submissionId=result.get("submissionId"),
+                invitationNumber=result.get("invitationNumber"),
+                email=result.get("email"),
+                details={"entryType": result.get("entryType")},
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        self._send_json(200, {"ok": True, "deleted": result})
 
     def _handle_bug_report_list(self):
         conn = get_db()

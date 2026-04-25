@@ -99,6 +99,57 @@
       margin-bottom: 20px;
     }
 
+    .stats-controls {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .stats-filter-grid,
+    .table-builder-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .stats-controls select {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 253, 248, 0.95);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 12px 14px;
+      min-width: 0;
+    }
+
+    .stats-table-wrap {
+      overflow: auto;
+    }
+
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 480px;
+    }
+
+    .stats-table th,
+    .stats-table td {
+      border: 1px solid rgba(217, 210, 196, 0.8);
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .stats-table th {
+      background: var(--card-strong);
+      font-weight: 700;
+    }
+
+    .stats-table td {
+      background: var(--card);
+    }
+
     .stats-panel-body {
       padding: 18px 20px 20px;
     }
@@ -248,6 +299,24 @@
     .panel-header-action:hover {
       transform: translateY(-1px);
       opacity: 0.92;
+    }
+
+    .danger-btn {
+      border-radius: 999px;
+      border: 1px solid var(--red);
+      background: rgba(201, 74, 67, 0.12);
+      color: var(--red);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    .danger-btn:hover {
+      background: rgba(201, 74, 67, 0.18);
     }
 
     .left-stack {
@@ -758,6 +827,25 @@
         </div>
       </section>
 
+      <section class="stats-controls">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Stats Filters</h2>
+          </div>
+          <div class="stats-panel-body stats-filter-grid">
+            <select id="stats-status-filter"></select>
+            <select id="stats-lang-filter"></select>
+            <select id="stats-gender-filter"></select>
+            <select id="stats-age-filter"></select>
+            <select id="stats-work-filter"></select>
+            <select id="stats-living-filter"></select>
+            <select id="stats-family-filter"></select>
+            <select id="stats-tech-filter"></select>
+            <select id="stats-time-filter"></select>
+          </div>
+        </div>
+      </section>
+
       <section class="stats-grid">
         <div class="panel">
           <div class="panel-header">
@@ -778,6 +866,28 @@
             <h2 class="panel-title">Progress Snapshot</h2>
           </div>
           <div class="stats-panel-body stats-list" id="progress-breakdown"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Demographics</h2>
+          </div>
+          <div class="stats-panel-body stats-list" id="demographics-breakdown"></div>
+        </div>
+      </section>
+
+      <section class="stats-controls">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Dynamic Table</h2>
+          </div>
+          <div class="stats-panel-body">
+            <div class="table-builder-grid">
+              <select id="stats-row-dimension"></select>
+              <select id="stats-column-dimension"></select>
+            </div>
+            <div class="stats-table-wrap" id="dynamic-table-wrap" style="margin-top: 16px;"></div>
+          </div>
         </div>
       </section>
     </section>
@@ -823,6 +933,30 @@
       progression: "Progress",
       tableauFinal: "Dashboard pt. 2",
     };
+
+    const STATS_DIMENSIONS = {
+      lang: "Language",
+      isComplete: "Completion status",
+      ageRange: "Age range",
+      gender: "Gender",
+      workSituation: "Work situation",
+      livingSituation: "Living situation",
+      familySituation: "Family situation",
+      tech: "Tech level",
+      time: "Time available",
+    };
+
+    const STATS_FILTER_FIELDS = [
+      ["stats-status-filter", "isComplete", "All completion states"],
+      ["stats-lang-filter", "lang", "All languages"],
+      ["stats-gender-filter", "gender", "All genders"],
+      ["stats-age-filter", "ageRange", "All age ranges"],
+      ["stats-work-filter", "workSituation", "All work situations"],
+      ["stats-living-filter", "livingSituation", "All living situations"],
+      ["stats-family-filter", "familySituation", "All family situations"],
+      ["stats-tech-filter", "tech", "All tech levels"],
+      ["stats-time-filter", "time", "All time budgets"],
+    ];
 
     const TOOL_FIELDS = {
       tableauIntro: [
@@ -942,10 +1076,12 @@
     }
 
     function renderStats() {
-      const total = state.list.length;
-      const complete = state.list.filter(item => item.isComplete).length;
+      renderStatsFilterControls();
+      const participants = filteredStatsParticipants();
+      const total = participants.length;
+      const complete = participants.filter(item => item.isComplete).length;
       const ghosts = state.list.filter(item => item.entryType === "ghost").length;
-      const started = Math.max(total - ghosts, 0);
+      const started = total;
       const invites = state.invites.length;
       const completionRate = total ? `${Math.round((complete / total) * 100)}%` : "0%";
       document.getElementById("stat-total").textContent = total;
@@ -955,8 +1091,10 @@
       document.getElementById("stat-completion-rate").textContent = completionRate;
 
       renderInviteOverview(total, started, complete, ghosts);
-      renderLanguageBreakdown(total);
-      renderProgressBreakdown(total);
+      renderLanguageBreakdown(total, participants);
+      renderProgressBreakdown(total, participants);
+      renderDemographicsBreakdown(participants);
+      renderDynamicTable(participants);
     }
 
     function renderBugList() {
@@ -1126,12 +1264,81 @@
       `;
     }
 
+    function formatStatsValue(field, value) {
+      if (!value && value !== false) return "Unknown";
+      if (field === "lang") return String(value).toUpperCase();
+      if (field === "isComplete") return String(value) === "true" || value === true ? "Complete" : "In progress";
+      return humanizeKey(String(value));
+    }
+
+    function statsParticipants() {
+      return state.list.filter(item => item.entryType !== "ghost");
+    }
+
+    function getStatsFilters() {
+      return Object.fromEntries(
+        STATS_FILTER_FIELDS.map(([id, field]) => [field, document.getElementById(id)?.value || "all"])
+      );
+    }
+
+    function filteredStatsParticipants() {
+      const filters = getStatsFilters();
+      return statsParticipants().filter(item => {
+        return Object.entries(filters).every(([field, value]) => {
+          if (value === "all") return true;
+          if (field === "isComplete") return String(Boolean(item.isComplete)) === value;
+          return String(item[field] || "") === value;
+        });
+      });
+    }
+
+    function populateStatsSelect(id, values, allLabel) {
+      const select = document.getElementById(id);
+      if (!select) return;
+      const current = select.value || "all";
+      const unique = [...new Set(values.filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b)));
+      const field = STATS_FILTER_FIELDS.find(([filterId]) => filterId === id)?.[1] || "";
+      select.innerHTML = `
+        <option value="all">${esc(allLabel)}</option>
+        ${unique.map(value => `<option value="${esc(value)}">${esc(formatStatsValue(field, value))}</option>`).join("")}
+      `;
+      select.value = unique.includes(current) ? current : "all";
+    }
+
+    function renderStatsFilterControls() {
+      const participants = statsParticipants();
+      populateStatsSelect("stats-status-filter", ["true", "false"], "All completion states");
+      populateStatsSelect("stats-lang-filter", participants.map(item => item.lang), "All languages");
+      populateStatsSelect("stats-gender-filter", participants.map(item => item.gender), "All genders");
+      populateStatsSelect("stats-age-filter", participants.map(item => item.ageRange), "All age ranges");
+      populateStatsSelect("stats-work-filter", participants.map(item => item.workSituation), "All work situations");
+      populateStatsSelect("stats-living-filter", participants.map(item => item.livingSituation), "All living situations");
+      populateStatsSelect("stats-family-filter", participants.map(item => item.familySituation), "All family situations");
+      populateStatsSelect("stats-tech-filter", participants.map(item => item.tech), "All tech levels");
+      populateStatsSelect("stats-time-filter", participants.map(item => item.time), "All time budgets");
+
+      const rowSelect = document.getElementById("stats-row-dimension");
+      const colSelect = document.getElementById("stats-column-dimension");
+      if (rowSelect && !rowSelect.options.length) {
+        rowSelect.innerHTML = Object.entries(STATS_DIMENSIONS)
+          .map(([value, label]) => `<option value="${esc(value)}">${esc(label)}</option>`)
+          .join("");
+        rowSelect.value = "gender";
+      }
+      if (colSelect && !colSelect.options.length) {
+        colSelect.innerHTML = Object.entries(STATS_DIMENSIONS)
+          .map(([value, label]) => `<option value="${esc(value)}">${esc(label)}</option>`)
+          .join("");
+        colSelect.value = "workSituation";
+      }
+    }
+
     function renderInviteOverview(participantCount, startedCount, completeCount, ghostCount) {
       const activeInvites = state.invites.filter(item => item.isActive).length;
       const usedInvites = state.invites.filter(item => item.useCount > 0 || item.boundSubmissionId).length;
       const unusedInvites = Math.max(state.invites.length - usedInvites, 0);
       const startedNotComplete = Math.max(startedCount - completeCount, 0);
-      const recent24h = state.list.filter(item => {
+      const recent24h = filteredStatsParticipants().filter(item => {
         const updated = new Date(item.updatedAt).getTime();
         return Number.isFinite(updated) && (Date.now() - updated) <= 24 * 60 * 60 * 1000;
       }).length;
@@ -1150,14 +1357,12 @@
       ].join("");
     }
 
-    function renderLanguageBreakdown(total) {
+    function renderLanguageBreakdown(total, participants) {
       const counts = {};
-      state.list
-        .filter(item => item.entryType !== "ghost")
-        .forEach(item => {
+      participants.forEach(item => {
         const lang = (item.lang || "unknown").toUpperCase();
         counts[lang] = (counts[lang] || 0) + 1;
-        });
+      });
       const rows = Object.entries(counts)
         .sort((a, b) => b[1] - a[1])
         .map(([lang, count]) => statsRowHTML(lang, total ? `${count} (${Math.round((count / total) * 100)}%)` : String(count)));
@@ -1166,7 +1371,7 @@
         : `<div class="empty-state">No started participant languages yet.</div>`;
     }
 
-    function renderProgressBreakdown(total) {
+    function renderProgressBreakdown(total, participants) {
       const buckets = [
         ["0 tabs", 0],
         ["1-3 tabs", 0],
@@ -1175,7 +1380,7 @@
         ["10 tabs", 0],
       ];
 
-      state.list.forEach(item => {
+      participants.forEach(item => {
         const count = Number(item.completedTabsCount || 0);
         if (count === 0) buckets[0][1] += 1;
         else if (count <= 3) buckets[1][1] += 1;
@@ -1187,6 +1392,66 @@
       document.getElementById("progress-breakdown").innerHTML = buckets
         .map(([label, count]) => statsRowHTML(label, total ? `${count} (${Math.round((count / total) * 100)}%)` : String(count)))
         .join("");
+    }
+
+    function renderDemographicsBreakdown(participants) {
+      const fields = [
+        ["Gender", "gender"],
+        ["Age range", "ageRange"],
+        ["Work situation", "workSituation"],
+        ["Living situation", "livingSituation"],
+        ["Family situation", "familySituation"],
+      ];
+      document.getElementById("demographics-breakdown").innerHTML = fields.map(([label, field]) => {
+        const counts = {};
+        participants.forEach(item => {
+          const key = item[field] || "unknown";
+          counts[key] = (counts[key] || 0) + 1;
+        });
+        const summary = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .map(([key, count]) => `${formatStatsValue(field, key)}: ${count}`)
+          .join(" | ") || "No data";
+        return statsRowHTML(label, summary);
+      }).join("");
+    }
+
+    function renderDynamicTable(participants) {
+      const rowField = document.getElementById("stats-row-dimension")?.value || "gender";
+      const colField = document.getElementById("stats-column-dimension")?.value || "workSituation";
+      const wrap = document.getElementById("dynamic-table-wrap");
+      if (!wrap) return;
+      if (rowField === colField) {
+        wrap.innerHTML = `<div class="empty-state">Choose two different dimensions to build the table.</div>`;
+        return;
+      }
+      const rowValues = [...new Set(participants.map(item => item[rowField] || "unknown"))];
+      const colValues = [...new Set(participants.map(item => item[colField] || "unknown"))];
+      if (!rowValues.length || !colValues.length) {
+        wrap.innerHTML = `<div class="empty-state">Not enough data for a dynamic table with the current filters.</div>`;
+        return;
+      }
+      wrap.innerHTML = `
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>${esc(STATS_DIMENSIONS[rowField])} \\ ${esc(STATS_DIMENSIONS[colField])}</th>
+              ${colValues.map(value => `<th>${esc(formatStatsValue(colField, value))}</th>`).join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${rowValues.map(rowValue => `
+              <tr>
+                <th>${esc(formatStatsValue(rowField, rowValue))}</th>
+                ${colValues.map(colValue => {
+                  const count = participants.filter(item => (item[rowField] || "unknown") === rowValue && (item[colField] || "unknown") === colValue).length;
+                  return `<td>${esc(String(count))}</td>`;
+                }).join("")}
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
     }
 
     function renderInvites() {
@@ -1310,7 +1575,10 @@
     function renderGhostDetail(detail) {
       document.getElementById("detail-pane").innerHTML = `
         <div class="detail-card">
-          <h3>Overview</h3>
+          <div class="panel-header-row" style="margin-bottom: 14px;">
+            <h3 style="margin:0;">Overview</h3>
+            <button class="danger-btn" type="button" data-delete-participant="${esc(detail.submissionId)}">Delete ghost form</button>
+          </div>
           <div class="kv-grid">
             <div class="kv-item"><div class="kv-label">Ghost form ID</div><div class="kv-value">${esc(detail.submissionId)}</div></div>
             <div class="kv-item"><div class="kv-label">Invitation #</div><div class="kv-value">${esc(detail.invitationNumber || "—")}</div></div>
@@ -1336,6 +1604,7 @@
           <pre>${esc(JSON.stringify(detail.payload || detail, null, 2))}</pre>
         </div>
       `;
+      document.querySelector("[data-delete-participant]")?.addEventListener("click", () => deleteParticipant(detail.submissionId));
     }
 
     function renderDetail(detail) {
@@ -1349,7 +1618,10 @@
 
       document.getElementById("detail-pane").innerHTML = `
         <div class="detail-card">
-          <h3>Overview</h3>
+          <div class="panel-header-row" style="margin-bottom: 14px;">
+            <h3 style="margin:0;">Overview</h3>
+            <button class="danger-btn" type="button" data-delete-participant="${esc(detail.submissionId)}">Delete participant</button>
+          </div>
           <div class="kv-grid">
             <div class="kv-item"><div class="kv-label">Submission ID</div><div class="kv-value">${esc(detail.submissionId)}</div></div>
             <div class="kv-item"><div class="kv-label">Email</div><div class="kv-value">${esc(detail.email || "—")}</div></div>
@@ -1385,6 +1657,7 @@
           <pre>${esc(JSON.stringify(detail.payload || detail, null, 2))}</pre>
         </div>
       `;
+      document.querySelector("[data-delete-participant]")?.addEventListener("click", () => deleteParticipant(detail.submissionId));
     }
 
     async function loadList() {
@@ -1403,6 +1676,7 @@
       const data = await response.json();
       state.invites = data.items || [];
       renderInvites();
+      renderStats();
     }
 
     async function loadBugReports() {
@@ -1482,6 +1756,32 @@
         status.textContent = `${code} disabled.`;
       } catch (_) {
         status.textContent = `Could not disable ${code}.`;
+      }
+    }
+
+    async function deleteParticipant(submissionId) {
+      const item = state.list.find(entry => entry.submissionId === submissionId);
+      const label = item?.email || item?.invitationNumber || submissionId;
+      const confirmed = window.confirm(`Delete ${label}? This cannot be undone.`);
+      if (!confirmed) return;
+
+      renderEmptyDetail("Deleting participant...");
+      try {
+        const response = await fetch("/api/admin/participants/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ submissionId }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          renderEmptyDetail(data.error || "Could not delete participant.");
+          return;
+        }
+        delete state.detailCache[submissionId];
+        state.activeId = null;
+        await refreshAll(false);
+      } catch (_) {
+        renderEmptyDetail("Could not delete participant.");
       }
     }
 
@@ -1579,6 +1879,11 @@
     document.getElementById("bug-reports-tab").addEventListener("click", () => setActiveView("bugs"));
     document.getElementById("stats-tab").addEventListener("click", () => setActiveView("stats"));
     document.getElementById("logs-tab").addEventListener("click", () => setActiveView("logs"));
+    STATS_FILTER_FIELDS.forEach(([id]) => {
+      document.getElementById(id).addEventListener("change", renderStats);
+    });
+    document.getElementById("stats-row-dimension").addEventListener("change", renderStats);
+    document.getElementById("stats-column-dimension").addEventListener("change", renderStats);
 
     setActiveView("participants");
     refreshAll();
