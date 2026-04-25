@@ -1405,13 +1405,14 @@
       document.getElementById("demographics-breakdown").innerHTML = fields.map(([label, field]) => {
         const counts = {};
         participants.forEach(item => {
-          const key = item[field] || "unknown";
+          const key = item[field];
+          if (!key) return;
           counts[key] = (counts[key] || 0) + 1;
         });
         const summary = Object.entries(counts)
           .sort((a, b) => b[1] - a[1])
           .map(([key, count]) => `${formatStatsValue(field, key)}: ${count}`)
-          .join(" | ") || "No data";
+          .join(" | ") || "No data yet";
         return statsRowHTML(label, summary);
       }).join("");
     }
@@ -1425,8 +1426,8 @@
         wrap.innerHTML = `<div class="empty-state">Choose two different dimensions to build the table.</div>`;
         return;
       }
-      const rowValues = [...new Set(participants.map(item => item[rowField] || "unknown"))];
-      const colValues = [...new Set(participants.map(item => item[colField] || "unknown"))];
+      const rowValues = [...new Set(participants.map(item => item[rowField]).filter(Boolean))];
+      const colValues = [...new Set(participants.map(item => item[colField]).filter(Boolean))];
       if (!rowValues.length || !colValues.length) {
         wrap.innerHTML = `<div class="empty-state">Not enough data for a dynamic table with the current filters.</div>`;
         return;
@@ -1444,7 +1445,7 @@
               <tr>
                 <th>${esc(formatStatsValue(rowField, rowValue))}</th>
                 ${colValues.map(colValue => {
-                  const count = participants.filter(item => (item[rowField] || "unknown") === rowValue && (item[colField] || "unknown") === colValue).length;
+                  const count = participants.filter(item => item[rowField] === rowValue && item[colField] === colValue).length;
                   return `<td>${esc(String(count))}</td>`;
                 }).join("")}
               </tr>
