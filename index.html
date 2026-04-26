@@ -1687,6 +1687,21 @@ function loadFromStorage() {
   } catch (_) {}
 }
 
+function hydrateFromExistingSubmission(detail) {
+  if (!detail || typeof detail !== "object") return;
+  state.submissionId = detail.submissionId || state.submissionId;
+  state.lang = detail.lang && T[detail.lang] ? detail.lang : state.lang;
+  state.onboardingData = { ...(detail.onboarding || {}) };
+  state.toolData = { ...(detail.tools || {}) };
+  state.completed = {};
+  (detail.completedTabs || []).forEach(tabId => {
+    state.completed[Number(tabId)] = true;
+  });
+  state.invitationValidated = true;
+  const firstIncomplete = Array.from({ length: TOTAL_TABS }, (_, i) => i + 1).find(tabId => !state.completed[tabId]);
+  state.activeTab = firstIncomplete || TOTAL_TABS;
+}
+
 async function persistNow() {
   clearTimeout(autosaveTimer);
   try {
@@ -2195,9 +2210,13 @@ function attachInvitationListeners() {
       return;
     }
 
+    if (result.data?.existingSubmission) {
+      hydrateFromExistingSubmission(result.data.existingSubmission);
+    } else if (result.data?.submissionId) {
+      state.submissionId = result.data.submissionId;
+    }
     state.onboardingData.invitationNumber = result.data.code || code;
     state.invitationValidated = true;
-    state.activeTab = 1;
     setAutosaveStatus("saving");
     await persistNow();
     renderAll();
@@ -3319,7 +3338,12 @@ async function restoreInvitationSession() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) return false;
-      state.invitationValidated = true;
+      if (data.existingSubmission) {
+        hydrateFromExistingSubmission(data.existingSubmission);
+      } else if (data.submissionId) {
+        state.submissionId = data.submissionId;
+        state.invitationValidated = true;
+      }
       state.onboardingData.invitationNumber = data.code || state.onboardingData.invitationNumber || "";
       await persistNow();
       return true;

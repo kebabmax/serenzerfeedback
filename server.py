@@ -140,6 +140,38 @@ def get_db():
     return conn
 
 
+def get_feedback_detail_row(conn, submission_id):
+    if not submission_id:
+        return None
+    return conn.execute(
+        """
+        SELECT submission_id, created_at, updated_at, lang, is_complete, email,
+               invitation_number, completed_tabs_json, onboarding_json, tools_json, payload_json
+        FROM feedback_submissions
+        WHERE submission_id = ?
+        """,
+        (submission_id,),
+    ).fetchone()
+
+
+def feedback_detail_from_row(row):
+    if row is None:
+        return None
+    return {
+        "submissionId": row["submission_id"],
+        "createdAt": row["created_at"],
+        "updatedAt": row["updated_at"],
+        "lang": row["lang"],
+        "isComplete": bool(row["is_complete"]),
+        "email": row["email"],
+        "invitationNumber": row["invitation_number"],
+        "completedTabs": json.loads(row["completed_tabs_json"]),
+        "onboarding": json.loads(row["onboarding_json"]),
+        "tools": json.loads(row["tools_json"]),
+        "payload": json.loads(row["payload_json"]),
+    }
+
+
 def claim_invitation_code(conn, code, submission_id):
     normalized = normalize_code(code)
     if not normalized or not submission_id:
@@ -157,28 +189,44 @@ def claim_invitation_code(conn, code, submission_id):
     if row is None or not row["is_active"]:
         return False, "Invalid invitation code"
 
-    if row["bound_submission_id"] and row["bound_submission_id"] != submission_id:
-        return False, "This invitation code is already in use"
+    existing_submission_id = row["bound_submission_id"]
+    existing_submission = None
+    if existing_submission_id:
+        existing_submission = get_feedback_detail_row(conn, existing_submission_id)
 
-    first_activation = row["use_count"] < 1 and not row["bound_submission_id"]
+    first_activation = row["use_count"] < 1 and not existing_submission_id
     timestamp = now_iso()
-    conn.execute(
-        """
-        UPDATE invitation_codes
-        SET updated_at = ?,
-            bound_submission_id = ?,
-            use_count = CASE WHEN use_count < 1 THEN 1 ELSE use_count END,
-            used_at = COALESCE(used_at, ?)
-        WHERE code = ?
-        """,
-        (timestamp, submission_id, timestamp, normalized),
-    )
+    if not existing_submission_id:
+        conn.execute(
+            """
+            UPDATE invitation_codes
+            SET updated_at = ?,
+                bound_submission_id = ?,
+                use_count = CASE WHEN use_count < 1 THEN 1 ELSE use_count END,
+                used_at = COALESCE(used_at, ?)
+            WHERE code = ?
+            """,
+            (timestamp, submission_id, timestamp, normalized),
+        )
+    else:
+        conn.execute(
+            """
+            UPDATE invitation_codes
+            SET updated_at = ?,
+                use_count = CASE WHEN use_count < 1 THEN 1 ELSE use_count END,
+                used_at = COALESCE(used_at, ?)
+            WHERE code = ?
+            """,
+            (timestamp, timestamp, normalized),
+        )
     return True, {
         "code": normalized,
         "firstActivation": first_activation,
         "email": row["email"],
         "appUserId": row["app_user_id"],
         "source": row["source"],
+        "submissionId": existing_submission_id or submission_id,
+        "existingSubmission": feedback_detail_from_row(existing_submission),
     }
 
 
@@ -189,7 +237,7 @@ def restore_invitation_session(conn, remember_token, submission_id):
 
     row = conn.execute(
         """
-        SELECT code, is_active
+        SELECT code, is_active, bound_submission_id
         FROM invitation_codes
         WHERE remember_token = ?
         """,
@@ -199,17 +247,32 @@ def restore_invitation_session(conn, remember_token, submission_id):
     if row is None or not row["is_active"]:
         return False, "No remembered invitation session found"
 
+    existing_submission = get_feedback_detail_row(conn, row["bound_submission_id"]) if row["bound_submission_id"] else None
     timestamp = now_iso()
-    conn.execute(
-        """
-        UPDATE invitation_codes
-        SET updated_at = ?,
-            bound_submission_id = ?
-        WHERE remember_token = ?
-        """,
-        (timestamp, submission_id, token),
-    )
-    return True, row["code"]
+    if not row["bound_submission_id"]:
+        conn.execute(
+            """
+            UPDATE invitation_codes
+            SET updated_at = ?,
+                bound_submission_id = ?
+            WHERE remember_token = ?
+            """,
+            (timestamp, submission_id, token),
+        )
+    else:
+        conn.execute(
+            """
+            UPDATE invitation_codes
+            SET updated_at = ?
+            WHERE remember_token = ?
+            """,
+            (timestamp, token),
+        )
+    return True, {
+        "code": row["code"],
+        "submissionId": row["bound_submission_id"] or submission_id,
+        "existingSubmission": feedback_detail_from_row(existing_submission),
+    }
 
 
 def list_invitation_codes(conn):
@@ -808,7 +871,7 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             self._log_activity(
                 conn,
                 "invitation_validated",
-                submissionId=submission_id,
+                submissionId=result.get("submissionId") or submission_id,
                 invitationNumber=result["code"],
                 email=result.get("email"),
                 details={
@@ -823,7 +886,12 @@ class FeedbackHandler(BaseHTTPRequestHandler):
 
         self._send_json(
             200,
-            {"ok": True, "code": result["code"]},
+            {
+                "ok": True,
+                "code": result["code"],
+                "submissionId": result.get("submissionId"),
+                "existingSubmission": result.get("existingSubmission"),
+            },
             extra_headers=[
                 ("Set-Cookie", f"serenzer_invite={remember_token}; Path=/; Max-Age=31536000; SameSite=Lax; HttpOnly")
             ],
@@ -956,15 +1024,23 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             self._log_activity(
                 conn,
                 "invitation_restored",
-                submissionId=submission_id,
-                invitationNumber=result,
+                submissionId=result.get("submissionId") or submission_id,
+                invitationNumber=result["code"],
                 details={"rememberedSession": True},
             )
             conn.commit()
         finally:
             conn.close()
 
-        self._send_json(200, {"ok": True, "code": result})
+        self._send_json(
+            200,
+            {
+                "ok": True,
+                "code": result["code"],
+                "submissionId": result.get("submissionId"),
+                "existingSubmission": result.get("existingSubmission"),
+            },
+        )
 
     def _handle_invitation_clear(self):
         self._send_json(
@@ -981,8 +1057,8 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             self._send_json(400, error)
             return
 
-        submission_id = str(payload.get("submissionId", "")).strip()
-        if not submission_id:
+        requested_submission_id = str(payload.get("submissionId", "")).strip()
+        if not requested_submission_id:
             self._send_json(400, {"error": "submissionId is required"})
             return
 
@@ -998,11 +1074,12 @@ class FeedbackHandler(BaseHTTPRequestHandler):
 
         conn = get_db()
         try:
-            ok, result = claim_invitation_code(conn, invitation_number, submission_id)
+            ok, result = claim_invitation_code(conn, invitation_number, requested_submission_id)
             if not ok:
                 conn.rollback()
                 self._send_json(403, {"error": result})
                 return
+            submission_id = result.get("submissionId") or requested_submission_id
 
             existing_row = conn.execute(
                 """
@@ -1203,15 +1280,7 @@ class FeedbackHandler(BaseHTTPRequestHandler):
 
         conn = get_db()
         try:
-            row = conn.execute(
-                """
-                SELECT submission_id, created_at, updated_at, lang, is_complete, email,
-                       invitation_number, completed_tabs_json, onboarding_json, tools_json, payload_json
-                FROM feedback_submissions
-                WHERE submission_id = ?
-                """,
-                (submission_id,),
-            ).fetchone()
+            row = get_feedback_detail_row(conn, submission_id)
         finally:
             conn.close()
 
@@ -1219,22 +1288,7 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": "Submission not found"})
             return
 
-        self._send_json(
-            200,
-            {
-                "submissionId": row["submission_id"],
-                "createdAt": row["created_at"],
-                "updatedAt": row["updated_at"],
-                "lang": row["lang"],
-                "isComplete": bool(row["is_complete"]),
-                "email": row["email"],
-                "invitationNumber": row["invitation_number"],
-                "completedTabs": json.loads(row["completed_tabs_json"]),
-                "onboarding": json.loads(row["onboarding_json"]),
-                "tools": json.loads(row["tools_json"]),
-                "payload": json.loads(row["payload_json"]),
-            },
-        )
+        self._send_json(200, feedback_detail_from_row(row))
 
     def _get_cookie(self, name):
         cookie = SimpleCookie()
