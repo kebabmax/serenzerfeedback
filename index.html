@@ -318,13 +318,25 @@ const T = {
     challengesRelevant: "Les challenges proposés te semblent-ils pertinents ?",
     challengesClear: "Est-il clair de comprendre comment participer à un challenge ?",
     challengesProgress: "Le système de progression / récompense te semble-t-il cohérent ?",
-    organisationRequired: "* Complète au moins la section Organisation et l'évaluation pour continuer",
-    organisationTitle: "Actions à faire - Organisation",
-    organisationCreate: "Crée une tâche ou une note.",
-    organisationComplete: "Marque un élément comme terminé.",
-    organisationEasy: "Est-il facile de comprendre comment organiser tes éléments ?",
-    organisationSense: "Les catégories, listes ou regroupements te semblent-ils clairs ?",
-    organisationReflect: "Quand tu termines un élément, le résultat est-il clairement visible dans l'interface ?",
+    organisationRequired: "* Complète les sections Projet et l'évaluation pour continuer",
+    organisationProjectTitle: "Actions à faire - Nouveau projet",
+    organisationProjectCreate: "Crée un nouveau projet.",
+    organisationProjectChoose: "Choisis « Organiser ma semaine » et nomme ton projet.",
+    organisationProjectWeek: "Sélectionne une semaine.",
+    organisationProjectAsk: "Pose une question à propos de cette semaine.",
+    organisationProjectCalendar: "L'IA mentionne-t-elle les événements de ton calendrier connecté ?",
+    organisationUseTitle: "Utilise ton projet",
+    organisationUseTell: "Dis à l'IA à quoi tu aimerais que ta semaine ressemble.",
+    organisationUseContext: "Comprend-elle ta demande et utilise-t-elle le contexte pour t'aider ?",
+    organisationUseBuild: "Construis ta semaine avec l'IA.",
+    organisationFinaliseTitle: "Finaliser ton projet",
+    organisationFinaliseWrap: "Demande à l'IA de clôturer le projet.",
+    organisationFinaliseWorks: "Est-ce que ça fonctionne ?",
+    organisationFinaliseClick: "Clique sur « Finaliser ».",
+    organisationFinaliseReport: "Génère-t-elle un rapport complet de votre échange ?",
+    organisationFinaliseSense: "Est-ce que cela a du sens ?",
+    organisationFinaliseCalendar: "Ajoute-t-elle tes nouveaux plans à ton calendrier ?",
+    genericToolSense: "Cet outil te semble-t-il clair ?",
     progressionRequired: "* Complète au moins la section Progression et l'évaluation pour continuer",
     progressionTitle: "Actions à faire - Progression",
     progressionOpen: "Ouvre la page Progression.",
@@ -358,7 +370,7 @@ const T = {
       rituels:       { label: "Rituels",         task: "Crée ou explore un rituel dans Serenzer. Configure ses paramètres et active-le pour voir comment il s'intègre dans ta routine." },
       challenges:    { label: "Challenges",      task: "Rejoins ou consulte un challenge disponible. Observe la progression et les étapes proposées." },
       calendrier:    { label: "Calendrier",      task: "Consulte ton calendrier Serenzer. Ajoute un événement ou un rappel et vérifie qu'il s'affiche correctement." },
-      organisation:  { label: "Organisation",    task: "Utilise les outils d'organisation : crée une tâche ou une note, classe-la et marque-la comme terminée." },
+      organisation:  { label: "Organisation",    task: "Crée un projet, demande à l'IA de t'aider à organiser ta semaine, puis finalise ton ressenti dans l'évaluation." },
       progression:   { label: "Progression",     task: "Consulte ta page de progression. Observe tes statistiques, graphiques et badges obtenus." },
       tableauFinal:  { label: "Tableau de bord pt. 2", task: "Reviens au tableau de bord après avoir utilisé les autres outils Serenzer. Observe ce qui a évolué, la richesse des informations affichées et si l'ensemble te paraît maintenant plus utile et vivant." },
       finalThoughts: { label: "Dernières pensées", task: "Prends un moment pour partager ton ressenti global. C'est l'endroit pour nous dire ce que tu garderais, ce que tu changerais et ce que tu aimerais voir ensuite." },
@@ -553,13 +565,25 @@ const T = {
     challengesRelevant: "Do the available challenges feel relevant to you?",
     challengesClear: "Is it clear how to participate in a challenge?",
     challengesProgress: "Does the progress / reward system make sense to you?",
-    organisationRequired: "* Complete at least the Organisation section and the evaluation to continue",
-    organisationTitle: "Actions to complete - Organisation",
-    organisationCreate: "Create a task or a note.",
-    organisationComplete: "Mark one item as completed.",
-    organisationEasy: "Is it easy to understand how to organise your items?",
-    organisationSense: "Do the categories, lists, or groupings make sense to you?",
-    organisationReflect: "When you complete an item, is the result clearly reflected in the interface?",
+    organisationRequired: "* Complete the Project sections and the evaluation to continue",
+    organisationProjectTitle: "Actions to complete - New Project",
+    organisationProjectCreate: "Create a new Project.",
+    organisationProjectChoose: "Choose \"Organise my week\" and name your Project.",
+    organisationProjectWeek: "Select a week.",
+    organisationProjectAsk: "Ask about that week.",
+    organisationProjectCalendar: "Does the AI mention the events of your connected calendar?",
+    organisationUseTitle: "Use your Project",
+    organisationUseTell: "Tell the AI what you would like your week to look like.",
+    organisationUseContext: "Does it understand and use context to help you?",
+    organisationUseBuild: "Build your week with the AI.",
+    organisationFinaliseTitle: "Finalising your Project",
+    organisationFinaliseWrap: "Tell the AI to wrap up the project.",
+    organisationFinaliseWorks: "Does it work?",
+    organisationFinaliseClick: "Click on finalise.",
+    organisationFinaliseReport: "Does it generate a full report on your discussion?",
+    organisationFinaliseSense: "Does it make sense?",
+    organisationFinaliseCalendar: "Does it add your new plans to your calendar?",
+    genericToolSense: "Does this tool make sense to you?",
     progressionRequired: "* Complete at least the Progress section and the evaluation to continue",
     progressionTitle: "Actions to complete - Progress",
     progressionOpen: "Open the Progress page.",
@@ -593,7 +617,7 @@ const T = {
       rituels:       { label: "Rituals",       task: "Create or explore a ritual in Serenzer. Configure its settings and activate it to see how it fits into your routine." },
       challenges:    { label: "Challenges",    task: "Join or consult an available challenge. Observe the progress and proposed steps." },
       calendrier:    { label: "Calendar",      task: "Check your Serenzer calendar. Add an event or reminder and verify it displays correctly." },
-      organisation:  { label: "Organisation",  task: "Use the organisation tools: create a task or note, categorise it and mark it as done." },
+      organisation:  { label: "Organisation",  task: "Create a Project, ask the AI to help structure your week, then finalise your feedback below." },
       progression:   { label: "Progress",      task: "Check your progress page. Observe your statistics, charts and badges earned." },
       tableauFinal:  { label: "Dashboard pt. 2", task: "Return to the dashboard after using the other Serenzer tools. Observe what has changed, how rich the displayed information feels, and whether the overall page now feels more useful and alive." },
       finalThoughts: { label: "Final thoughts", task: "Take a moment to share your overall impression. This is where you can tell us what you would keep, what you would change, and what you would want next." },
@@ -788,13 +812,25 @@ const T = {
     challengesRelevant: "Le sfide disponibili ti sembrano pertinenti?",
     challengesClear: "È chiaro come partecipare a una sfida?",
     challengesProgress: "Il sistema di progressione / ricompensa ti sembra coerente?",
-    organisationRequired: "* Completa almeno la sezione Organizzazione e la valutazione per continuare",
-    organisationTitle: "Azioni da fare - Organizzazione",
-    organisationCreate: "Crea un'attività o una nota.",
-    organisationComplete: "Segna un elemento come completato.",
-    organisationEasy: "È facile capire come organizzare i tuoi elementi?",
-    organisationSense: "Categorie, liste o raggruppamenti ti sembrano chiari?",
-    organisationReflect: "Quando completi un elemento, il risultato è chiaramente visibile nell'interfaccia?",
+    organisationRequired: "* Completa le sezioni Progetto e la valutazione per continuare",
+    organisationProjectTitle: "Azioni da fare - Nuovo progetto",
+    organisationProjectCreate: "Crea un nuovo progetto.",
+    organisationProjectChoose: "Scegli \"Organizza la mia settimana\" e dai un nome al progetto.",
+    organisationProjectWeek: "Seleziona una settimana.",
+    organisationProjectAsk: "Fai una domanda su quella settimana.",
+    organisationProjectCalendar: "L'IA cita gli eventi del tuo calendario collegato?",
+    organisationUseTitle: "Usa il tuo progetto",
+    organisationUseTell: "Di' all'IA come vorresti che fosse la tua settimana.",
+    organisationUseContext: "Capisce la tua richiesta e usa il contesto per aiutarti?",
+    organisationUseBuild: "Costruisci la tua settimana con l'IA.",
+    organisationFinaliseTitle: "Finalizza il tuo progetto",
+    organisationFinaliseWrap: "Chiedi all'IA di concludere il progetto.",
+    organisationFinaliseWorks: "Funziona?",
+    organisationFinaliseClick: "Clicca su « Finalizza ».",
+    organisationFinaliseReport: "Genera un report completo della vostra conversazione?",
+    organisationFinaliseSense: "Ha senso?",
+    organisationFinaliseCalendar: "Aggiunge i tuoi nuovi piani al calendario?",
+    genericToolSense: "Questo strumento ti sembra chiaro?",
     progressionRequired: "* Completa almeno la sezione Progressi e la valutazione per continuare",
     progressionTitle: "Azioni da fare - Progressi",
     progressionOpen: "Apri la pagina Progressi.",
@@ -828,7 +864,7 @@ const T = {
       rituels:       { label: "Rituali",         task: "Crea o esplora un rituale in Serenzer. Configura le sue impostazioni e attivalo per vedere come si integra nella tua routine." },
       challenges:    { label: "Sfide",           task: "Partecipa o consulta una sfida disponibile. Osserva i progressi e i passaggi proposti." },
       calendrier:    { label: "Calendario",      task: "Consulta il tuo calendario Serenzer. Aggiungi un evento o un promemoria e verifica che venga visualizzato correttamente." },
-      organisation:  { label: "Organizzazione",  task: "Usa gli strumenti di organizzazione: crea un'attività o una nota, classificala e contrassegnala come completata." },
+      organisation:  { label: "Organizzazione",  task: "Crea un progetto, chiedi all'IA di aiutarti a strutturare la settimana e poi completa la valutazione." },
       progression:   { label: "Progressi",       task: "Consulta la tua pagina dei progressi. Osserva le tue statistiche, grafici e badge ottenuti." },
       tableauFinal:  { label: "Dashboard pt. 2", task: "Torna alla dashboard dopo aver usato gli altri strumenti di Serenzer. Osserva cosa è cambiato, quanto sono ricche le informazioni mostrate e se la pagina ti sembra ora più utile e viva." },
       finalThoughts: { label: "Ultimi pensieri", task: "Prenditi un momento per condividere la tua impressione generale. Qui puoi dirci cosa terresti, cosa cambieresti e cosa ti piacerebbe vedere dopo." },
@@ -1023,13 +1059,25 @@ const T = {
     challengesRelevant: "Voelen de beschikbare uitdagingen relevant voor jou?",
     challengesClear: "Is het duidelijk hoe je aan een uitdaging deelneemt?",
     challengesProgress: "Voelt het voortgangs-/beloningssysteem logisch aan?",
-    organisationRequired: "* Vul minstens de sectie Organisatie en de evaluatie in om verder te gaan",
-    organisationTitle: "Acties om te voltooien - Organisatie",
-    organisationCreate: "Maak een taak of notitie aan.",
-    organisationComplete: "Markeer één item als voltooid.",
-    organisationEasy: "Is het gemakkelijk om te begrijpen hoe je je items organiseert?",
-    organisationSense: "Voelen de categorieën, lijsten of groeperingen logisch aan?",
-    organisationReflect: "Wanneer je een item voltooit, wordt dat dan duidelijk zichtbaar in de interface?",
+    organisationRequired: "* Vul de Project-secties en de evaluatie in om verder te gaan",
+    organisationProjectTitle: "Acties om te voltooien - Nieuw project",
+    organisationProjectCreate: "Maak een nieuw project aan.",
+    organisationProjectChoose: "Kies \"Organiseer mijn week\" en geef je project een naam.",
+    organisationProjectWeek: "Selecteer een week.",
+    organisationProjectAsk: "Stel een vraag over die week.",
+    organisationProjectCalendar: "Noemt de AI de gebeurtenissen uit je gekoppelde agenda?",
+    organisationUseTitle: "Gebruik je project",
+    organisationUseTell: "Vertel de AI hoe je wilt dat je week eruitziet.",
+    organisationUseContext: "Begrijpt de AI je vraag en gebruikt ze context om je te helpen?",
+    organisationUseBuild: "Bouw je week op met de AI.",
+    organisationFinaliseTitle: "Je project afronden",
+    organisationFinaliseWrap: "Vraag de AI om het project af te ronden.",
+    organisationFinaliseWorks: "Werkt het?",
+    organisationFinaliseClick: "Klik op ‘Finaliseren’.",
+    organisationFinaliseReport: "Maakt het een volledig verslag van jullie gesprek?",
+    organisationFinaliseSense: "Is het logisch?",
+    organisationFinaliseCalendar: "Voegt het je nieuwe plannen toe aan je agenda?",
+    genericToolSense: "Voelt deze tool logisch voor je aan?",
     progressionRequired: "* Vul minstens de sectie Voortgang en de evaluatie in om verder te gaan",
     progressionTitle: "Acties om te voltooien - Voortgang",
     progressionOpen: "Open de voortgangspagina.",
@@ -1063,7 +1111,7 @@ const T = {
       rituels:       { label: "Rituelen",     task: "Maak of verken een ritueel in Serenzer. Configureer de instellingen en activeer het om te zien hoe het in je routine past." },
       challenges:    { label: "Uitdagingen",  task: "Doe mee aan of bekijk een beschikbare uitdaging. Observeer de voortgang en de voorgestelde stappen." },
       calendrier:    { label: "Kalender",     task: "Bekijk je Serenzer-kalender. Voeg een evenement of herinnering toe en controleer of het correct wordt weergegeven." },
-      organisation:  { label: "Organisatie",  task: "Gebruik de organisatietools: maak een taak of notitie, categoriseer deze en markeer als voltooid." },
+      organisation:  { label: "Organisatie",  task: "Maak een project, laat de AI je helpen je week op te bouwen en rond daarna je evaluatie af." },
       progression:   { label: "Voortgang",    task: "Bekijk je voortgangspagina. Observeer je statistieken, grafieken en behaalde badges." },
       tableauFinal:  { label: "Dashboard pt. 2", task: "Ga terug naar het dashboard nadat je de andere Serenzer-tools hebt gebruikt. Kijk wat er is veranderd, hoe rijk de getoonde informatie nu aanvoelt en of de pagina nu nuttiger en levendiger lijkt." },
       finalThoughts: { label: "Laatste gedachten", task: "Neem even de tijd om je algemene indruk te delen. Hier kun je ons vertellen wat je zou behouden, wat je zou veranderen en wat je hierna zou willen zien." },
@@ -1258,13 +1306,25 @@ const T = {
     challengesRelevant: "Fühlen sich die verfügbaren Herausforderungen für dich relevant an?",
     challengesClear: "Ist klar, wie man an einer Herausforderung teilnimmt?",
     challengesProgress: "Erscheint dir das Fortschritts- / Belohnungssystem sinnvoll?",
-    organisationRequired: "* Fülle mindestens den Bereich Organisation und die Bewertung aus, um fortzufahren",
-    organisationTitle: "Zu erledigende Aktionen - Organisation",
-    organisationCreate: "Erstelle eine Aufgabe oder Notiz.",
-    organisationComplete: "Markiere ein Element als erledigt.",
-    organisationEasy: "Ist es leicht zu verstehen, wie du deine Elemente organisierst?",
-    organisationSense: "Erscheinen dir Kategorien, Listen oder Gruppierungen logisch?",
-    organisationReflect: "Wenn du ein Element erledigst, wird das Ergebnis dann klar in der Oberfläche angezeigt?",
+    organisationRequired: "* Fülle die Projekt-Abschnitte und die Bewertung aus, um fortzufahren",
+    organisationProjectTitle: "Zu erledigende Aktionen - Neues Projekt",
+    organisationProjectCreate: "Erstelle ein neues Projekt.",
+    organisationProjectChoose: "Wähle „Meine Woche organisieren“ und benenne dein Projekt.",
+    organisationProjectWeek: "Wähle eine Woche aus.",
+    organisationProjectAsk: "Stelle eine Frage zu dieser Woche.",
+    organisationProjectCalendar: "Erwähnt die KI die Ereignisse aus deinem verbundenen Kalender?",
+    organisationUseTitle: "Nutze dein Projekt",
+    organisationUseTell: "Sag der KI, wie deine Woche aussehen soll.",
+    organisationUseContext: "Versteht sie deine Anfrage und nutzt den Kontext, um dir zu helfen?",
+    organisationUseBuild: "Plane deine Woche mit der KI.",
+    organisationFinaliseTitle: "Projekt abschließen",
+    organisationFinaliseWrap: "Bitte die KI, das Projekt abzuschließen.",
+    organisationFinaliseWorks: "Funktioniert das?",
+    organisationFinaliseClick: "Klicke auf „Finalisieren“.",
+    organisationFinaliseReport: "Erstellt sie einen vollständigen Bericht über euer Gespräch?",
+    organisationFinaliseSense: "Ergibt das Sinn?",
+    organisationFinaliseCalendar: "Fügt sie deine neuen Pläne deinem Kalender hinzu?",
+    genericToolSense: "Erscheint dir dieses Tool sinnvoll?",
     progressionRequired: "* Fülle mindestens den Bereich Fortschritt und die Bewertung aus, um fortzufahren",
     progressionTitle: "Zu erledigende Aktionen - Fortschritt",
     progressionOpen: "Öffne die Fortschrittsseite.",
@@ -1298,7 +1358,7 @@ const T = {
       rituels:       { label: "Rituale",              task: "Erstelle oder erkunde ein Ritual in Serenzer. Konfiguriere die Einstellungen und aktiviere es, um zu sehen, wie es sich in deine Routine einfügt." },
       challenges:    { label: "Herausforderungen",    task: "Nimm an einer verfügbaren Herausforderung teil oder konsultiere sie. Beobachte den Fortschritt und die vorgeschlagenen Schritte." },
       calendrier:    { label: "Kalender",             task: "Schau dir deinen Serenzer-Kalender an. Füge ein Ereignis oder eine Erinnerung hinzu und überprüfe, ob es korrekt angezeigt wird." },
-      organisation:  { label: "Organisation",         task: "Verwende die Organisationstools: Erstelle eine Aufgabe oder Notiz, kategorisiere sie und markiere sie als erledigt." },
+      organisation:  { label: "Organisation",         task: "Erstelle ein Projekt, lass dir von der KI bei deiner Woche helfen und schließe dann die Bewertung ab." },
       progression:   { label: "Fortschritt",          task: "Schau dir deine Fortschrittsseite an. Beobachte deine Statistiken, Diagramme und erhaltenen Abzeichen." },
       tableauFinal:  { label: "Dashboard Teil 2",      task: "Kehre zum Dashboard zurück, nachdem du die anderen Serenzer-Tools genutzt hast. Beobachte, was sich verändert hat, wie reichhaltig die angezeigten Informationen nun wirken und ob die Seite jetzt nützlicher und lebendiger erscheint." },
       finalThoughts: { label: "Letzte Gedanken", task: "Nimm dir einen Moment, um deinen Gesamteindruck zu teilen. Hier kannst du uns sagen, was du behalten würdest, was du ändern würdest und was du dir als Nächstes wünschen würdest." },
@@ -1493,13 +1553,25 @@ const T = {
     challengesRelevant: "¿Los retos disponibles te parecen relevantes?",
     challengesClear: "¿Queda claro cómo participar en un reto?",
     challengesProgress: "¿El sistema de progreso / recompensa te parece coherente?",
-    organisationRequired: "* Completa al menos la sección Organización y la evaluación para continuar",
-    organisationTitle: "Acciones a completar - Organización",
-    organisationCreate: "Crea una tarea o una nota.",
-    organisationComplete: "Marca un elemento como completado.",
-    organisationEasy: "¿Es fácil entender cómo organizar tus elementos?",
-    organisationSense: "¿Las categorías, listas o agrupaciones te parecen claras?",
-    organisationReflect: "Cuando completas un elemento, ¿el resultado se refleja claramente en la interfaz?",
+    organisationRequired: "* Completa las secciones de Proyecto y la evaluación para continuar",
+    organisationProjectTitle: "Acciones a completar - Nuevo proyecto",
+    organisationProjectCreate: "Crea un nuevo proyecto.",
+    organisationProjectChoose: "Elige \"Organizar mi semana\" y ponle un nombre a tu proyecto.",
+    organisationProjectWeek: "Selecciona una semana.",
+    organisationProjectAsk: "Haz una pregunta sobre esa semana.",
+    organisationProjectCalendar: "¿La IA menciona los eventos de tu calendario conectado?",
+    organisationUseTitle: "Usa tu proyecto",
+    organisationUseTell: "Dile a la IA cómo te gustaría que fuera tu semana.",
+    organisationUseContext: "¿Entiende tu petición y usa el contexto para ayudarte?",
+    organisationUseBuild: "Construye tu semana con la IA.",
+    organisationFinaliseTitle: "Finaliza tu proyecto",
+    organisationFinaliseWrap: "Dile a la IA que cierre el proyecto.",
+    organisationFinaliseWorks: "¿Funciona?",
+    organisationFinaliseClick: "Haz clic en « Finalizar ».",
+    organisationFinaliseReport: "¿Genera un informe completo de vuestra conversación?",
+    organisationFinaliseSense: "¿Tiene sentido?",
+    organisationFinaliseCalendar: "¿Añade tus nuevos planes al calendario?",
+    genericToolSense: "¿Te parece claro este instrumento?",
     progressionRequired: "* Completa al menos la sección Progreso y la evaluación para continuar",
     progressionTitle: "Acciones a completar - Progreso",
     progressionOpen: "Abre la página Progreso.",
@@ -1533,7 +1605,7 @@ const T = {
       rituels:       { label: "Rituales",        task: "Crea o explora un ritual en Serenzer. Configura sus ajustes y activalo para ver cómo se integra en tu rutina." },
       challenges:    { label: "Retos",           task: "Únete o consulta un reto disponible. Observa el progreso y los pasos propuestos." },
       calendrier:    { label: "Calendario",      task: "Consulta tu calendario Serenzer. Añade un evento o un recordatorio y verifica que se muestre correctamente." },
-      organisation:  { label: "Organización",    task: "Utiliza las herramientas de organización: crea una tarea o una nota, clasifícala y márcala como completada." },
+      organisation:  { label: "Organización",    task: "Crea un proyecto, deja que la IA te ayude a estructurar tu semana y luego completa la evaluación." },
       progression:   { label: "Progreso",        task: "Consulta tu página de progreso. Observa tus estadísticas, gráficos e insignias obtenidas." },
       tableauFinal:  { label: "Panel pt. 2",      task: "Vuelve al panel después de haber usado las demás herramientas de Serenzer. Observa qué ha cambiado, lo rica que se siente ahora la información mostrada y si la página te parece más útil y viva." },
       finalThoughts: { label: "Reflexiones finales", task: "Tómate un momento para compartir tu impresión general. Aquí puedes decirnos qué conservarías, qué cambiarías y qué te gustaría ver después." },
@@ -2214,6 +2286,7 @@ function toolTabHTML(tool) {
       <p style="color:var(--olive-mid);font-size:14px;margin-top:0;margin-bottom:20px;">${t("evaluationSubtitle")}</p>
       ${starRatingHTML(t("intuitiveLabel"), d.intuitive, "intuitive")}
       ${starRatingHTML(t("usefulLabel"),    d.useful,    "useful")}
+      ${checkboxGroupHTML(t("genericToolSense"), yesNoOptions(), d.genericToolSense, true, "genericToolSense")}
       ${checkboxGroupHTML(t("experienceQuestion"), experienceOptions, d.experience || [], false, "experience")}
 
       <div class="field">
@@ -2236,13 +2309,14 @@ function toolTabHTML(tool) {
   `;
 }
 
-function standardEvaluationCardHTML(tr, d, isValid, requiredText) {
+function standardEvaluationCardHTML(tr, d, isValid, requiredText, toolKey = "") {
   const experienceOptions = [
     { value: "perfect",  label: t("expPerfect") },
     { value: "bug",      label: t("expBug") },
     { value: "confused", label: t("expConfused") },
     { value: "loved",    label: t("expLoved") },
   ];
+  const includeSenseQuestion = ["calendrier", "coach", "progression", "organisation", "rituels"].includes(toolKey);
 
   return `
     <div class="card">
@@ -2250,6 +2324,7 @@ function standardEvaluationCardHTML(tr, d, isValid, requiredText) {
       <p style="color:var(--olive-mid);font-size:14px;margin-top:0;margin-bottom:20px;">${t("evaluationSubtitle")}</p>
       ${starRatingHTML(t("intuitiveLabel"), d.intuitive, "intuitive")}
       ${starRatingHTML(t("usefulLabel"), d.useful, "useful")}
+      ${includeSenseQuestion ? checkboxGroupHTML(t("genericToolSense"), yesNoOptions(), d.genericToolSense, true, "genericToolSense") : ""}
       ${checkboxGroupHTML(t("experienceQuestion"), experienceOptions, d.experience || [], false, "experience")}
 
       <div class="field">
@@ -2304,11 +2379,12 @@ function scenarioToolHTML(tool, d, sections, requiredText) {
             ${section.tasks.map(task => taskItemHTML(t(task.labelKey), d[task.field], "data-generic-task", task.field)).join("")}
           </div>
         ` : ""}
+        ${section.noteKey ? `<p style="color:var(--olive-mid);font-size:15px;line-height:1.65;margin:0 0 4px;">${t(section.noteKey)}</p>` : ""}
         ${(section.questions || []).map(question => sectionQuestionHTML(question, d)).join("")}
       </div>
     `).join("")}
 
-    ${standardEvaluationCardHTML(tr, d, isValid, requiredText)}
+    ${standardEvaluationCardHTML(tr, d, isValid, requiredText, tool.key)}
   `;
 }
 
@@ -2360,6 +2436,7 @@ function calendarToolHTML(tool, d) {
       <p style="color:var(--olive-mid);font-size:14px;margin-top:0;margin-bottom:20px;">${t("evaluationSubtitle")}</p>
       ${starRatingHTML(t("intuitiveLabel"), d.intuitive, "intuitive")}
       ${starRatingHTML(t("usefulLabel"),    d.useful,    "useful")}
+      ${checkboxGroupHTML(t("genericToolSense"), yesNoOptions(), d.genericToolSense, true, "genericToolSense")}
       ${checkboxGroupHTML(t("experienceQuestion"), experienceOptions, d.experience || [], false, "experience")}
 
       <div class="field">
@@ -2402,15 +2479,38 @@ function challengesToolHTML(tool, d) {
 function organisationToolHTML(tool, d) {
   return scenarioToolHTML(tool, d, [
     {
-      titleKey: "organisationTitle",
+      titleKey: "organisationProjectTitle",
       tasks: [
-        { labelKey: "organisationCreate", field: "organisationCreateDone" },
-        { labelKey: "organisationComplete", field: "organisationCompleteDone" },
+        { labelKey: "organisationProjectCreate", field: "organisationProjectCreateDone" },
+        { labelKey: "organisationProjectChoose", field: "organisationProjectChooseDone" },
+        { labelKey: "organisationProjectWeek", field: "organisationProjectWeekDone" },
+        { labelKey: "organisationProjectAsk", field: "organisationProjectAskDone" },
       ],
       questions: [
-        { type: "yesNo", labelKey: "organisationEasy", field: "organisationEasy" },
-        { type: "open", labelKey: "organisationSense", field: "organisationSense" },
-        { type: "yesNo", labelKey: "organisationReflect", field: "organisationReflect" },
+        { type: "yesNo", labelKey: "organisationProjectCalendar", field: "organisationProjectCalendar" },
+      ],
+    },
+    {
+      titleKey: "organisationUseTitle",
+      tasks: [
+        { labelKey: "organisationUseTell", field: "organisationUseTellDone" },
+        { labelKey: "organisationUseBuild", field: "organisationUseBuildDone" },
+      ],
+      questions: [
+        { type: "yesNo", labelKey: "organisationUseContext", field: "organisationUseContext" },
+      ],
+    },
+    {
+      titleKey: "organisationFinaliseTitle",
+      tasks: [
+        { labelKey: "organisationFinaliseWrap", field: "organisationFinaliseWrapDone" },
+        { labelKey: "organisationFinaliseClick", field: "organisationFinaliseClickDone" },
+      ],
+      questions: [
+        { type: "yesNo", labelKey: "organisationFinaliseWorks", field: "organisationFinaliseWorks" },
+        { type: "yesNo", labelKey: "organisationFinaliseReport", field: "organisationFinaliseReport" },
+        { type: "yesNo", labelKey: "organisationFinaliseSense", field: "organisationFinaliseSense" },
+        { type: "yesNo", labelKey: "organisationFinaliseCalendar", field: "organisationFinaliseCalendar" },
       ],
     },
   ], t("organisationRequired"));
@@ -2566,6 +2666,7 @@ function ritualsToolHTML(tool, d) {
       <p style="color:var(--olive-mid);font-size:14px;margin-top:0;margin-bottom:20px;">${t("evaluationSubtitle")}</p>
       ${starRatingHTML(t("intuitiveLabel"), d.intuitive, "intuitive")}
       ${starRatingHTML(t("usefulLabel"),    d.useful,    "useful")}
+      ${checkboxGroupHTML(t("genericToolSense"), yesNoOptions(), d.genericToolSense, true, "genericToolSense")}
       ${checkboxGroupHTML(t("experienceQuestion"), experienceOptions, d.experience || [], false, "experience")}
 
       <div class="field">
@@ -2817,7 +2918,6 @@ function attachToolListeners(tool) {
 
   [
     "challengesRelevant",
-    "organisationSense",
     "progressionSense",
     "dashboardFinalSense",
     "finalThoughtsEssay",
@@ -2841,8 +2941,6 @@ function attachToolListeners(tool) {
         ? ["description", "suggestions", "ritualNewSense", "ritualAiSense"]
         : tool.key === "challenges"
           ? ["description", "suggestions", "challengesRelevant"]
-        : tool.key === "organisation"
-          ? ["description", "suggestions", "organisationSense"]
         : tool.key === "progression"
           ? ["description", "suggestions", "progressionSense"]
         : tool.key === "tableauFinal"
@@ -2971,7 +3069,7 @@ function isToolValid(toolKey, d) {
     case "coach":
       return ["coachAction1Done", "coachAction2Done", "coachAction3Done"].every(key => !!d[key])
         && ["coachObs1", "coachObs2", "coachObs3", "coachObs4", "coachObs5"].every(key => d[`${key}Answer`])
-        && d.intuitive && d.useful;
+        && d.intuitive && d.useful && d.genericToolSense;
     case "calendrier":
       return d.calendarGoogleAddDone
         && d.calendarGoogleShow
@@ -2980,7 +3078,8 @@ function isToolValid(toolKey, d) {
         && d.calendarSerenzerShow
         && d.calendarGoogleSync
         && d.intuitive
-        && d.useful;
+        && d.useful
+        && d.genericToolSense;
     case "rituels":
       return d.ritualNewActionDone
         && d.ritualNewWorks
@@ -2994,7 +3093,8 @@ function isToolValid(toolKey, d) {
         && d.ritualAiCalendar
         && d.ritualAiMine
         && d.intuitive
-        && d.useful;
+        && d.useful
+        && d.genericToolSense;
     case "challenges":
       return d.challengesOpenDone
         && d.challengesJoinDone
@@ -3004,13 +3104,23 @@ function isToolValid(toolKey, d) {
         && d.intuitive
         && d.useful;
     case "organisation":
-      return d.organisationCreateDone
-        && d.organisationCompleteDone
-        && d.organisationEasy
-        && String(d.organisationSense || "").trim()
-        && d.organisationReflect
+      return d.organisationProjectCreateDone
+        && d.organisationProjectChooseDone
+        && d.organisationProjectWeekDone
+        && d.organisationProjectAskDone
+        && d.organisationProjectCalendar
+        && d.organisationUseTellDone
+        && d.organisationUseContext
+        && d.organisationUseBuildDone
+        && d.organisationFinaliseWrapDone
+        && d.organisationFinaliseWorks
+        && (d.organisationFinaliseWorks !== "no" || d.organisationFinaliseClickDone)
+        && d.organisationFinaliseReport
+        && d.organisationFinaliseSense
+        && d.organisationFinaliseCalendar
         && d.intuitive
-        && d.useful;
+        && d.useful
+        && d.genericToolSense;
     case "progression":
       return d.progressionOpenDone
         && d.progressionLoad
@@ -3018,7 +3128,8 @@ function isToolValid(toolKey, d) {
         && String(d.progressionSense || "").trim()
         && d.progressionMotivate
         && d.intuitive
-        && d.useful;
+        && d.useful
+        && d.genericToolSense;
     case "tableauFinal":
       return d.dashboardFinalReturnDone
         && d.dashboardFinalPersonal
