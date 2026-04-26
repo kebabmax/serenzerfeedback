@@ -26,6 +26,10 @@ def normalize_code(value):
     return str(value or "").strip().upper()
 
 
+def normalize_name(value):
+    return " ".join(str(value or "").strip().lower().split())
+
+
 def make_remember_token():
     return secrets.token_urlsafe(32)
 
@@ -172,7 +176,16 @@ def feedback_detail_from_row(row):
     }
 
 
-def claim_invitation_code(conn, code, submission_id):
+def get_onboarding_from_row(row):
+    if row is None:
+        return {}
+    try:
+        return json.loads(row["onboarding_json"] or "{}")
+    except Exception:
+        return {}
+
+
+def claim_invitation_code(conn, code, submission_id, last_name=None):
     normalized = normalize_code(code)
     if not normalized or not submission_id:
         return False, "Invitation code is required"
@@ -193,6 +206,21 @@ def claim_invitation_code(conn, code, submission_id):
     existing_submission = None
     if existing_submission_id:
         existing_submission = get_feedback_detail_row(conn, existing_submission_id)
+        saved_last_name = normalize_name(get_onboarding_from_row(existing_submission).get("lastName"))
+        provided_last_name = normalize_name(last_name)
+        if existing_submission_id != submission_id and saved_last_name:
+            if not provided_last_name:
+                return False, {
+                    "error": "This code has already been used. Confirm the last name on file to continue.",
+                    "requiresLastName": True,
+                    "code": normalized,
+                }
+            if provided_last_name != saved_last_name:
+                return False, {
+                    "error": "That last name does not match our records.",
+                    "requiresLastName": True,
+                    "code": normalized,
+                }
 
     first_activation = row["use_count"] < 1 and not existing_submission_id
     timestamp = now_iso()
@@ -854,10 +882,19 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         submission_id = str(payload.get("submissionId", "")).strip()
         conn = get_db()
         try:
-            ok, result = claim_invitation_code(conn, payload.get("code"), submission_id)
+            ok, result = claim_invitation_code(
+                conn,
+                payload.get("code"),
+                submission_id,
+                payload.get("lastName"),
+            )
             if not ok:
                 conn.rollback()
-                self._send_json(403, {"ok": False, "error": result})
+                if isinstance(result, dict):
+                    status = 409 if result.get("requiresLastName") else 403
+                    self._send_json(status, {"ok": False, **result})
+                else:
+                    self._send_json(403, {"ok": False, "error": result})
                 return
             remember_token = make_remember_token()
             conn.execute(

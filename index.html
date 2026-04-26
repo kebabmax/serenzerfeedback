@@ -142,8 +142,11 @@ const T = {
     inviteButton: "Entrer",
     inviteHint:   "Ton code t'a été envoyé avec l'invitation au test.",
     inviteErrorRequired: "Entre un code d'invitation pour continuer.",
-    inviteErrorInvalid: "Ce code n'est pas valide ou a déjà été utilisé.",
+    inviteErrorInvalid: "Ce code n'est pas valide.",
     inviteValidating: "Vérification du code...",
+    inviteLastNameLabel: "Nom de famille",
+    inviteLastNamePlaceholder: "Le nom utilisé lors de la première connexion",
+    inviteNeedLastName: "Ce code a déjà été utilisé. Confirme le nom de famille associé pour reprendre le même formulaire.",
     inviteLocked: "Accès verrouillé jusqu'à validation du code",
     onboardingInviteLabel: "Code d'invitation validé",
 
@@ -389,8 +392,11 @@ const T = {
     inviteButton: "Enter",
     inviteHint:   "Your code was sent with your beta invitation.",
     inviteErrorRequired: "Enter an invitation code to continue.",
-    inviteErrorInvalid: "This code is invalid or has already been used.",
+    inviteErrorInvalid: "This code is invalid.",
     inviteValidating: "Checking code...",
+    inviteLastNameLabel: "Last name",
+    inviteLastNamePlaceholder: "The last name used the first time",
+    inviteNeedLastName: "This code has already been used. Confirm the last name on file to reopen the same form.",
     inviteLocked: "Access locked until code validation",
     onboardingInviteLabel: "Validated invitation code",
 
@@ -636,8 +642,11 @@ const T = {
     inviteButton: "Entra",
     inviteHint:   "Il tuo codice ti è stato inviato con l'invito alla beta.",
     inviteErrorRequired: "Inserisci un codice d'invito per continuare.",
-    inviteErrorInvalid: "Questo codice non è valido o è già stato usato.",
+    inviteErrorInvalid: "Questo codice non è valido.",
     inviteValidating: "Verifica del codice...",
+    inviteLastNameLabel: "Cognome",
+    inviteLastNamePlaceholder: "Il cognome usato al primo accesso",
+    inviteNeedLastName: "Questo codice è già stato usato. Conferma il cognome associato per riaprire lo stesso modulo.",
     inviteLocked: "Accesso bloccato finché il codice non viene validato",
     onboardingInviteLabel: "Codice d'invito convalidato",
 
@@ -883,8 +892,11 @@ const T = {
     inviteButton: "Doorgaan",
     inviteHint:   "Je code werd meegestuurd met je bèta-uitnodiging.",
     inviteErrorRequired: "Voer een uitnodigingscode in om verder te gaan.",
-    inviteErrorInvalid: "Deze code is ongeldig of al gebruikt.",
+    inviteErrorInvalid: "Deze code is ongeldig.",
     inviteValidating: "Code wordt gecontroleerd...",
+    inviteLastNameLabel: "Achternaam",
+    inviteLastNamePlaceholder: "De achternaam van je eerste gebruik",
+    inviteNeedLastName: "Deze code is al gebruikt. Bevestig de achternaam op het dossier om hetzelfde formulier te heropenen.",
     inviteLocked: "Toegang vergrendeld tot de code is gevalideerd",
     onboardingInviteLabel: "Gevalideerde uitnodigingscode",
 
@@ -1130,8 +1142,11 @@ const T = {
     inviteButton: "Weiter",
     inviteHint:   "Dein Code wurde mit deiner Beta-Einladung gesendet.",
     inviteErrorRequired: "Gib einen Einladungscode ein, um fortzufahren.",
-    inviteErrorInvalid: "Dieser Code ist ungültig oder wurde bereits verwendet.",
+    inviteErrorInvalid: "Dieser Code ist ungültig.",
     inviteValidating: "Code wird geprüft...",
+    inviteLastNameLabel: "Nachname",
+    inviteLastNamePlaceholder: "Der Nachname aus der ersten Nutzung",
+    inviteNeedLastName: "Dieser Code wurde bereits verwendet. Bestätige den hinterlegten Nachnamen, um dasselbe Formular wieder zu öffnen.",
     inviteLocked: "Zugang gesperrt, bis der Code validiert ist",
     onboardingInviteLabel: "Validierter Einladungscode",
 
@@ -1377,8 +1392,11 @@ const T = {
     inviteButton: "Entrar",
     inviteHint:   "Tu código se envió con tu invitación a la beta.",
     inviteErrorRequired: "Introduce un código de invitación para continuar.",
-    inviteErrorInvalid: "Este código no es válido o ya fue utilizado.",
+    inviteErrorInvalid: "Este código no es válido.",
     inviteValidating: "Comprobando código...",
+    inviteLastNameLabel: "Apellido",
+    inviteLastNamePlaceholder: "El apellido usado la primera vez",
+    inviteNeedLastName: "Este código ya fue usado. Confirma el apellido registrado para reabrir el mismo formulario.",
     inviteLocked: "Acceso bloqueado hasta validar el código",
     onboardingInviteLabel: "Código de invitación validado",
 
@@ -1636,6 +1654,9 @@ const state = {
   onboardingData: {},
   toolData: {},
   invitationValidated: false,
+  inviteNeedsLastName: false,
+  inviteDraftCode: "",
+  inviteLastNameDraft: "",
   submissionId: makeSubmissionId(),
   mobileOpen: false,
   debugMenuOpen: false,
@@ -1978,8 +1999,14 @@ function invitationHTML() {
       <p style="color:var(--olive-mid);font-size:15px;line-height:1.7;margin:8px 0 18px;">${t("inviteSubtitle")}</p>
       <div class="field">
         <label class="field-label" for="inp-invitation-gate">${t("inviteLabel")}</label>
-        <input class="text-input" id="inp-invitation-gate" type="text" placeholder="${t("invitePlaceholder")}" value="${esc(state.onboardingData.invitationNumber)}" autocomplete="off" autocapitalize="characters">
+        <input class="text-input" id="inp-invitation-gate" type="text" placeholder="${t("invitePlaceholder")}" value="${esc(state.inviteDraftCode || state.onboardingData.invitationNumber)}" autocomplete="off" autocapitalize="characters">
       </div>
+      ${state.inviteNeedsLastName ? `
+        <div class="field">
+          <label class="field-label" for="inp-invitation-last-name">${t("inviteLastNameLabel")}</label>
+          <input class="text-input" id="inp-invitation-last-name" type="text" placeholder="${t("inviteLastNamePlaceholder")}" value="${esc(state.inviteLastNameDraft)}" autocomplete="family-name">
+        </div>
+      ` : ""}
       <p class="field-hint" id="invite-status-text">${t("inviteHint")}</p>
       <button class="submit-btn" id="invite-submit-btn">${t("inviteButton")}</button>
     </div>
@@ -2185,12 +2212,21 @@ function attachOnboardingListeners() {
 
 function attachInvitationListeners() {
   const input = document.getElementById("inp-invitation-gate");
+  const lastNameInput = document.getElementById("inp-invitation-last-name");
   const status = document.getElementById("invite-status-text");
   const button = document.getElementById("invite-submit-btn");
   if (!input || !status || !button) return;
 
   input.addEventListener("input", () => {
+    state.inviteDraftCode = input.value;
+    state.inviteNeedsLastName = false;
+    state.inviteLastNameDraft = "";
     status.textContent = t("inviteHint");
+  });
+
+  lastNameInput?.addEventListener("input", () => {
+    state.inviteLastNameDraft = lastNameInput.value;
+    status.textContent = t("inviteNeedLastName");
   });
 
   button.addEventListener("click", async () => {
@@ -2199,12 +2235,25 @@ function attachInvitationListeners() {
       status.textContent = t("inviteErrorRequired");
       return;
     }
+    if (state.inviteNeedsLastName && !String(lastNameInput?.value || "").trim()) {
+      status.textContent = t("inviteNeedLastName");
+      return;
+    }
 
     button.disabled = true;
     status.textContent = t("inviteValidating");
 
     const result = await validateInvitationCode(code);
     if (!result.ok) {
+      if (result.data?.requiresLastName) {
+        state.inviteNeedsLastName = true;
+        state.inviteDraftCode = code;
+        state.inviteLastNameDraft = String(lastNameInput?.value || state.inviteLastNameDraft || "");
+        renderAll();
+        document.getElementById("invite-status-text").textContent = result.data?.error || t("inviteNeedLastName");
+        document.getElementById("inp-invitation-last-name")?.focus();
+        return;
+      }
       status.textContent = result.data?.error || t("inviteErrorInvalid");
       button.disabled = false;
       return;
@@ -2217,6 +2266,9 @@ function attachInvitationListeners() {
     }
     state.onboardingData.invitationNumber = result.data.code || code;
     state.invitationValidated = true;
+    state.inviteNeedsLastName = false;
+    state.inviteDraftCode = "";
+    state.inviteLastNameDraft = "";
     setAutosaveStatus("saving");
     await persistNow();
     renderAll();
@@ -3314,6 +3366,7 @@ async function validateInvitationCode(code) {
       body: JSON.stringify({
         submissionId: state.submissionId,
         code,
+        lastName: String(state.inviteLastNameDraft || "").trim() || undefined,
       }),
     });
     const data = await res.json().catch(() => ({}));
