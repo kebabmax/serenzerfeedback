@@ -360,6 +360,8 @@ const T = {
     finalThoughtsPlaceholder: "Parle-nous de ce qui t'a marqué, de ce qui t'a frustré, de ce qui t'a surpris, de ce que tu changerais, et de ce que tu aimerais voir dans Serenzer à l'avenir...",
     finalThoughtsSubmit: "Envoyer mes dernières pensées",
     finalThoughtsRequired: "* Écris au moins quelques lignes pour terminer",
+    finalThoughtsPricingLabel: "Si Serenzer proposait un abonnement, combien serais-tu prêt(e) à payer par mois ? Et pour quelles fonctionnalités ?",
+    finalThoughtsPricingPlaceholder: "Ex. 5-10 € par mois pour le coach IA et les rituels, mais pas au-delà de 15 €...",
     closingTitle: "Merci pour ton temps",
     closingBody: "Ton feedback a bien été enregistré. Merci d'avoir pris le temps d'explorer Serenzer avec attention et honnêteté. Tes réponses vont directement nous aider à améliorer l'expérience avant le lancement.",
     closingRewardTitle: "Ton avantage beta",
@@ -610,6 +612,8 @@ const T = {
     finalThoughtsPlaceholder: "Tell us what stood out, what frustrated you, what surprised you, what you would change, and what you would love to see next in Serenzer...",
     finalThoughtsSubmit: "Send my final thoughts",
     finalThoughtsRequired: "* Write at least a few lines to finish",
+    finalThoughtsPricingLabel: "If Serenzer offered a subscription, how much would you be willing to pay per month? And for which features?",
+    finalThoughtsPricingPlaceholder: "E.g. £5-10/month for the AI coach and rituals, but I wouldn't go beyond £15...",
     closingTitle: "Thank you for your time",
     closingBody: "Your feedback has been successfully saved. Thank you for exploring Serenzer so carefully and honestly. Your answers will directly help us improve the experience before launch.",
     closingRewardTitle: "Your beta perk",
@@ -860,6 +864,8 @@ const T = {
     finalThoughtsPlaceholder: "Raccontaci cosa ti ha colpito, cosa ti ha frustrato, cosa ti ha sorpreso, cosa cambieresti e cosa ti piacerebbe vedere in Serenzer in futuro...",
     finalThoughtsSubmit: "Invia i miei ultimi pensieri",
     finalThoughtsRequired: "* Scrivi almeno qualche riga per terminare",
+    finalThoughtsPricingLabel: "Se Serenzer offrisse un abbonamento, quanto saresti disposto/a a pagare al mese? E per quali funzionalità?",
+    finalThoughtsPricingPlaceholder: "Es. 5-10 € al mese per il coach IA e i rituali, ma non andrei oltre i 15 €...",
     closingTitle: "Grazie per il tuo tempo",
     closingBody: "Il tuo feedback è stato registrato correttamente. Grazie per aver esplorato Serenzer con attenzione e sincerità. Le tue risposte ci aiuteranno direttamente a migliorare l'esperienza prima del lancio.",
     closingRewardTitle: "Il tuo vantaggio beta",
@@ -1110,6 +1116,8 @@ const T = {
     finalThoughtsPlaceholder: "Vertel ons wat opviel, wat frustrerend was, wat je verraste, wat je zou veranderen en wat je later nog graag in Serenzer zou zien...",
     finalThoughtsSubmit: "Stuur mijn laatste gedachten",
     finalThoughtsRequired: "* Schrijf minstens een paar regels om af te ronden",
+    finalThoughtsPricingLabel: "Als Serenzer een abonnement zou aanbieden, hoeveel zou je per maand willen betalen? En voor welke functies?",
+    finalThoughtsPricingPlaceholder: "Bijv. €5-10 per maand voor de AI-coach en rituelen, maar meer dan €15 zou ik niet betalen...",
     closingTitle: "Bedankt voor je tijd",
     closingBody: "Je feedback is goed opgeslagen. Bedankt dat je Serenzer zo aandachtig en eerlijk hebt verkend. Je antwoorden zullen ons rechtstreeks helpen om de ervaring vóór de lancering te verbeteren.",
     closingRewardTitle: "Jouw beta-voordeel",
@@ -1360,6 +1368,8 @@ const T = {
     finalThoughtsPlaceholder: "Erzähl uns, was dich beeindruckt hat, was dich frustriert hat, was dich überrascht hat, was du ändern würdest und was du dir als Nächstes in Serenzer wünschen würdest...",
     finalThoughtsSubmit: "Meine letzten Gedanken senden",
     finalThoughtsRequired: "* Schreibe mindestens ein paar Zeilen, um abzuschließen",
+    finalThoughtsPricingLabel: "Wenn Serenzer ein Abonnement anbieten würde, wie viel wärst du bereit, pro Monat zu zahlen? Und für welche Funktionen?",
+    finalThoughtsPricingPlaceholder: "z.B. 5-10 € pro Monat für den KI-Coach und die Rituale, aber mehr als 15 € würde ich nicht zahlen...",
     closingTitle: "Danke für deine Zeit",
     closingBody: "Dein Feedback wurde erfolgreich gespeichert. Danke, dass du Serenzer so aufmerksam und ehrlich erkundet hast. Deine Antworten helfen uns direkt dabei, die Erfahrung vor dem Launch zu verbessern.",
     closingRewardTitle: "Dein Beta-Vorteil",
@@ -1610,6 +1620,8 @@ const T = {
     finalThoughtsPlaceholder: "Cuéntanos qué te llamó la atención, qué te frustró, qué te sorprendió, qué cambiarías y qué te gustaría ver después en Serenzer...",
     finalThoughtsSubmit: "Enviar mis reflexiones finales",
     finalThoughtsRequired: "* Escribe al menos unas líneas para terminar",
+    finalThoughtsPricingLabel: "Si Serenzer ofreciera una suscripción, ¿cuánto estarías dispuesto/a a pagar al mes? ¿Y por qué funcionalidades?",
+    finalThoughtsPricingPlaceholder: "Por ej. 5-10 € al mes por el coach IA y los rituales, pero no pagaría más de 15 €...",
     closingTitle: "Gracias por tu tiempo",
     closingBody: "Tu feedback se ha guardado correctamente. Gracias por explorar Serenzer con tanta atención y honestidad. Tus respuestas nos ayudarán directamente a mejorar la experiencia antes del lanzamiento.",
     closingRewardTitle: "Tu ventaja beta",
@@ -2637,6 +2649,14 @@ function finalThoughtsToolHTML(tool, d) {
         <textarea class="textarea-input" id="inp-finalThoughtsEssay" rows="10"
           placeholder="${t("finalThoughtsPlaceholder")}">${esc(d.finalThoughtsEssay)}</textarea>
       </div>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label class="field-label" for="inp-subscriptionThoughts">${t("finalThoughtsPricingLabel")}</label>
+        <textarea class="textarea-input" id="inp-subscriptionThoughts" rows="4"
+          placeholder="${t("finalThoughtsPricingPlaceholder")}">${esc(d.subscriptionThoughts)}</textarea>
+      </div>
 
       <button class="submit-btn" id="tool-submit-btn" ${isValid ? "" : "disabled"}>
         ${t("finalThoughtsSubmit")}
@@ -2992,6 +3012,7 @@ function attachToolListeners(tool) {
     "progressionSense",
     "dashboardFinalSense",
     "finalThoughtsEssay",
+    "subscriptionThoughts",
   ].forEach(field => {
     const el = document.getElementById(`inp-${field}`);
     if (!el) return;
@@ -3017,7 +3038,7 @@ function attachToolListeners(tool) {
         : tool.key === "tableauFinal"
           ? ["description", "suggestions", "dashboardFinalSense"]
         : tool.key === "finalThoughts"
-          ? ["finalThoughtsEssay"]
+          ? ["finalThoughtsEssay", "subscriptionThoughts"]
         : ["description", "suggestions"];
 
     fields.forEach(field => {
