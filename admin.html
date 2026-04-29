@@ -1329,7 +1329,7 @@
                 ${messages.map(message => `
                   <div class="message-history-item">
                     <div class="message-history-topline">
-                      <div class="message-history-author">${esc(message.author || "Serenzer team")}</div>
+                      <div class="message-history-author">${esc(message.author || ((message.senderRole || "admin") === "participant" ? "Participant" : "Serenzer team"))}</div>
                       <div class="message-history-meta">${esc(formatDate(message.createdAt))}</div>
                     </div>
                     <div class="message-history-body">${esc(message.message || "")}</div>
@@ -1503,6 +1503,7 @@
             invitationNumber: invitation,
             submissionId: detail.submissionId,
             author: "Serenzer team",
+            senderRole: "admin",
             message,
           }),
         });

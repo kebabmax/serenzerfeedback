@@ -188,6 +188,14 @@ const T = {
     reportBugRetry: "Réessayer",
     participantMessageTitle: "Message de Serenzer",
     participantMessageDismiss: "J'ai lu",
+    chatOpen: "Messages",
+    chatTitle: "Chat Serenzer",
+    chatEmpty: "Aucun message pour l'instant. Écris-nous si tu as besoin d'aide ou si tu veux préciser un bug.",
+    chatPlaceholder: "Écris un message...",
+    chatSend: "Envoyer",
+    chatSending: "Envoi...",
+    chatSent: "Message envoyé.",
+    chatError: "Impossible d'envoyer le message.",
     startBtn:        "J'ai compris, commencer !",
     langSelectTitle:  "Choisissez votre langue",
     langSelectHint:   "Vous pouvez toujours changer la langue en haut à droite.",
@@ -443,6 +451,14 @@ const T = {
     reportBugRetry: "Try again",
     participantMessageTitle: "Message from Serenzer",
     participantMessageDismiss: "Got it",
+    chatOpen: "Messages",
+    chatTitle: "Serenzer chat",
+    chatEmpty: "No messages yet. Write to us if you need help or want to clarify a bug.",
+    chatPlaceholder: "Write a message...",
+    chatSend: "Send",
+    chatSending: "Sending...",
+    chatSent: "Message sent.",
+    chatError: "Could not send message.",
     startBtn:        "Got it, let's start!",
     langSelectTitle:  "Choose your language",
     langSelectHint:   "You can always change the language in the top right.",
@@ -698,6 +714,14 @@ const T = {
     reportBugRetry: "Riprova",
     participantMessageTitle: "Messaggio da Serenzer",
     participantMessageDismiss: "Ho capito",
+    chatOpen: "Messaggi",
+    chatTitle: "Chat Serenzer",
+    chatEmpty: "Nessun messaggio per ora. Scrivici se hai bisogno di aiuto o vuoi chiarire un bug.",
+    chatPlaceholder: "Scrivi un messaggio...",
+    chatSend: "Invia",
+    chatSending: "Invio in corso...",
+    chatSent: "Messaggio inviato.",
+    chatError: "Impossibile inviare il messaggio.",
     startBtn:        "Ho capito, iniziamo!",
     langSelectTitle:  "Scegli la tua lingua",
     langSelectHint:   "Puoi sempre cambiare la lingua in alto a destra.",
@@ -953,6 +977,14 @@ const T = {
     reportBugRetry: "Opnieuw proberen",
     participantMessageTitle: "Bericht van Serenzer",
     participantMessageDismiss: "Begrepen",
+    chatOpen: "Berichten",
+    chatTitle: "Serenzer chat",
+    chatEmpty: "Nog geen berichten. Schrijf ons als je hulp nodig hebt of een bug wilt verduidelijken.",
+    chatPlaceholder: "Schrijf een bericht...",
+    chatSend: "Versturen",
+    chatSending: "Bezig met verzenden...",
+    chatSent: "Bericht verzonden.",
+    chatError: "Kon bericht niet verzenden.",
     startBtn:        "Begrepen, laten we beginnen!",
     langSelectTitle:  "Kies je taal",
     langSelectHint:   "Je kunt de taal altijd rechtsboven wijzigen.",
@@ -1208,6 +1240,14 @@ const T = {
     reportBugRetry: "Erneut versuchen",
     participantMessageTitle: "Nachricht von Serenzer",
     participantMessageDismiss: "Verstanden",
+    chatOpen: "Nachrichten",
+    chatTitle: "Serenzer Chat",
+    chatEmpty: "Noch keine Nachrichten. Schreib uns, wenn du Hilfe brauchst oder einen Bug genauer erklären möchtest.",
+    chatPlaceholder: "Nachricht schreiben...",
+    chatSend: "Senden",
+    chatSending: "Wird gesendet...",
+    chatSent: "Nachricht gesendet.",
+    chatError: "Nachricht konnte nicht gesendet werden.",
     startBtn:        "Verstanden, los geht's!",
     langSelectTitle:  "Wähle deine Sprache",
     langSelectHint:   "Du kannst die Sprache jederzeit oben rechts ändern.",
@@ -1463,6 +1503,14 @@ const T = {
     reportBugRetry: "Reintentar",
     participantMessageTitle: "Mensaje de Serenzer",
     participantMessageDismiss: "Entendido",
+    chatOpen: "Mensajes",
+    chatTitle: "Chat Serenzer",
+    chatEmpty: "Todavía no hay mensajes. Escríbenos si necesitas ayuda o quieres aclarar un bug.",
+    chatPlaceholder: "Escribe un mensaje...",
+    chatSend: "Enviar",
+    chatSending: "Enviando...",
+    chatSent: "Mensaje enviado.",
+    chatError: "No se pudo enviar el mensaje.",
     startBtn:        "Entendido, empezamos!",
     langSelectTitle:  "Elige tu idioma",
     langSelectHint:   "Siempre puedes cambiar el idioma en la parte superior derecha.",
@@ -1695,7 +1743,13 @@ const state = {
   debugUnlockAllTabs: false,
   debugEnabled: false,
   bugModalOpen: false,
-  participantMessage: null,
+  chatOpen: false,
+  chatThread: [],
+  chatDraft: "",
+  chatLoading: false,
+  chatStatus: "",
+  chatLastSeenAt: "",
+  chatComposing: false,
   lang: "en",
   langSelected: false,
   autosaveStatus: "saved",
@@ -1814,51 +1868,80 @@ async function submitBugReport(message) {
   }
 }
 
-async function fetchCurrentParticipantMessage() {
-  if (!state.invitationValidated) {
-    if (state.participantMessage) {
-      state.participantMessage = null;
-      renderAll();
-    }
-    return null;
-  }
-
+function chatQueryParams() {
   const invitation = String(state.onboardingData.invitationNumber || "").trim();
   const params = new URLSearchParams();
   if (invitation) params.set("invitation", invitation);
   if (state.submissionId) params.set("submissionId", state.submissionId);
+  return params;
+}
 
+async function fetchChatThread() {
+  if (!state.invitationValidated) {
+    if (state.chatThread.length) {
+      state.chatThread = [];
+      renderAll();
+    }
+    return [];
+  }
+
+  const params = chatQueryParams();
+  state.chatLoading = true;
   try {
-    const res = await fetch(`/api/messages/current?${params.toString()}`, { cache: "no-store" });
+    const res = await fetch(`/api/messages/thread?${params.toString()}`, { cache: "no-store" });
     const data = await res.json().catch(() => ({}));
-    const nextMessage = res.ok ? data.message || null : null;
-    const changed = (state.participantMessage?.id || null) !== (nextMessage?.id || null)
-      || (state.participantMessage?.updatedAt || "") !== (nextMessage?.updatedAt || "");
-    state.participantMessage = nextMessage;
-    if (changed) renderAll();
-    return nextMessage;
+    const items = res.ok ? (data.items || []) : [];
+    const changed = JSON.stringify(state.chatThread) !== JSON.stringify(items);
+    state.chatThread = items;
+    if (changed && !state.chatComposing) renderAll();
+    return items;
   } catch (_) {
-    return state.participantMessage;
+    return state.chatThread;
+  } finally {
+    state.chatLoading = false;
   }
 }
 
-async function dismissCurrentParticipantMessage() {
-  if (!state.participantMessage) return false;
+async function sendChatMessage() {
+  const message = String(state.chatDraft || "").trim();
+  if (!message) {
+    state.chatStatus = t("chatError");
+    renderAll();
+    return false;
+  }
+
+  state.chatStatus = t("chatSending");
+  renderAll();
   try {
-    const res = await fetch("/api/messages/dismiss", {
+    const activeTab = getNavTabs().find(tab => tab.id === state.activeTab);
+    const res = await fetch("/api/messages/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        messageId: state.participantMessage.id,
         invitationNumber: state.onboardingData.invitationNumber,
         submissionId: state.submissionId,
+        lang: state.lang,
+        activeTab: state.activeTab,
+        activeTabLabel: activeTab?.label || "",
+        onboarding: state.onboardingData,
+        message,
       }),
     });
-    if (!res.ok) return false;
-    state.participantMessage = null;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      state.chatStatus = data.error || t("chatError");
+      renderAll();
+      return false;
+    }
+    state.chatDraft = "";
+    state.chatComposing = false;
+    state.chatStatus = t("chatSent");
+    await fetchChatThread();
     renderAll();
     return true;
   } catch (_) {
+    state.chatStatus = t("chatError");
+    renderAll();
     return false;
   }
 }
@@ -1928,6 +2011,15 @@ function formatMessageDate(value) {
   }
 }
 
+function unreadChatCount() {
+  const seen = state.chatLastSeenAt ? new Date(state.chatLastSeenAt).getTime() : 0;
+  return state.chatThread.filter(message => {
+    if ((message.senderRole || "admin") !== "admin") return false;
+    const created = message.createdAt ? new Date(message.createdAt).getTime() : 0;
+    return created > seen;
+  }).length;
+}
+
 function doneBadgeHTML(className = "") {
   return `
     <span class="status-badge status-badge-done ${className}">
@@ -1982,7 +2074,13 @@ function resetAppState() {
   state.debugMenuOpen = false;
   state.debugUnlockAllTabs = false;
   state.bugModalOpen = false;
-  state.participantMessage = null;
+  state.chatOpen = false;
+  state.chatThread = [];
+  state.chatDraft = "";
+  state.chatLoading = false;
+  state.chatStatus = "";
+  state.chatLastSeenAt = "";
+  state.chatComposing = false;
   state.lang = "en";
   state.langSelected = false;
   state.autosaveStatus = "saved";
@@ -2372,7 +2470,7 @@ function attachInvitationListeners() {
     state.inviteLastNameDraft = "";
     setAutosaveStatus("saving");
     await persistNow();
-    await fetchCurrentParticipantMessage();
+    await fetchChatThread();
     renderAll();
   });
 }
@@ -3510,7 +3608,7 @@ async function restoreInvitationSession() {
       }
       state.onboardingData.invitationNumber = data.code || state.onboardingData.invitationNumber || "";
       await persistNow();
-      await fetchCurrentParticipantMessage();
+      await fetchChatThread();
       return true;
     } catch (_) {
       return false;
@@ -3555,7 +3653,7 @@ function renderAll() {
   document.getElementById("debug-menu-panel").classList.toggle("hidden", !state.debugMenuOpen);
   document.getElementById("debug-menu-toggle").setAttribute("aria-expanded", state.debugMenuOpen ? "true" : "false");
   document.getElementById("bug-report-modal").classList.toggle("hidden", !state.bugModalOpen);
-  renderParticipantMessage();
+  renderChatWidget();
   document.getElementById("bug-report-title").textContent = t("reportBugTitle");
   document.getElementById("bug-report-body").textContent = t("reportBugBody");
   document.getElementById("bug-report-input").placeholder = t("reportBugPlaceholder");
@@ -3563,44 +3661,87 @@ function renderAll() {
   document.getElementById("bug-report-submit-btn").textContent = t("reportBugSubmit");
 }
 
-function renderParticipantMessage() {
+function renderChatWidget() {
   const shell = document.getElementById("participant-message-shell");
-  const message = state.participantMessage;
-  shell.classList.toggle("hidden", !message);
-  if (!message) {
+  if (!state.invitationValidated) {
+    shell.classList.add("hidden");
     shell.innerHTML = "";
     return;
   }
-
-  const meta = [message.author || "Serenzer", formatMessageDate(message.createdAt)].filter(Boolean).join(" · ");
+  shell.classList.remove("hidden");
+  const unread = unreadChatCount();
   shell.innerHTML = `
-    <div class="participant-message-card">
-      <div class="participant-message-topline">
-        <div>
-          <h3 class="participant-message-title">${esc(t("participantMessageTitle"))}</h3>
-          <div class="participant-message-meta">${esc(meta)}</div>
+    <div class="participant-chat-launcher-wrap">
+      ${state.chatOpen ? "" : `
+        <button class="participant-chat-launcher" id="participant-chat-launcher" type="button" aria-label="${esc(t("chatOpen"))}">
+          <span>${esc(t("chatOpen"))}</span>
+          ${unread ? `<span class="participant-chat-badge">${esc(String(unread))}</span>` : ""}
+        </button>
+      `}
+      <div class="participant-chat-card ${state.chatOpen ? "" : "hidden"}">
+        <div class="participant-chat-topline">
+          <div>
+            <h3 class="participant-message-title">${esc(t("chatTitle"))}</h3>
+            <div class="participant-message-meta">${esc(t("participantMessageTitle"))}</div>
+          </div>
+          <button class="participant-message-close" id="participant-chat-close" type="button" aria-label="${esc(t("participantMessageDismiss"))}">×</button>
         </div>
-        <button class="participant-message-close" id="participant-message-close" type="button" aria-label="${esc(t("participantMessageDismiss"))}">×</button>
-      </div>
-      <p class="participant-message-body">${esc(message.message || "")}</p>
-      <div class="participant-message-actions">
-        <button class="participant-message-dismiss" id="participant-message-dismiss" type="button">${esc(t("participantMessageDismiss"))}</button>
+        <div class="participant-chat-thread" id="participant-chat-thread">
+          ${state.chatThread.length ? state.chatThread.map(message => `
+            <div class="participant-chat-row ${(message.senderRole || "admin") === "participant" ? "self" : "admin"}">
+              <div class="participant-chat-bubble ${(message.senderRole || "admin") === "participant" ? "self" : "admin"}">
+                <div class="participant-chat-author">${esc(message.author || ((message.senderRole || "admin") === "participant" ? "You" : "Serenzer"))}</div>
+                <div class="participant-chat-body">${esc(message.message || "")}</div>
+                <div class="participant-chat-time">${esc(formatMessageDate(message.createdAt))}</div>
+              </div>
+            </div>
+          `).join("") : `
+            <div class="participant-chat-empty">${esc(t("chatEmpty"))}</div>
+          `}
+        </div>
+        <div class="participant-chat-compose">
+          <textarea class="participant-chat-input" id="participant-chat-input" rows="3" placeholder="${esc(t("chatPlaceholder"))}">${esc(state.chatDraft)}</textarea>
+          <div class="participant-chat-compose-footer">
+            <div class="participant-chat-status">${esc(state.chatStatus)}</div>
+            <button class="participant-chat-send" id="participant-chat-send" type="button">${esc(t("chatSend"))}</button>
+          </div>
+        </div>
       </div>
     </div>
   `;
 
-  const handleDismiss = async button => {
-    if (!button) return;
-    button.disabled = true;
-    await dismissCurrentParticipantMessage();
-  };
+  document.getElementById("participant-chat-launcher")?.addEventListener("click", () => {
+    state.chatOpen = true;
+    state.chatStatus = "";
+    state.chatLastSeenAt = nowClientIso();
+    renderAll();
+  });
+  document.getElementById("participant-chat-close")?.addEventListener("click", () => {
+    state.chatOpen = false;
+    state.chatStatus = "";
+    renderAll();
+  });
+  document.getElementById("participant-chat-input")?.addEventListener("input", event => {
+    state.chatDraft = event.currentTarget.value;
+    state.chatComposing = true;
+  });
+  document.getElementById("participant-chat-input")?.addEventListener("focus", () => {
+    state.chatComposing = true;
+  });
+  document.getElementById("participant-chat-input")?.addEventListener("blur", () => {
+    state.chatComposing = false;
+  });
+  document.getElementById("participant-chat-send")?.addEventListener("click", () => {
+    sendChatMessage();
+  });
+  const thread = document.getElementById("participant-chat-thread");
+  if (thread && state.chatOpen) {
+    thread.scrollTop = thread.scrollHeight;
+  }
+}
 
-  document.getElementById("participant-message-close")?.addEventListener("click", event => {
-    handleDismiss(event.currentTarget);
-  });
-  document.getElementById("participant-message-dismiss")?.addEventListener("click", event => {
-    handleDismiss(event.currentTarget);
-  });
+function nowClientIso() {
+  return new Date().toISOString();
 }
 
 function openBugReportModal() {
@@ -3821,9 +3962,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateCountdown();
   setInterval(updateCountdown, 1000);
   setInterval(() => {
-    fetchCurrentParticipantMessage();
+    fetchChatThread();
   }, 15000);
-  fetchCurrentParticipantMessage();
+  fetchChatThread();
 
   if (!state.langSelected) {
     document.getElementById("lang-splash").classList.remove("hidden");

@@ -190,22 +190,37 @@ def get_db():
         )
     if "author" not in participant_message_columns:
         conn.execute("ALTER TABLE participant_messages ADD COLUMN author TEXT")
+    if "sender_role" not in participant_message_columns:
+        conn.execute("ALTER TABLE participant_messages ADD COLUMN sender_role TEXT")
     if "is_dismissed" not in participant_message_columns:
         conn.execute("ALTER TABLE participant_messages ADD COLUMN is_dismissed INTEGER NOT NULL DEFAULT 0")
     if "dismissed_at" not in participant_message_columns:
         conn.execute("ALTER TABLE participant_messages ADD COLUMN dismissed_at TEXT")
+    participant_message_columns = {row["name"] for row in conn.execute("PRAGMA table_info(participant_messages)").fetchall()}
+    if "invitation_code" in participant_message_columns:
+        conn.execute(
+            """
+            UPDATE participant_messages
+            SET invitation_number = COALESCE(NULLIF(invitation_number, ''), invitation_code)
+            WHERE invitation_number IS NULL OR invitation_number = ''
+            """
+        )
+    if "body" in participant_message_columns:
+        conn.execute(
+            """
+            UPDATE participant_messages
+            SET message = COALESCE(NULLIF(message, ''), body)
+            WHERE message IS NULL OR message = ''
+            """
+        )
     conn.execute(
         """
         UPDATE participant_messages
-        SET invitation_number = COALESCE(NULLIF(invitation_number, ''), invitation_code)
-        WHERE invitation_number IS NULL OR invitation_number = ''
-        """
-    )
-    conn.execute(
-        """
-        UPDATE participant_messages
-        SET message = COALESCE(NULLIF(message, ''), body)
-        WHERE message IS NULL OR message = ''
+        SET sender_role = CASE
+            WHEN sender_role IS NOT NULL AND sender_role != '' THEN sender_role
+            WHEN lower(COALESCE(author, '')) IN ('serenzer team', 'serenzer') THEN 'admin'
+            ELSE 'admin'
+        END
         """
     )
     return conn
@@ -834,14 +849,14 @@ def list_participant_messages(conn, invitation_number, include_dismissed=True):
     if not normalized:
         return []
     query = """
-        SELECT id, created_at, updated_at, invitation_number, submission_id, author, message, is_dismissed, dismissed_at
+        SELECT id, created_at, updated_at, invitation_number, submission_id, author, sender_role, message, is_dismissed, dismissed_at
         FROM participant_messages
         WHERE invitation_number = ?
     """
     params = [normalized]
     if not include_dismissed:
         query += " AND is_dismissed = 0"
-    query += " ORDER BY created_at DESC, id DESC"
+    query += " ORDER BY created_at ASC, id ASC"
     rows = conn.execute(query, params).fetchall()
     return [
         {
@@ -851,6 +866,7 @@ def list_participant_messages(conn, invitation_number, include_dismissed=True):
             "invitationNumber": row["invitation_number"],
             "submissionId": row["submission_id"],
             "author": row["author"],
+            "senderRole": row["sender_role"] or "admin",
             "message": row["message"],
             "isDismissed": bool(row["is_dismissed"]),
             "dismissedAt": row["dismissed_at"],
@@ -872,6 +888,9 @@ def create_participant_message(conn, payload):
         return False, "Invitation number is required"
     submission_id = str(payload.get("submissionId") or "").strip() or None
     author = str(payload.get("author") or "Serenzer team").strip() or "Serenzer team"
+    sender_role = str(payload.get("senderRole") or "admin").strip().lower() or "admin"
+    if sender_role not in {"admin", "participant"}:
+        sender_role = "admin"
     timestamp = now_iso()
     columns = {row["name"] for row in conn.execute("PRAGMA table_info(participant_messages)").fetchall()}
 
@@ -893,6 +912,9 @@ def create_participant_message(conn, payload):
     if "author" in columns:
         insert_columns.append("author")
         insert_values.append(author)
+    if "sender_role" in columns:
+        insert_columns.append("sender_role")
+        insert_values.append(sender_role)
     if "message" in columns:
         insert_columns.append("message")
         insert_values.append(message)
@@ -921,6 +943,7 @@ def create_participant_message(conn, payload):
         "invitationNumber": invitation_number,
         "submissionId": submission_id,
         "author": author,
+        "senderRole": sender_role,
         "message": message,
         "isDismissed": False,
         "dismissedAt": None,
@@ -965,6 +988,9 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/messages/current":
             self._handle_current_participant_message(parsed)
             return
+        if parsed.path == "/api/messages/thread":
+            self._handle_participant_message_thread(parsed)
+            return
         if parsed.path == "/api/admin/messages":
             self._handle_admin_message_list(parsed)
             return
@@ -1006,6 +1032,9 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/admin/messages":
             self._handle_admin_message_create()
+            return
+        if parsed.path == "/api/messages/send":
+            self._handle_participant_message_create()
             return
         if parsed.path == "/api/messages/dismiss":
             self._handle_participant_message_dismiss()
@@ -1455,6 +1484,18 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             conn.close()
         self._send_json(200, {"ok": True, "message": items[0] if items else None})
 
+    def _handle_participant_message_thread(self, parsed):
+        query = parse_qs(parsed.query)
+        invitation = query.get("invitation", [""])[0]
+        submission_id = query.get("submissionId", [""])[0]
+        conn = get_db()
+        try:
+            resolved = resolve_invitation_number(conn, invitation_number=invitation, submission_id=submission_id)
+            items = list_participant_messages(conn, resolved, include_dismissed=False)
+        finally:
+            conn.close()
+        self._send_json(200, {"count": len(items), "items": items})
+
     def _handle_admin_message_create(self):
         payload, error = self._read_json_body()
         if error:
@@ -1472,6 +1513,44 @@ class FeedbackHandler(BaseHTTPRequestHandler):
                 "participant_message_created",
                 submissionId=result.get("submissionId"),
                 invitationNumber=result.get("invitationNumber"),
+                details={"messageId": result.get("id"), "author": result.get("author")},
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        self._send_json(200, {"ok": True, "message": result})
+
+    def _handle_participant_message_create(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+        conn = get_db()
+        try:
+            onboarding = payload.get("onboarding") or {}
+            author = (
+                str(onboarding.get("firstName") or "").strip()
+                or str(onboarding.get("email") or "").strip()
+                or "Participant"
+            )
+            payload["author"] = author
+            payload["senderRole"] = "participant"
+            ok, result = create_participant_message(conn, payload)
+            if not ok:
+                conn.rollback()
+                self._send_json(400, {"error": result})
+                return
+            self._log_activity(
+                conn,
+                "participant_message_sent",
+                submissionId=result.get("submissionId"),
+                invitationNumber=result.get("invitationNumber"),
+                email=str(onboarding.get("email") or "").strip() or None,
+                firstName=str(onboarding.get("firstName") or "").strip() or None,
+                lastName=str(onboarding.get("lastName") or "").strip() or None,
+                lang=str(payload.get("lang") or "").strip() or None,
+                activeTab=payload.get("activeTab"),
+                activeTabLabel=payload.get("activeTabLabel"),
                 details={"messageId": result.get("id"), "author": result.get("author")},
             )
             conn.commit()
