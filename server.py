@@ -873,13 +873,46 @@ def create_participant_message(conn, payload):
     submission_id = str(payload.get("submissionId") or "").strip() or None
     author = str(payload.get("author") or "Serenzer team").strip() or "Serenzer team"
     timestamp = now_iso()
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(participant_messages)").fetchall()}
+
+    insert_columns = ["created_at"]
+    insert_values = [timestamp]
+
+    if "updated_at" in columns:
+        insert_columns.append("updated_at")
+        insert_values.append(timestamp)
+    if "invitation_number" in columns:
+        insert_columns.append("invitation_number")
+        insert_values.append(invitation_number)
+    if "invitation_code" in columns:
+        insert_columns.append("invitation_code")
+        insert_values.append(invitation_number)
+    if "submission_id" in columns:
+        insert_columns.append("submission_id")
+        insert_values.append(submission_id)
+    if "author" in columns:
+        insert_columns.append("author")
+        insert_values.append(author)
+    if "message" in columns:
+        insert_columns.append("message")
+        insert_values.append(message)
+    if "body" in columns:
+        insert_columns.append("body")
+        insert_values.append(message)
+    if "is_dismissed" in columns:
+        insert_columns.append("is_dismissed")
+        insert_values.append(0)
+    if "dismissed_at" in columns:
+        insert_columns.append("dismissed_at")
+        insert_values.append(None)
+
+    placeholders = ", ".join("?" for _ in insert_columns)
     cursor = conn.execute(
-        """
-        INSERT INTO participant_messages (
-            created_at, updated_at, invitation_number, submission_id, author, message, is_dismissed, dismissed_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 0, NULL)
+        f"""
+        INSERT INTO participant_messages ({", ".join(insert_columns)})
+        VALUES ({placeholders})
         """,
-        (timestamp, timestamp, invitation_number, submission_id, author, message),
+        insert_values,
     )
     return True, {
         "id": cursor.lastrowid,
