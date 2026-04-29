@@ -156,6 +156,22 @@ def get_db():
         conn.execute("ALTER TABLE invitation_codes ADD COLUMN app_user_id TEXT")
     if "source" not in existing_columns:
         conn.execute("ALTER TABLE invitation_codes ADD COLUMN source TEXT")
+    participant_message_columns = {row["name"] for row in conn.execute("PRAGMA table_info(participant_messages)").fetchall()}
+    if "updated_at" not in participant_message_columns:
+        conn.execute("ALTER TABLE participant_messages ADD COLUMN updated_at TEXT")
+        conn.execute(
+            """
+            UPDATE participant_messages
+            SET updated_at = created_at
+            WHERE updated_at IS NULL OR updated_at = ''
+            """
+        )
+    if "author" not in participant_message_columns:
+        conn.execute("ALTER TABLE participant_messages ADD COLUMN author TEXT")
+    if "is_dismissed" not in participant_message_columns:
+        conn.execute("ALTER TABLE participant_messages ADD COLUMN is_dismissed INTEGER NOT NULL DEFAULT 0")
+    if "dismissed_at" not in participant_message_columns:
+        conn.execute("ALTER TABLE participant_messages ADD COLUMN dismissed_at TEXT")
     return conn
 
 
