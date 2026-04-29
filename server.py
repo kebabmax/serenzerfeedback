@@ -157,6 +157,28 @@ def get_db():
     if "source" not in existing_columns:
         conn.execute("ALTER TABLE invitation_codes ADD COLUMN source TEXT")
     participant_message_columns = {row["name"] for row in conn.execute("PRAGMA table_info(participant_messages)").fetchall()}
+    if "invitation_number" not in participant_message_columns:
+        conn.execute("ALTER TABLE participant_messages ADD COLUMN invitation_number TEXT")
+        if "invitation_code" in participant_message_columns:
+            conn.execute(
+                """
+                UPDATE participant_messages
+                SET invitation_number = invitation_code
+                WHERE invitation_number IS NULL OR invitation_number = ''
+                """
+            )
+    if "submission_id" not in participant_message_columns:
+        conn.execute("ALTER TABLE participant_messages ADD COLUMN submission_id TEXT")
+    if "message" not in participant_message_columns:
+        conn.execute("ALTER TABLE participant_messages ADD COLUMN message TEXT")
+        if "body" in participant_message_columns:
+            conn.execute(
+                """
+                UPDATE participant_messages
+                SET message = body
+                WHERE message IS NULL OR message = ''
+                """
+            )
     if "updated_at" not in participant_message_columns:
         conn.execute("ALTER TABLE participant_messages ADD COLUMN updated_at TEXT")
         conn.execute(
@@ -172,6 +194,20 @@ def get_db():
         conn.execute("ALTER TABLE participant_messages ADD COLUMN is_dismissed INTEGER NOT NULL DEFAULT 0")
     if "dismissed_at" not in participant_message_columns:
         conn.execute("ALTER TABLE participant_messages ADD COLUMN dismissed_at TEXT")
+    conn.execute(
+        """
+        UPDATE participant_messages
+        SET invitation_number = COALESCE(NULLIF(invitation_number, ''), invitation_code)
+        WHERE invitation_number IS NULL OR invitation_number = ''
+        """
+    )
+    conn.execute(
+        """
+        UPDATE participant_messages
+        SET message = COALESCE(NULLIF(message, ''), body)
+        WHERE message IS NULL OR message = ''
+        """
+    )
     return conn
 
 
