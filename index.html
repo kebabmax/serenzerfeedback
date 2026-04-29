@@ -183,6 +183,7 @@ const T = {
     reportBugSending: "Envoi en cours...",
     reportBugError: "Impossible d'envoyer le bug.",
     reportBugThanks: "Bug signalé. Merci.",
+    reportBugRetry: "Réessayer",
     startBtn:        "J'ai compris, commencer !",
     langSelectTitle:  "Choisissez votre langue",
     langSelectHint:   "Vous pouvez toujours changer la langue en haut à droite.",
@@ -435,6 +436,7 @@ const T = {
     reportBugSending: "Sending...",
     reportBugError: "Could not send bug report.",
     reportBugThanks: "Bug report sent. Thank you.",
+    reportBugRetry: "Try again",
     startBtn:        "Got it, let's start!",
     langSelectTitle:  "Choose your language",
     langSelectHint:   "You can always change the language in the top right.",
@@ -687,6 +689,7 @@ const T = {
     reportBugSending: "Invio in corso...",
     reportBugError: "Impossibile inviare il bug.",
     reportBugThanks: "Bug inviato. Grazie.",
+    reportBugRetry: "Riprova",
     startBtn:        "Ho capito, iniziamo!",
     langSelectTitle:  "Scegli la tua lingua",
     langSelectHint:   "Puoi sempre cambiare la lingua in alto a destra.",
@@ -939,6 +942,7 @@ const T = {
     reportBugSending: "Bezig met verzenden...",
     reportBugError: "Kon het bugrapport niet versturen.",
     reportBugThanks: "Bug gemeld. Dank je.",
+    reportBugRetry: "Opnieuw proberen",
     startBtn:        "Begrepen, laten we beginnen!",
     langSelectTitle:  "Kies je taal",
     langSelectHint:   "Je kunt de taal altijd rechtsboven wijzigen.",
@@ -1191,6 +1195,7 @@ const T = {
     reportBugSending: "Wird gesendet...",
     reportBugError: "Bug konnte nicht gesendet werden.",
     reportBugThanks: "Bug gemeldet. Danke.",
+    reportBugRetry: "Erneut versuchen",
     startBtn:        "Verstanden, los geht's!",
     langSelectTitle:  "Wähle deine Sprache",
     langSelectHint:   "Du kannst die Sprache jederzeit oben rechts ändern.",
@@ -1443,6 +1448,7 @@ const T = {
     reportBugSending: "Enviando...",
     reportBugError: "No se pudo enviar el bug.",
     reportBugThanks: "Bug enviado. Gracias.",
+    reportBugRetry: "Reintentar",
     startBtn:        "Entendido, empezamos!",
     langSelectTitle:  "Elige tu idioma",
     langSelectHint:   "Siempre puedes cambiar el idioma en la parte superior derecha.",
@@ -1771,6 +1777,7 @@ async function clearInvitationSession() {
 async function submitBugReport(message) {
   const activeTab = getNavTabs().find(tab => tab.id === state.activeTab);
   try {
+    persistNow().catch(() => {});
     const res = await fetch("/api/bug-reports", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1785,9 +1792,10 @@ async function submitBugReport(message) {
         message,
       }),
     });
-    return { ok: res.ok, data: await res.json().catch(() => ({})) };
-  } catch (_) {
-    return { ok: false, data: {} };
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, data };
+  } catch (err) {
+    return { ok: false, data: { error: err?.message || "" } };
   }
 }
 
@@ -3616,25 +3624,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     const input = document.getElementById("bug-report-input");
     const status = document.getElementById("bug-report-status");
     const button = document.getElementById("bug-report-submit-btn");
+    const cancelButton = document.getElementById("bug-report-cancel-btn");
     const message = input.value.trim();
     if (!message) {
       status.textContent = t("reportBugPlaceholder");
       return;
     }
     button.disabled = true;
+    cancelButton.disabled = true;
     status.textContent = t("reportBugSending");
     const result = await submitBugReport(message);
     button.disabled = false;
+    cancelButton.disabled = false;
     if (!result.ok) {
-      status.textContent = t("reportBugError");
+      status.textContent = result.data?.error
+        ? `${t("reportBugError")} ${result.data.error}`
+        : t("reportBugError");
+      button.textContent = t("reportBugRetry");
       return;
     }
     status.textContent = t("reportBugThanks");
+    button.textContent = t("reportBugSubmit");
     input.value = "";
     setTimeout(() => {
       closeBugReportModal();
       status.textContent = "";
-    }, 700);
+      button.textContent = t("reportBugSubmit");
+    }, 1500);
   });
 
   document.getElementById("lang-select").addEventListener("change", e => {
