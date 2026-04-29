@@ -1029,6 +1029,7 @@
       detailCache: {},
       messageCache: {},
       messageLoading: {},
+      messageErrors: {},
       messageDrafts: {},
       messageComposerDirty: {},
       invites: [],
@@ -1037,6 +1038,9 @@
       logs: [],
       activeLogId: null,
     };
+
+    const REMOTE_ADMIN_ORIGIN = "https://beta.serenzer.com";
+    const ADMIN_AUTH_STORAGE_KEY = "serenzer-admin-basic-auth";
 
     const ONBOARDING_FIELDS = [
       ["firstName", "First name"],
@@ -1192,6 +1196,65 @@
         .replace(/"/g, "&quot;");
     }
 
+    function shouldUseRemoteAdminApi() {
+      return window.location.protocol === "file:";
+    }
+
+    function getAdminApiUrl(path) {
+      return shouldUseRemoteAdminApi() ? `${REMOTE_ADMIN_ORIGIN}${path}` : path;
+    }
+
+    function getStoredAdminAuthToken() {
+      try {
+        return sessionStorage.getItem(ADMIN_AUTH_STORAGE_KEY) || "";
+      } catch (_) {
+        return "";
+      }
+    }
+
+    function setStoredAdminAuthToken(token) {
+      try {
+        if (token) sessionStorage.setItem(ADMIN_AUTH_STORAGE_KEY, token);
+        else sessionStorage.removeItem(ADMIN_AUTH_STORAGE_KEY);
+      } catch (_) {}
+    }
+
+    function promptAdminAuthToken() {
+      const username = window.prompt("Admin username for beta.serenzer.com");
+      if (!username) return "";
+      const password = window.prompt(`Password for ${username}`);
+      if (password === null) return "";
+      const token = btoa(`${username}:${password}`);
+      setStoredAdminAuthToken(token);
+      return token;
+    }
+
+    async function apiFetch(path, options = {}, retry = true) {
+      const headers = new Headers(options.headers || {});
+      if (shouldUseRemoteAdminApi()) {
+        let token = getStoredAdminAuthToken();
+        if (!token) {
+          token = promptAdminAuthToken();
+        }
+        if (token) {
+          headers.set("Authorization", `Basic ${token}`);
+        }
+      }
+      const response = await fetch(getAdminApiUrl(path), {
+        ...options,
+        headers,
+        cache: options.cache || "no-store",
+      });
+      if (response.status === 401 && shouldUseRemoteAdminApi() && retry) {
+        setStoredAdminAuthToken("");
+        const token = promptAdminAuthToken();
+        if (token) {
+          return apiFetch(path, options, false);
+        }
+      }
+      return response;
+    }
+
     function formatDate(value) {
       if (!value) return "—";
       try {
@@ -1253,8 +1316,11 @@
       const invitation = detail.invitationNumber || "";
       const messages = invitation ? (state.messageCache[invitation] || null) : null;
       const draft = invitation ? (state.messageDrafts[invitation] || "") : "";
+      const error = invitation ? (state.messageErrors?.[invitation] || "") : "";
       const history = !invitation
         ? `<div class="muted">No invitation code available for participant messaging yet.</div>`
+        : error
+          ? `<div class="muted">${esc(error)}</div>`
         : messages === null
           ? `<div class="muted">Loading messages…</div>`
           : messages.length
@@ -1388,10 +1454,20 @@
         try {
           const params = new URLSearchParams({ invitation });
           if (detail?.submissionId) params.set("submissionId", detail.submissionId);
-          const response = await fetch(`/api/admin/messages?${params.toString()}`, { cache: "no-store" });
+          const response = await apiFetch(`/api/admin/messages?${params.toString()}`);
           if (!response.ok) throw new Error(`Failed to load participant messages (${response.status})`);
           const data = await response.json();
+          state.messageErrors = state.messageErrors || {};
+          state.messageErrors[invitation] = "";
           state.messageCache[invitation] = data.items || [];
+          rerenderActiveDetailForInvitation(invitation);
+          return state.messageCache[invitation];
+        } catch (error) {
+          state.messageErrors = state.messageErrors || {};
+          state.messageErrors[invitation] = shouldUseRemoteAdminApi()
+            ? "Could not load messages. Use the live admin if the credentials fail."
+            : (error?.message || "Could not load participant messages.");
+          state.messageCache[invitation] = [];
           rerenderActiveDetailForInvitation(invitation);
           return state.messageCache[invitation];
         } finally {
@@ -1420,7 +1496,7 @@
       button.disabled = true;
       status.textContent = "Sending...";
       try {
-        const response = await fetch("/api/admin/messages", {
+        const response = await apiFetch("/api/admin/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1438,10 +1514,12 @@
         input.value = "";
         state.messageDrafts[invitation] = "";
         state.messageComposerDirty[invitation] = false;
+        state.messageErrors = state.messageErrors || {};
+        state.messageErrors[invitation] = "";
         status.textContent = "Message sent.";
         await loadParticipantMessages(detail, true);
-      } catch (_) {
-        status.textContent = "Could not send message.";
+      } catch (error) {
+        status.textContent = error?.message || "Could not send message.";
       } finally {
         button.disabled = false;
       }
@@ -2054,7 +2132,7 @@
     }
 
     async function loadList() {
-      const response = await fetch("/api/admin/feedback", { cache: "no-store" });
+      const response = await apiFetch("/api/admin/feedback");
       if (!response.ok) throw new Error(`Failed to load participants (${response.status})`);
       const data = await response.json();
       state.list = data.items || [];
@@ -2064,7 +2142,7 @@
     }
 
     async function loadInvites() {
-      const response = await fetch("/api/admin/invitations", { cache: "no-store" });
+      const response = await apiFetch("/api/admin/invitations");
       if (!response.ok) throw new Error(`Failed to load invitation codes (${response.status})`);
       const data = await response.json();
       state.invites = data.items || [];
@@ -2073,7 +2151,7 @@
     }
 
     async function loadBugReports() {
-      const response = await fetch("/api/admin/bug-reports", { cache: "no-store" });
+      const response = await apiFetch("/api/admin/bug-reports");
       if (!response.ok) throw new Error(`Failed to load bug reports (${response.status})`);
       const data = await response.json();
       state.bugReports = data.items || [];
@@ -2085,7 +2163,7 @@
     }
 
     async function loadLogs() {
-      const response = await fetch("/api/admin/logs", { cache: "no-store" });
+      const response = await apiFetch("/api/admin/logs");
       if (!response.ok) throw new Error(`Failed to load activity logs (${response.status})`);
       const data = await response.json();
       state.logs = data.items || [];
@@ -2109,7 +2187,7 @@
       button.disabled = true;
       status.textContent = "Creating invitation codes...";
       try {
-        const response = await fetch("/api/admin/invitations", {
+        const response = await apiFetch("/api/admin/invitations", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ codes: raw }),
@@ -2134,7 +2212,7 @@
       const status = document.getElementById("invite-status");
       status.textContent = `Disabling ${code}...`;
       try {
-        const response = await fetch("/api/admin/invitations/disable", {
+        const response = await apiFetch("/api/admin/invitations/disable", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code }),
@@ -2160,7 +2238,7 @@
 
       renderEmptyDetail("Deleting participant...");
       try {
-        const response = await fetch("/api/admin/participants/delete", {
+        const response = await apiFetch("/api/admin/participants/delete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ submissionId }),
@@ -2195,7 +2273,7 @@
         return;
       }
       if (!forceRefresh) renderEmptyDetail("Loading submission…");
-      const response = await fetch(`/api/admin/feedback/${encodeURIComponent(submissionId)}`, { cache: "no-store" });
+      const response = await apiFetch(`/api/admin/feedback/${encodeURIComponent(submissionId)}`);
       if (!response.ok) {
         renderEmptyDetail(`Could not load submission ${submissionId}.`);
         if (state.activeView === "messages") {
