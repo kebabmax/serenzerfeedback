@@ -396,16 +396,99 @@
       min-height: 20px;
     }
 
+    .message-thread-card {
+      display: grid;
+      gap: 18px;
+      min-height: 560px;
+    }
+
+    .message-thread {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 320px;
+      max-height: 58vh;
+      overflow: auto;
+      padding-right: 6px;
+    }
+
+    .message-thread-row {
+      display: flex;
+      width: 100%;
+    }
+
+    .message-thread-row.participant {
+      justify-content: flex-start;
+    }
+
+    .message-thread-row.admin {
+      justify-content: flex-end;
+    }
+
+    .message-thread-bubble {
+      max-width: min(72ch, 82%);
+      border-radius: 22px;
+      padding: 14px 16px;
+      display: grid;
+      gap: 8px;
+      box-shadow: 0 10px 24px rgba(63, 74, 67, 0.06);
+    }
+
+    .message-thread-bubble.participant {
+      background: rgba(255, 253, 248, 0.96);
+      border: 1px solid rgba(217, 210, 196, 0.9);
+    }
+
+    .message-thread-bubble.admin {
+      background: rgba(144, 176, 144, 0.18);
+      border: 1px solid rgba(107, 143, 113, 0.28);
+    }
+
+    .message-thread-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .message-thread-author {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .message-thread-body {
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message-thread-empty {
+      border: 1px dashed rgba(217, 210, 196, 0.95);
+      border-radius: 22px;
+      background: rgba(255, 253, 248, 0.6);
+      padding: 28px 22px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
     .message-compose {
       display: grid;
       gap: 12px;
+      border-top: 1px solid rgba(217, 210, 196, 0.85);
+      padding-top: 18px;
+      margin-top: auto;
     }
 
     .message-compose textarea {
       width: 100%;
-      min-height: 110px;
+      min-height: 132px;
       resize: vertical;
-      border-radius: 14px;
+      border-radius: 18px;
       border: 1px solid var(--border);
       background: rgba(255, 253, 248, 0.95);
       color: var(--text);
@@ -442,46 +525,6 @@
       color: var(--muted);
       min-height: 20px;
       text-align: right;
-    }
-
-    .message-history {
-      display: grid;
-      gap: 12px;
-      margin-top: 18px;
-    }
-
-    .message-history-item {
-      border: 1px solid rgba(217, 210, 196, 0.8);
-      border-radius: 16px;
-      background: var(--card);
-      padding: 14px;
-      display: grid;
-      gap: 8px;
-    }
-
-    .message-history-topline {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .message-history-author {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .message-history-meta {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .message-history-body {
-      font-size: 14px;
-      line-height: 1.7;
-      color: var(--text);
-      white-space: pre-wrap;
     }
 
     .invite-list {
@@ -1318,39 +1361,45 @@
       const draft = invitation ? (state.messageDrafts[invitation] || "") : "";
       const error = invitation ? (state.messageErrors?.[invitation] || "") : "";
       const history = !invitation
-        ? `<div class="muted">No invitation code available for participant messaging yet.</div>`
+        ? `<div class="message-thread-empty">No invitation code available for participant messaging yet.</div>`
         : error
-          ? `<div class="muted">${esc(error)}</div>`
+          ? `<div class="message-thread-empty">${esc(error)}</div>`
         : messages === null
-          ? `<div class="muted">Loading messages…</div>`
+          ? `<div class="message-thread-empty">Loading messages…</div>`
           : messages.length
-            ? `
-              <div class="message-history">
-                ${messages.map(message => `
-                  <div class="message-history-item">
-                    <div class="message-history-topline">
-                      <div class="message-history-author">${esc(message.author || ((message.senderRole || "admin") === "participant" ? "Participant" : "Serenzer team"))}</div>
-                      <div class="message-history-meta">${esc(formatDate(message.createdAt))}</div>
+            ? messages.map(message => {
+                const senderRole = (message.senderRole || "admin") === "participant" ? "participant" : "admin";
+                const author = message.author || (senderRole === "participant" ? "Participant" : "Serenzer team");
+                return `
+                  <div class="message-thread-row ${senderRole}">
+                    <div class="message-thread-bubble ${senderRole}">
+                      <div class="message-thread-meta">
+                        <span class="message-thread-author">${esc(author)}</span>
+                        <span>${esc(formatDate(message.createdAt))}</span>
+                      </div>
+                      <div class="message-thread-body">${esc(message.message || "")}</div>
+                      ${message.isDismissed ? `<div class="message-thread-meta">Dismissed ${esc(formatDate(message.dismissedAt))}</div>` : ""}
                     </div>
-                    <div class="message-history-body">${esc(message.message || "")}</div>
-                    ${message.isDismissed ? `<div class="message-history-meta">Dismissed ${esc(formatDate(message.dismissedAt))}</div>` : ""}
                   </div>
-                `).join("")}
-              </div>
-            `
-            : `<div class="muted">No participant messages yet.</div>`;
+                `;
+              }).join("")
+            : `<div class="message-thread-empty">No messages yet. Start the conversation here.</div>`;
 
       return `
         <div class="detail-card">
-          <h3>Participant message</h3>
-          <div class="message-compose">
-            <textarea id="participant-message-input" placeholder="Write a short update for this tester.">${esc(draft)}</textarea>
-            <div class="message-compose-actions">
-              <button type="button" id="participant-message-send">Send message</button>
-              <div class="message-compose-status" id="participant-message-status"></div>
+          <h3>Conversation</h3>
+          <div class="message-thread-card">
+            <div class="message-thread" id="participant-message-thread">
+              ${history}
+            </div>
+            <div class="message-compose">
+              <textarea id="participant-message-input" placeholder="Write a short update for this tester.">${esc(draft)}</textarea>
+              <div class="message-compose-actions">
+                <button type="button" id="participant-message-send">Send message</button>
+                <div class="message-compose-status" id="participant-message-status"></div>
+              </div>
             </div>
           </div>
-          ${history}
         </div>
       `;
     }
@@ -1417,7 +1466,16 @@
       if (!pane) return;
       pane.innerHTML = renderParticipantMessagesCard(detail);
       wireParticipantMessageComposer(detail);
+      scrollMessageThreadToBottom();
       loadParticipantMessages(detail);
+    }
+
+    function scrollMessageThreadToBottom() {
+      const thread = document.getElementById("participant-message-thread");
+      if (!thread) return;
+      requestAnimationFrame(() => {
+        thread.scrollTop = thread.scrollHeight;
+      });
     }
 
     function rerenderActiveDetailForInvitation(invitation) {
