@@ -396,6 +396,94 @@
       min-height: 20px;
     }
 
+    .message-compose {
+      display: grid;
+      gap: 12px;
+    }
+
+    .message-compose textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 253, 248, 0.95);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 12px 14px;
+      box-sizing: border-box;
+    }
+
+    .message-compose-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .message-compose-actions button {
+      border-radius: 999px;
+      border: 1px solid var(--sage-dark);
+      background: rgba(144, 176, 144, 0.14);
+      color: var(--sage-dark);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    .message-compose-status {
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 20px;
+      text-align: right;
+    }
+
+    .message-history {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .message-history-item {
+      border: 1px solid rgba(217, 210, 196, 0.8);
+      border-radius: 16px;
+      background: var(--card);
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .message-history-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .message-history-author {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .message-history-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .message-history-body {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
     .invite-list {
       display: grid;
       gap: 10px;
@@ -920,6 +1008,8 @@
       filtered: [],
       activeId: null,
       detailCache: {},
+      messageCache: {},
+      messageLoading: {},
       invites: [],
       bugReports: [],
       activeBugId: null,
@@ -1136,6 +1226,133 @@
       });
 
       return html.length ? `<div class="qa-list">${html.join("")}</div>` : `<div class="muted">No answers saved yet.</div>`;
+    }
+
+    function renderParticipantMessagesCard(detail) {
+      const invitation = detail.invitationNumber || "";
+      const messages = invitation ? (state.messageCache[invitation] || null) : null;
+      const history = !invitation
+        ? `<div class="muted">No invitation code available for participant messaging yet.</div>`
+        : messages === null
+          ? `<div class="muted">Loading messages…</div>`
+          : messages.length
+            ? `
+              <div class="message-history">
+                ${messages.map(message => `
+                  <div class="message-history-item">
+                    <div class="message-history-topline">
+                      <div class="message-history-author">${esc(message.author || "Serenzer team")}</div>
+                      <div class="message-history-meta">${esc(formatDate(message.createdAt))}</div>
+                    </div>
+                    <div class="message-history-body">${esc(message.message || "")}</div>
+                    ${message.isDismissed ? `<div class="message-history-meta">Dismissed ${esc(formatDate(message.dismissedAt))}</div>` : ""}
+                  </div>
+                `).join("")}
+              </div>
+            `
+            : `<div class="muted">No participant messages yet.</div>`;
+
+      return `
+        <div class="detail-card">
+          <h3>Participant message</h3>
+          <div class="message-compose">
+            <textarea id="participant-message-input" placeholder="Write a short update for this tester."></textarea>
+            <div class="message-compose-actions">
+              <button type="button" id="participant-message-send">Send message</button>
+              <div class="message-compose-status" id="participant-message-status"></div>
+            </div>
+          </div>
+          ${history}
+        </div>
+      `;
+    }
+
+    function rerenderActiveDetailForInvitation(invitation) {
+      const activeItem = state.list.find(entry => entry.submissionId === state.activeId)
+        || state.filtered.find(entry => entry.submissionId === state.activeId);
+      if (!activeItem || activeItem.invitationNumber !== invitation) return;
+      if (activeItem.entryType === "ghost") {
+        renderGhostDetail(activeItem);
+        return;
+      }
+      const detail = state.detailCache[activeItem.submissionId];
+      if (detail) renderDetail(detail);
+    }
+
+    async function loadParticipantMessages(detail, forceRefresh = false) {
+      const invitation = detail?.invitationNumber;
+      if (!invitation) return [];
+      if (!forceRefresh && Array.isArray(state.messageCache[invitation])) {
+        return state.messageCache[invitation];
+      }
+      if (state.messageLoading[invitation]) {
+        return state.messageLoading[invitation];
+      }
+      state.messageLoading[invitation] = (async () => {
+        try {
+          const params = new URLSearchParams({ invitation });
+          if (detail?.submissionId) params.set("submissionId", detail.submissionId);
+          const response = await fetch(`/api/admin/messages?${params.toString()}`, { cache: "no-store" });
+          if (!response.ok) throw new Error(`Failed to load participant messages (${response.status})`);
+          const data = await response.json();
+          state.messageCache[invitation] = data.items || [];
+          rerenderActiveDetailForInvitation(invitation);
+          return state.messageCache[invitation];
+        } finally {
+          delete state.messageLoading[invitation];
+        }
+      })();
+      return state.messageLoading[invitation];
+    }
+
+    async function sendParticipantMessage(detail) {
+      const invitation = detail?.invitationNumber;
+      const input = document.getElementById("participant-message-input");
+      const status = document.getElementById("participant-message-status");
+      const button = document.getElementById("participant-message-send");
+      const message = String(input?.value || "").trim();
+
+      if (!invitation) {
+        status.textContent = "This participant does not have an invitation code yet.";
+        return;
+      }
+      if (!message) {
+        status.textContent = "Write a message first.";
+        return;
+      }
+
+      button.disabled = true;
+      status.textContent = "Sending...";
+      try {
+        const response = await fetch("/api/admin/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            invitationNumber: invitation,
+            submissionId: detail.submissionId,
+            author: "Serenzer team",
+            message,
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          status.textContent = data.error || "Could not send message.";
+          return;
+        }
+        input.value = "";
+        status.textContent = "Message sent.";
+        await loadParticipantMessages(detail, true);
+      } catch (_) {
+        status.textContent = "Could not send message.";
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function wireParticipantMessageComposer(detail) {
+      document.getElementById("participant-message-send")?.addEventListener("click", () => {
+        sendParticipantMessage(detail);
+      });
     }
 
     function renderStats() {
@@ -1675,12 +1892,16 @@
           <div class="muted">This invitation code exists, but the tester has not started the feedback form yet. Once they enter the code and save progress, this ghost form will turn into a live submission.</div>
         </div>
 
+        ${renderParticipantMessagesCard(detail)}
+
         <div class="detail-card">
           <h3>Raw Invite Data</h3>
           <pre>${esc(JSON.stringify(detail.payload || detail, null, 2))}</pre>
         </div>
       `;
       document.querySelector("[data-delete-participant]")?.addEventListener("click", () => deleteParticipant(detail.submissionId));
+      wireParticipantMessageComposer(detail);
+      loadParticipantMessages(detail);
     }
 
     function renderDetail(detail) {
@@ -1728,12 +1949,16 @@
           }
         </div>
 
+        ${renderParticipantMessagesCard(detail)}
+
         <div class="detail-card">
           <h3>Full Payload</h3>
           <pre>${esc(JSON.stringify(detail.payload || detail, null, 2))}</pre>
         </div>
       `;
       document.querySelector("[data-delete-participant]")?.addEventListener("click", () => deleteParticipant(detail.submissionId));
+      wireParticipantMessageComposer(detail);
+      loadParticipantMessages(detail);
     }
 
     async function loadList() {
@@ -1904,8 +2129,12 @@
           const item = state.list.find(entry => entry.submissionId === state.activeId);
           if (item?.entryType === "ghost") {
             renderGhostDetail(item);
+            loadParticipantMessages(item, true);
           } else {
             await loadDetail(state.activeId, true);
+            if (state.detailCache[state.activeId]) {
+              loadParticipantMessages(state.detailCache[state.activeId], true);
+            }
           }
         }
       } catch (error) {

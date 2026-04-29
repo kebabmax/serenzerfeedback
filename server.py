@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -129,6 +129,21 @@ def get_db():
             active_tab INTEGER,
             active_tab_label TEXT,
             details_json TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS participant_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            invitation_number TEXT NOT NULL,
+            submission_id TEXT,
+            author TEXT,
+            message TEXT NOT NULL,
+            is_dismissed INTEGER NOT NULL DEFAULT 0,
+            dismissed_at TEXT
         )
         """
     )
@@ -742,6 +757,108 @@ def create_bug_report(conn, payload):
     return True, timestamp
 
 
+def resolve_invitation_number(conn, invitation_number=None, submission_id=None):
+    normalized = normalize_code(invitation_number)
+    if normalized:
+        return normalized
+    identifier = str(submission_id or "").strip()
+    if not identifier:
+        return None
+    row = conn.execute(
+        """
+        SELECT invitation_number
+        FROM feedback_submissions
+        WHERE submission_id = ?
+        """,
+        (identifier,),
+    ).fetchone()
+    if row is None:
+        return None
+    return normalize_code(row["invitation_number"])
+
+
+def list_participant_messages(conn, invitation_number, include_dismissed=True):
+    normalized = normalize_code(invitation_number)
+    if not normalized:
+        return []
+    query = """
+        SELECT id, created_at, updated_at, invitation_number, submission_id, author, message, is_dismissed, dismissed_at
+        FROM participant_messages
+        WHERE invitation_number = ?
+    """
+    params = [normalized]
+    if not include_dismissed:
+        query += " AND is_dismissed = 0"
+    query += " ORDER BY created_at DESC, id DESC"
+    rows = conn.execute(query, params).fetchall()
+    return [
+        {
+            "id": row["id"],
+            "createdAt": row["created_at"],
+            "updatedAt": row["updated_at"],
+            "invitationNumber": row["invitation_number"],
+            "submissionId": row["submission_id"],
+            "author": row["author"],
+            "message": row["message"],
+            "isDismissed": bool(row["is_dismissed"]),
+            "dismissedAt": row["dismissed_at"],
+        }
+        for row in rows
+    ]
+
+
+def create_participant_message(conn, payload):
+    message = str(payload.get("message") or "").strip()
+    if not message:
+        return False, "Message is required"
+    invitation_number = resolve_invitation_number(
+        conn,
+        invitation_number=payload.get("invitationNumber"),
+        submission_id=payload.get("submissionId"),
+    )
+    if not invitation_number:
+        return False, "Invitation number is required"
+    submission_id = str(payload.get("submissionId") or "").strip() or None
+    author = str(payload.get("author") or "Serenzer team").strip() or "Serenzer team"
+    timestamp = now_iso()
+    cursor = conn.execute(
+        """
+        INSERT INTO participant_messages (
+            created_at, updated_at, invitation_number, submission_id, author, message, is_dismissed, dismissed_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 0, NULL)
+        """,
+        (timestamp, timestamp, invitation_number, submission_id, author, message),
+    )
+    return True, {
+        "id": cursor.lastrowid,
+        "createdAt": timestamp,
+        "updatedAt": timestamp,
+        "invitationNumber": invitation_number,
+        "submissionId": submission_id,
+        "author": author,
+        "message": message,
+        "isDismissed": False,
+        "dismissedAt": None,
+    }
+
+
+def dismiss_participant_message(conn, invitation_number, message_id):
+    normalized = normalize_code(invitation_number)
+    if not normalized or not message_id:
+        return False
+    cursor = conn.execute(
+        """
+        UPDATE participant_messages
+        SET is_dismissed = 1,
+            dismissed_at = ?,
+            updated_at = ?
+        WHERE id = ? AND invitation_number = ?
+        """,
+        (now_iso(), now_iso(), int(message_id), normalized),
+    )
+    return cursor.rowcount > 0
+
+
 class FeedbackHandler(BaseHTTPRequestHandler):
     server_version = "SerenzerFeedback/1.0"
 
@@ -759,6 +876,12 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/api/health":
             self._send_json(200, {"ok": True})
+            return
+        if parsed.path == "/api/messages/current":
+            self._handle_current_participant_message(parsed)
+            return
+        if parsed.path == "/api/admin/messages":
+            self._handle_admin_message_list(parsed)
             return
         if parsed.path == "/api/admin/logs":
             self._handle_activity_log_list()
@@ -795,6 +918,12 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/api/feedback":
             self._handle_feedback_upsert()
+            return
+        if parsed.path == "/api/admin/messages":
+            self._handle_admin_message_create()
+            return
+        if parsed.path == "/api/messages/dismiss":
+            self._handle_participant_message_dismiss()
             return
         if parsed.path == "/api/admin/participants/delete":
             self._handle_participant_delete()
@@ -1216,6 +1345,83 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         finally:
             conn.close()
         self._send_json(200, {"count": len(items), "items": items})
+
+    def _handle_admin_message_list(self, parsed):
+        query = parse_qs(parsed.query)
+        invitation = query.get("invitation", [""])[0]
+        submission_id = query.get("submissionId", [""])[0]
+        conn = get_db()
+        try:
+            resolved = resolve_invitation_number(conn, invitation_number=invitation, submission_id=submission_id)
+            items = list_participant_messages(conn, resolved, include_dismissed=True)
+        finally:
+            conn.close()
+        self._send_json(200, {"count": len(items), "items": items})
+
+    def _handle_current_participant_message(self, parsed):
+        query = parse_qs(parsed.query)
+        invitation = query.get("invitation", [""])[0]
+        submission_id = query.get("submissionId", [""])[0]
+        conn = get_db()
+        try:
+            resolved = resolve_invitation_number(conn, invitation_number=invitation, submission_id=submission_id)
+            items = list_participant_messages(conn, resolved, include_dismissed=False)
+        finally:
+            conn.close()
+        self._send_json(200, {"ok": True, "message": items[0] if items else None})
+
+    def _handle_admin_message_create(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+        conn = get_db()
+        try:
+            ok, result = create_participant_message(conn, payload)
+            if not ok:
+                conn.rollback()
+                self._send_json(400, {"error": result})
+                return
+            self._log_activity(
+                conn,
+                "participant_message_created",
+                submissionId=result.get("submissionId"),
+                invitationNumber=result.get("invitationNumber"),
+                details={"messageId": result.get("id"), "author": result.get("author")},
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        self._send_json(200, {"ok": True, "message": result})
+
+    def _handle_participant_message_dismiss(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+        conn = get_db()
+        try:
+            invitation_number = resolve_invitation_number(
+                conn,
+                invitation_number=payload.get("invitationNumber"),
+                submission_id=payload.get("submissionId"),
+            )
+            ok = dismiss_participant_message(conn, invitation_number, payload.get("messageId"))
+            if not ok:
+                conn.rollback()
+                self._send_json(404, {"error": "Message not found"})
+                return
+            self._log_activity(
+                conn,
+                "participant_message_dismissed",
+                submissionId=payload.get("submissionId"),
+                invitationNumber=invitation_number,
+                details={"messageId": payload.get("messageId")},
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        self._send_json(200, {"ok": True})
 
     def _handle_activity_log_list(self):
         conn = get_db()

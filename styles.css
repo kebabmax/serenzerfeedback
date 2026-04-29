@@ -952,6 +952,82 @@ body {
   gap: 10px;
 }
 
+.participant-message-shell {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 690;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.participant-message-card {
+  background: rgba(255, 251, 245, 0.98);
+  border: 1px solid rgba(189, 170, 143, 0.9);
+  border-radius: 22px;
+  box-shadow: 0 22px 50px rgba(45, 58, 46, 0.18);
+  padding: 18px 18px 16px;
+  backdrop-filter: blur(14px);
+}
+
+.participant-message-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.participant-message-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--olive);
+}
+
+.participant-message-meta {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--olive-mid);
+}
+
+.participant-message-close {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--olive-mid);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+  padding: 0;
+}
+
+.participant-message-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--olive);
+  white-space: pre-wrap;
+}
+
+.participant-message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.participant-message-dismiss {
+  border: 1px solid var(--border);
+  background: rgba(245, 240, 232, 0.96);
+  color: var(--olive);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .ghost-btn {
   border-radius: 14px;
   border: 1px solid var(--border);
@@ -1036,6 +1112,14 @@ body {
   font-size: 36px;
   font-weight: 800;
   line-height: 1;
+}
+
+@media (max-width: 720px) {
+  .participant-message-shell {
+    right: 12px;
+    bottom: 12px;
+    width: min(100vw - 24px, 360px);
+  }
 }
 
 .debug-menu-toggle:hover {

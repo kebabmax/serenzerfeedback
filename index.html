@@ -69,6 +69,8 @@
     </div>
   </div>
 
+  <div class="participant-message-shell hidden" id="participant-message-shell"></div>
+
   <div class="debug-menu" id="debug-menu">
     <div class="debug-menu-panel hidden" id="debug-menu-panel">
       <a class="debug-admin-btn" href="admin.html" target="_blank" rel="noreferrer">
@@ -184,6 +186,8 @@ const T = {
     reportBugError: "Impossible d'envoyer le bug.",
     reportBugThanks: "Bug signalé. Merci.",
     reportBugRetry: "Réessayer",
+    participantMessageTitle: "Message de Serenzer",
+    participantMessageDismiss: "J'ai lu",
     startBtn:        "J'ai compris, commencer !",
     langSelectTitle:  "Choisissez votre langue",
     langSelectHint:   "Vous pouvez toujours changer la langue en haut à droite.",
@@ -437,6 +441,8 @@ const T = {
     reportBugError: "Could not send bug report.",
     reportBugThanks: "Bug report sent. Thank you.",
     reportBugRetry: "Try again",
+    participantMessageTitle: "Message from Serenzer",
+    participantMessageDismiss: "Got it",
     startBtn:        "Got it, let's start!",
     langSelectTitle:  "Choose your language",
     langSelectHint:   "You can always change the language in the top right.",
@@ -690,6 +696,8 @@ const T = {
     reportBugError: "Impossibile inviare il bug.",
     reportBugThanks: "Bug inviato. Grazie.",
     reportBugRetry: "Riprova",
+    participantMessageTitle: "Messaggio da Serenzer",
+    participantMessageDismiss: "Ho capito",
     startBtn:        "Ho capito, iniziamo!",
     langSelectTitle:  "Scegli la tua lingua",
     langSelectHint:   "Puoi sempre cambiare la lingua in alto a destra.",
@@ -943,6 +951,8 @@ const T = {
     reportBugError: "Kon het bugrapport niet versturen.",
     reportBugThanks: "Bug gemeld. Dank je.",
     reportBugRetry: "Opnieuw proberen",
+    participantMessageTitle: "Bericht van Serenzer",
+    participantMessageDismiss: "Begrepen",
     startBtn:        "Begrepen, laten we beginnen!",
     langSelectTitle:  "Kies je taal",
     langSelectHint:   "Je kunt de taal altijd rechtsboven wijzigen.",
@@ -1196,6 +1206,8 @@ const T = {
     reportBugError: "Bug konnte nicht gesendet werden.",
     reportBugThanks: "Bug gemeldet. Danke.",
     reportBugRetry: "Erneut versuchen",
+    participantMessageTitle: "Nachricht von Serenzer",
+    participantMessageDismiss: "Verstanden",
     startBtn:        "Verstanden, los geht's!",
     langSelectTitle:  "Wähle deine Sprache",
     langSelectHint:   "Du kannst die Sprache jederzeit oben rechts ändern.",
@@ -1449,6 +1461,8 @@ const T = {
     reportBugError: "No se pudo enviar el bug.",
     reportBugThanks: "Bug enviado. Gracias.",
     reportBugRetry: "Reintentar",
+    participantMessageTitle: "Mensaje de Serenzer",
+    participantMessageDismiss: "Entendido",
     startBtn:        "Entendido, empezamos!",
     langSelectTitle:  "Elige tu idioma",
     langSelectHint:   "Siempre puedes cambiar el idioma en la parte superior derecha.",
@@ -1681,6 +1695,7 @@ const state = {
   debugUnlockAllTabs: false,
   debugEnabled: false,
   bugModalOpen: false,
+  participantMessage: null,
   lang: "en",
   langSelected: false,
   autosaveStatus: "saved",
@@ -1799,6 +1814,55 @@ async function submitBugReport(message) {
   }
 }
 
+async function fetchCurrentParticipantMessage() {
+  if (!state.invitationValidated) {
+    if (state.participantMessage) {
+      state.participantMessage = null;
+      renderAll();
+    }
+    return null;
+  }
+
+  const invitation = String(state.onboardingData.invitationNumber || "").trim();
+  const params = new URLSearchParams();
+  if (invitation) params.set("invitation", invitation);
+  if (state.submissionId) params.set("submissionId", state.submissionId);
+
+  try {
+    const res = await fetch(`/api/messages/current?${params.toString()}`, { cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
+    const nextMessage = res.ok ? data.message || null : null;
+    const changed = (state.participantMessage?.id || null) !== (nextMessage?.id || null)
+      || (state.participantMessage?.updatedAt || "") !== (nextMessage?.updatedAt || "");
+    state.participantMessage = nextMessage;
+    if (changed) renderAll();
+    return nextMessage;
+  } catch (_) {
+    return state.participantMessage;
+  }
+}
+
+async function dismissCurrentParticipantMessage() {
+  if (!state.participantMessage) return false;
+  try {
+    const res = await fetch("/api/messages/dismiss", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messageId: state.participantMessage.id,
+        invitationNumber: state.onboardingData.invitationNumber,
+        submissionId: state.submissionId,
+      }),
+    });
+    if (!res.ok) return false;
+    state.participantMessage = null;
+    renderAll();
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function totalCompleted() { return Object.keys(state.completed).length; }
@@ -1846,6 +1910,22 @@ function checkIconSVG(className = "") {
       <path d="M6.8 12.6L10.5 16.3L18 8.7" />
     </svg>
   `;
+}
+
+function formatMessageDate(value) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleString({
+      fr: "fr-FR",
+      en: "en-GB",
+      it: "it-IT",
+      nl: "nl-NL",
+      de: "de-DE",
+      es: "es-ES",
+    }[state.lang] || "en-GB");
+  } catch (_) {
+    return String(value);
+  }
 }
 
 function doneBadgeHTML(className = "") {
@@ -1902,6 +1982,7 @@ function resetAppState() {
   state.debugMenuOpen = false;
   state.debugUnlockAllTabs = false;
   state.bugModalOpen = false;
+  state.participantMessage = null;
   state.lang = "en";
   state.langSelected = false;
   state.autosaveStatus = "saved";
@@ -2291,6 +2372,7 @@ function attachInvitationListeners() {
     state.inviteLastNameDraft = "";
     setAutosaveStatus("saving");
     await persistNow();
+    await fetchCurrentParticipantMessage();
     renderAll();
   });
 }
@@ -3428,6 +3510,7 @@ async function restoreInvitationSession() {
       }
       state.onboardingData.invitationNumber = data.code || state.onboardingData.invitationNumber || "";
       await persistNow();
+      await fetchCurrentParticipantMessage();
       return true;
     } catch (_) {
       return false;
@@ -3472,11 +3555,52 @@ function renderAll() {
   document.getElementById("debug-menu-panel").classList.toggle("hidden", !state.debugMenuOpen);
   document.getElementById("debug-menu-toggle").setAttribute("aria-expanded", state.debugMenuOpen ? "true" : "false");
   document.getElementById("bug-report-modal").classList.toggle("hidden", !state.bugModalOpen);
+  renderParticipantMessage();
   document.getElementById("bug-report-title").textContent = t("reportBugTitle");
   document.getElementById("bug-report-body").textContent = t("reportBugBody");
   document.getElementById("bug-report-input").placeholder = t("reportBugPlaceholder");
   document.getElementById("bug-report-cancel-btn").textContent = t("reportBugCancel");
   document.getElementById("bug-report-submit-btn").textContent = t("reportBugSubmit");
+}
+
+function renderParticipantMessage() {
+  const shell = document.getElementById("participant-message-shell");
+  const message = state.participantMessage;
+  shell.classList.toggle("hidden", !message);
+  if (!message) {
+    shell.innerHTML = "";
+    return;
+  }
+
+  const meta = [message.author || "Serenzer", formatMessageDate(message.createdAt)].filter(Boolean).join(" · ");
+  shell.innerHTML = `
+    <div class="participant-message-card">
+      <div class="participant-message-topline">
+        <div>
+          <h3 class="participant-message-title">${esc(t("participantMessageTitle"))}</h3>
+          <div class="participant-message-meta">${esc(meta)}</div>
+        </div>
+        <button class="participant-message-close" id="participant-message-close" type="button" aria-label="${esc(t("participantMessageDismiss"))}">×</button>
+      </div>
+      <p class="participant-message-body">${esc(message.message || "")}</p>
+      <div class="participant-message-actions">
+        <button class="participant-message-dismiss" id="participant-message-dismiss" type="button">${esc(t("participantMessageDismiss"))}</button>
+      </div>
+    </div>
+  `;
+
+  const handleDismiss = async button => {
+    if (!button) return;
+    button.disabled = true;
+    await dismissCurrentParticipantMessage();
+  };
+
+  document.getElementById("participant-message-close")?.addEventListener("click", event => {
+    handleDismiss(event.currentTarget);
+  });
+  document.getElementById("participant-message-dismiss")?.addEventListener("click", event => {
+    handleDismiss(event.currentTarget);
+  });
 }
 
 function openBugReportModal() {
@@ -3696,6 +3820,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderAll();
   updateCountdown();
   setInterval(updateCountdown, 1000);
+  setInterval(() => {
+    fetchCurrentParticipantMessage();
+  }, 15000);
+  fetchCurrentParticipantMessage();
 
   if (!state.langSelected) {
     document.getElementById("lang-splash").classList.remove("hidden");
