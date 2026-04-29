@@ -817,6 +817,7 @@
 
     <section class="view-switcher">
       <button class="view-tab active" id="participants-tab" type="button">Participants</button>
+      <button class="view-tab" id="messages-tab" type="button">Messages</button>
       <button class="view-tab" id="bug-reports-tab" type="button">Bug Reports</button>
       <button class="view-tab" id="stats-tab" type="button">Stats</button>
       <button class="view-tab" id="logs-tab" type="button">Logs</button>
@@ -907,6 +908,24 @@
         </div>
         <div class="detail-scroll" id="log-detail-pane">
           <div class="empty-state">Select a log entry on the left to inspect who did what and when.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout hidden" id="messages-view">
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Participants</h2>
+        </div>
+        <div class="submission-list" id="message-participant-list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Messages</h2>
+        </div>
+        <div class="detail-scroll" id="message-pane">
+          <div class="empty-state">Select a participant on the left to send an update or review past messages.</div>
         </div>
       </div>
     </section>
@@ -1267,16 +1286,85 @@
       `;
     }
 
+    function activateParticipant(submissionId) {
+      state.activeId = submissionId;
+      renderList();
+      renderMessageList();
+      const item = state.filtered.find(entry => entry.submissionId === submissionId)
+        || state.list.find(entry => entry.submissionId === submissionId);
+      if (!item) {
+        renderEmptyDetail("No participants match the current filters.");
+        renderEmptyMessagePane("No participants match the current filters.");
+        return;
+      }
+      if (item.entryType === "ghost") {
+        renderGhostDetail(item);
+        renderMessagesPane(item);
+        return;
+      }
+      loadDetail(submissionId);
+      renderMessagesPane(item);
+    }
+
+    function renderMessageList() {
+      const list = document.getElementById("message-participant-list");
+      if (!list) return;
+      if (!state.filtered.length) {
+        list.innerHTML = `<div class="empty-state">No participants found yet.</div>`;
+        return;
+      }
+
+      list.innerHTML = state.filtered.map(item => `
+        <button class="submission-row ${item.submissionId === state.activeId ? "active" : ""}" data-message-id="${esc(item.submissionId)}" type="button">
+          <div class="submission-topline">
+            <div class="submission-email">${esc(item.email || item.invitationNumber || item.submissionId)}</div>
+            <span class="badge ${item.entryType === "ghost" ? "ghost" : item.isComplete ? "complete" : "incomplete"}">${item.entryType === "ghost" ? "Ghost form" : item.isComplete ? "Complete" : "In progress"}</span>
+          </div>
+          <div class="submission-meta">
+            <span>${esc((item.lang || "—").toUpperCase())}</span>
+            <span>${esc(item.invitationNumber || "No invitation")}</span>
+            <span>Last active: ${esc(formatDate(item.updatedAt))}</span>
+          </div>
+        </button>
+      `).join("");
+
+      list.querySelectorAll("[data-message-id]").forEach(button => {
+        button.addEventListener("click", () => activateParticipant(button.dataset.messageId));
+      });
+    }
+
+    function renderEmptyMessagePane(message) {
+      const pane = document.getElementById("message-pane");
+      if (!pane) return;
+      pane.innerHTML = `<div class="empty-state">${esc(message)}</div>`;
+    }
+
+    function renderMessagesPane(detail) {
+      const pane = document.getElementById("message-pane");
+      if (!pane) return;
+      pane.innerHTML = renderParticipantMessagesCard(detail);
+      wireParticipantMessageComposer(detail);
+      loadParticipantMessages(detail);
+    }
+
     function rerenderActiveDetailForInvitation(invitation) {
       const activeItem = state.list.find(entry => entry.submissionId === state.activeId)
         || state.filtered.find(entry => entry.submissionId === state.activeId);
       if (!activeItem || activeItem.invitationNumber !== invitation) return;
-      if (activeItem.entryType === "ghost") {
-        renderGhostDetail(activeItem);
-        return;
+      if (state.activeView === "participants") {
+        if (activeItem.entryType === "ghost") {
+          renderGhostDetail(activeItem);
+          return;
+        }
+        const detail = state.detailCache[activeItem.submissionId];
+        if (detail) renderDetail(detail);
       }
-      const detail = state.detailCache[activeItem.submissionId];
-      if (detail) renderDetail(detail);
+      if (state.activeView === "messages") {
+        const detail = activeItem.entryType === "ghost"
+          ? activeItem
+          : (state.detailCache[activeItem.submissionId] || activeItem);
+        renderMessagesPane(detail);
+      }
     }
 
     async function loadParticipantMessages(detail, forceRefresh = false) {
@@ -1814,10 +1902,12 @@
       }
 
       renderList();
+      renderMessageList();
       if (state.activeId) {
-        loadDetail(state.activeId);
+        activateParticipant(state.activeId);
       } else {
         renderEmptyDetail("No participants match the current filters.");
+        renderEmptyMessagePane("No participants match the current filters.");
       }
     }
 
@@ -1845,18 +1935,7 @@
 
       list.querySelectorAll("[data-id]").forEach(button => {
         button.addEventListener("click", () => {
-          state.activeId = button.dataset.id;
-          renderList();
-          const item = state.filtered.find(entry => entry.submissionId === state.activeId);
-          if (!item) {
-            renderEmptyDetail("No participants match the current filters.");
-            return;
-          }
-          if (item.entryType === "ghost") {
-            renderGhostDetail(item);
-            return;
-          }
-          loadDetail(state.activeId);
+          activateParticipant(button.dataset.id);
         });
       });
     }
@@ -1892,16 +1971,12 @@
           <div class="muted">This invitation code exists, but the tester has not started the feedback form yet. Once they enter the code and save progress, this ghost form will turn into a live submission.</div>
         </div>
 
-        ${renderParticipantMessagesCard(detail)}
-
         <div class="detail-card">
           <h3>Raw Invite Data</h3>
           <pre>${esc(JSON.stringify(detail.payload || detail, null, 2))}</pre>
         </div>
       `;
       document.querySelector("[data-delete-participant]")?.addEventListener("click", () => deleteParticipant(detail.submissionId));
-      wireParticipantMessageComposer(detail);
-      loadParticipantMessages(detail);
     }
 
     function renderDetail(detail) {
@@ -1949,16 +2024,12 @@
           }
         </div>
 
-        ${renderParticipantMessagesCard(detail)}
-
         <div class="detail-card">
           <h3>Full Payload</h3>
           <pre>${esc(JSON.stringify(detail.payload || detail, null, 2))}</pre>
         </div>
       `;
       document.querySelector("[data-delete-participant]")?.addEventListener("click", () => deleteParticipant(detail.submissionId));
-      wireParticipantMessageComposer(detail);
-      loadParticipantMessages(detail);
     }
 
     async function loadList() {
@@ -2106,11 +2177,18 @@
       const response = await fetch(`/api/admin/feedback/${encodeURIComponent(submissionId)}`, { cache: "no-store" });
       if (!response.ok) {
         renderEmptyDetail(`Could not load submission ${submissionId}.`);
+        if (state.activeView === "messages") {
+          renderEmptyMessagePane(`Could not load participant ${submissionId}.`);
+        }
         return;
       }
       const detail = await response.json();
       state.detailCache[submissionId] = detail;
-      renderDetail(detail);
+      if (state.activeView === "messages") {
+        renderMessagesPane(detail);
+      } else {
+        renderDetail(detail);
+      }
     }
 
     async function refreshAll(silent = false) {
@@ -2128,7 +2206,11 @@
         if (state.activeId) {
           const item = state.list.find(entry => entry.submissionId === state.activeId);
           if (item?.entryType === "ghost") {
-            renderGhostDetail(item);
+            if (state.activeView === "messages") {
+              renderMessagesPane(item);
+            } else {
+              renderGhostDetail(item);
+            }
             loadParticipantMessages(item, true);
           } else {
             await loadDetail(state.activeId, true);
@@ -2151,14 +2233,30 @@
     function setActiveView(view) {
       state.activeView = view;
       document.getElementById("participants-tab").classList.toggle("active", view === "participants");
+      document.getElementById("messages-tab").classList.toggle("active", view === "messages");
       document.getElementById("bug-reports-tab").classList.toggle("active", view === "bugs");
       document.getElementById("stats-tab").classList.toggle("active", view === "stats");
       document.getElementById("logs-tab").classList.toggle("active", view === "logs");
-      document.getElementById("participants-toolbar").classList.toggle("hidden", view !== "participants");
+      document.getElementById("participants-toolbar").classList.toggle("hidden", !(view === "participants" || view === "messages"));
       document.getElementById("participants-view").classList.toggle("hidden", view !== "participants");
+      document.getElementById("messages-view").classList.toggle("hidden", view !== "messages");
       document.getElementById("bug-reports-view").classList.toggle("hidden", view !== "bugs");
       document.getElementById("stats-view").classList.toggle("hidden", view !== "stats");
       document.getElementById("logs-view").classList.toggle("hidden", view !== "logs");
+      if (view === "messages") {
+        renderMessageList();
+        if (state.activeId) {
+          const item = state.filtered.find(entry => entry.submissionId === state.activeId)
+            || state.list.find(entry => entry.submissionId === state.activeId);
+          if (item) {
+            renderMessagesPane(item.entryType === "ghost" ? item : (state.detailCache[item.submissionId] || item));
+          } else {
+            renderEmptyMessagePane("No participants match the current filters.");
+          }
+        } else {
+          renderEmptyMessagePane("Select a participant on the left to send an update or review past messages.");
+        }
+      }
     }
 
     function toggleInviteCreatePanel() {
@@ -2181,6 +2279,7 @@
     document.getElementById("invite-create-btn").addEventListener("click", createInvites);
     document.getElementById("invite-toggle-btn").addEventListener("click", toggleInviteCreatePanel);
     document.getElementById("participants-tab").addEventListener("click", () => setActiveView("participants"));
+    document.getElementById("messages-tab").addEventListener("click", () => setActiveView("messages"));
     document.getElementById("bug-reports-tab").addEventListener("click", () => setActiveView("bugs"));
     document.getElementById("stats-tab").addEventListener("click", () => setActiveView("stats"));
     document.getElementById("logs-tab").addEventListener("click", () => setActiveView("logs"));
