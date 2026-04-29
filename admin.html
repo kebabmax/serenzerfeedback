@@ -1920,6 +1920,11 @@
       renderList();
       renderMessageList();
       if (state.activeId) {
+        const activeItem = state.filtered.find(entry => entry.submissionId === state.activeId)
+          || state.list.find(entry => entry.submissionId === state.activeId);
+        if (state.activeView === "messages" && activeItem && isMessageComposerDirty(activeItem.invitationNumber)) {
+          return;
+        }
         activateParticipant(state.activeId);
       } else {
         renderEmptyDetail("No participants match the current filters.");
