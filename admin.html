@@ -2150,7 +2150,10 @@
         <div class="detail-card">
           <div class="panel-header-row" style="margin-bottom: 14px;">
             <h3 style="margin:0;">Overview</h3>
-            <button class="danger-btn" type="button" data-delete-participant="${esc(detail.submissionId)}">Delete participant</button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="panel-header-action" type="button" data-download-pdf="${esc(detail.submissionId)}">Download PDF</button>
+              <button class="danger-btn" type="button" data-delete-participant="${esc(detail.submissionId)}">Delete participant</button>
+            </div>
           </div>
           <div class="kv-grid">
             <div class="kv-item"><div class="kv-label">Submission ID</div><div class="kv-value">${esc(detail.submissionId)}</div></div>
@@ -2187,7 +2190,44 @@
           <pre>${esc(JSON.stringify(detail.payload || detail, null, 2))}</pre>
         </div>
       `;
+      document.querySelector("[data-download-pdf]")?.addEventListener("click", () => downloadParticipantPdf(detail));
       document.querySelector("[data-delete-participant]")?.addEventListener("click", () => deleteParticipant(detail.submissionId));
+    }
+
+    function extractDownloadFilename(response, fallback) {
+      const header = response.headers.get("Content-Disposition") || "";
+      const match = header.match(/filename=\"?([^\";]+)\"?/i);
+      return match?.[1] || fallback;
+    }
+
+    async function downloadParticipantPdf(detail) {
+      const submissionId = detail?.submissionId;
+      if (!submissionId || String(submissionId).startsWith("ghost:")) {
+        window.alert("PDF export is only available for saved participant submissions.");
+        return;
+      }
+
+      try {
+        const response = await apiFetch(`/api/admin/feedback/${encodeURIComponent(submissionId)}/pdf`);
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          window.alert(data.error || "Could not generate the PDF.");
+          return;
+        }
+        const blob = await response.blob();
+        const fallback = `${detail.invitationNumber || submissionId}.pdf`;
+        const filename = extractDownloadFilename(response, fallback);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (_) {
+        window.alert("Could not generate the PDF.");
+      }
     }
 
     async function loadList() {

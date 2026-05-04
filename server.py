@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import json
 import os
+import re
 import secrets
 import sqlite3
+import textwrap
 from datetime import datetime, timezone
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -256,6 +258,388 @@ def feedback_detail_from_row(row):
         "tools": json.loads(row["tools_json"]),
         "payload": json.loads(row["payload_json"]),
     }
+
+
+ONBOARDING_FIELDS = [
+    ("firstName", "First name"),
+    ("lastName", "Last name"),
+    ("email", "Email"),
+    ("invitationNumber", "Invitation number"),
+    ("tech", "Tech level"),
+    ("devices", "Devices"),
+    ("time", "Time available"),
+    ("ageRange", "Age range"),
+    ("gender", "Gender"),
+    ("workSituation", "Work situation"),
+    ("livingSituation", "Living situation"),
+    ("familySituation", "Family situation"),
+    ("hopes", "Expectations"),
+]
+
+
+TOOL_LABELS = {
+    "tableauIntro": "Dashboard pt. 1",
+    "coach": "My Coach",
+    "calendrier": "Calendar",
+    "rituels": "Rituals",
+    "challenges": "Challenges",
+    "organisation": "Organisation",
+    "progression": "Progress",
+    "tableauFinal": "Dashboard pt. 2",
+    "finalThoughts": "Final thoughts",
+    "closing": "Finish",
+}
+
+
+TOOL_FIELDS = {
+    "tableauIntro": [
+        ("dateTimeCorrect", "Are the date and time displayed correctly?"),
+        ("greetingMatchesTime", "Is the welcome sentence consistent with the time of day?"),
+        ("pageDetailsSense", "Do the details on this page make sense to you?"),
+        ("startConversationWorks", "Does the \"Start a conversation\" button work properly?"),
+    ],
+    "coach": [
+        ("coachAction1Done", "Start a text conversation with The AI"),
+        ("coachAction2Done", "Talk about a real personal topic"),
+        ("coachAction3Done", "Complete a session of at least 10 minutes"),
+        ("coachObs1Answer", "The AI understands what I say well"),
+        ("coachObs1Comment", "Comment - The AI understands what I say well"),
+        ("coachObs2Answer", "The responses are relevant"),
+        ("coachObs2Comment", "Comment - The responses are relevant"),
+        ("coachObs3Answer", "The tone is appropriate and caring"),
+        ("coachObs3Comment", "Comment - The tone is appropriate and caring"),
+        ("coachObs4Answer", "The conversation feels natural"),
+        ("coachObs4Comment", "Comment - The conversation feels natural"),
+        ("coachObs5Answer", "I feel comfortable opening up"),
+        ("coachObs5Comment", "Comment - I feel comfortable opening up"),
+    ],
+    "calendrier": [
+        ("calendarGoogleAddDone", "Add your Google Calendar."),
+        ("calendarGoogleShow", "Do your events show on the Serenzer Calendar?"),
+        ("calendarSerenzerClickDone", "Click on a date in the calendar."),
+        ("calendarSerenzerCreateDone", "Create a new event."),
+        ("calendarSerenzerShow", "Does the event show on the Serenzer Calendar?"),
+        ("calendarGoogleSync", "Does the event show on your Google Calendar?"),
+    ],
+    "rituels": [
+        ("ritualNewActionDone", "Create a new ritual."),
+        ("ritualNewWorks", "Does the \"New Ritual\" form work?"),
+        ("ritualNewSense", "Does the \"New Ritual\" form make sense to you?"),
+        ("ritualNewCalendar", "Is the new ritual added to your calendar?"),
+        ("ritualNewMine", "Is the new ritual added to \"My Rituals\"?"),
+        ("ritualAiOpenDone", "Click on \"AI Suggestions\"."),
+        ("ritualAiLoad", "Do the suggestions load?"),
+        ("ritualAiSense", "Do the suggestions make sense to you?"),
+        ("ritualAiAcceptDone", "Accept one of the suggestions."),
+        ("ritualAiCalendar", "Is the new ritual added to your calendar?"),
+        ("ritualAiMine", "Is the new ritual added to \"My Rituals\"?"),
+    ],
+    "challenges": [
+        ("challengesOpenDone", "Open the Challenges page."),
+        ("challengesJoinDone", "Join a challenge or inspect one in detail."),
+        ("challengesRelevant", "Do the available challenges feel relevant to you?"),
+        ("challengesClear", "Is it clear how to participate in a challenge?"),
+        ("challengesProgress", "Does the progress / reward system make sense to you?"),
+    ],
+    "organisation": [
+        ("organisationProjectCreateDone", "Create a new Project."),
+        ("organisationProjectChooseDone", "Choose \"Organise my week\" and name your Project."),
+        ("organisationProjectWeekDone", "Select a week."),
+        ("organisationProjectAskDone", "Ask about that week."),
+        ("organisationProjectCalendar", "Does the AI mention the events of your connected calendar?"),
+        ("organisationUseTellDone", "Tell the AI what you would like your week to look like."),
+        ("organisationUseContext", "Does it understand and use context to help you?"),
+        ("organisationUseBuildDone", "Build your week with the AI."),
+        ("organisationFinaliseWrapDone", "Tell the AI to wrap up the project."),
+        ("organisationFinaliseWorks", "Does it work?"),
+        ("organisationFinaliseClickDone", "Click on finalise."),
+        ("organisationFinaliseReport", "Does it generate a full report on your discussion?"),
+        ("organisationFinaliseSense", "Does it make sense?"),
+        ("organisationFinaliseCalendar", "Does it add your new plans to your calendar?"),
+    ],
+    "progression": [
+        ("progressionOpenDone", "Open the Progress page."),
+        ("progressionLoad", "Do the statistics and visuals load correctly?"),
+        ("progressionCoherent", "Do the statistics seem coherent with what you have done in the app so far?"),
+        ("progressionSense", "Do the badges, graphs, or indicators make sense to you?"),
+        ("progressionMotivate", "Does this page motivate you to keep using Serenzer?"),
+    ],
+    "tableauFinal": [
+        ("dashboardFinalReturnDone", "Return to the dashboard after exploring the app."),
+        ("dashboardFinalPersonal", "Do your personal details now appear correctly on the dashboard?"),
+        ("dashboardFinalUseful", "Does the dashboard feel richer and more useful than at the beginning?"),
+        ("dashboardFinalSense", "Is the information displayed easy to understand?"),
+        ("dashboardFinalReflect", "Does the dashboard now reflect your activity in the app in a convincing way?"),
+    ],
+    "finalThoughts": [
+        ("finalThoughtsEssay", "Final thoughts"),
+    ],
+    "generic": [
+        ("intuitive", "Intuitivity rating"),
+        ("useful", "Usefulness rating"),
+        ("genericToolSense", "Does this tool make sense to you?"),
+        ("experience", "Experience tags"),
+        ("description", "Describe your experience"),
+        ("suggestions", "Suggestions or improvement ideas"),
+    ],
+}
+
+
+def humanize_key(key):
+    value = re.sub(r"([A-Z])", r" \1", str(key or ""))
+    value = value.replace("_", " ")
+    value = re.sub(r"\s+", " ", value).strip()
+    return value[:1].upper() + value[1:] if value else ""
+
+
+def format_answer_value(value):
+    if value is True:
+        return "Done"
+    if value is False:
+        return "Not done"
+    if value == "yes":
+        return "Yes"
+    if value == "no":
+        return "No"
+    if value == "maybe":
+        return "?"
+    if value is None or value == "":
+        return "—"
+    if isinstance(value, list):
+        return ", ".join(str(item) for item in value) if value else "—"
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=False, indent=2)
+    return str(value)
+
+
+def collect_labeled_items(data, fields):
+    if not isinstance(data, dict):
+        return []
+    handled = set()
+    items = []
+    for key, label in fields:
+        if key not in data:
+            continue
+        handled.add(key)
+        items.append((label, format_answer_value(data.get(key))))
+    for key, value in data.items():
+        if key in handled:
+            continue
+        items.append((humanize_key(key), format_answer_value(value)))
+    return items
+
+
+def build_feedback_report_sections(detail):
+    onboarding = detail.get("onboarding") or {}
+    tools = detail.get("tools") or {}
+    completed_tabs = detail.get("completedTabs") or []
+
+    overview_items = [
+        ("Submission ID", detail.get("submissionId") or "—"),
+        ("Email", detail.get("email") or "—"),
+        ("Invitation #", detail.get("invitationNumber") or "—"),
+        ("Language", (detail.get("lang") or "—").upper()),
+        ("Status", "Complete" if detail.get("isComplete") else "In progress"),
+        ("Completed tabs", ", ".join(str(item) for item in completed_tabs) if completed_tabs else "—"),
+        ("Created", detail.get("createdAt") or "—"),
+        ("Updated", detail.get("updatedAt") or "—"),
+    ]
+
+    sections = [
+        ("Overview", overview_items),
+        ("Onboarding", collect_labeled_items(onboarding, ONBOARDING_FIELDS)),
+    ]
+
+    tool_sections = []
+    for tool_key, value in tools.items():
+        if not isinstance(value, dict):
+            continue
+        fields = list(TOOL_FIELDS.get(tool_key, [])) + list(TOOL_FIELDS["generic"])
+        tool_sections.append((TOOL_LABELS.get(tool_key, humanize_key(tool_key)), collect_labeled_items(value, fields)))
+
+    if tool_sections:
+        sections.append(("Tool Responses", tool_sections))
+
+    return sections
+
+
+def make_report_filename(detail):
+    parts = [
+        detail.get("onboarding", {}).get("lastName") or "",
+        detail.get("onboarding", {}).get("firstName") or "",
+        detail.get("invitationNumber") or detail.get("submissionId") or "tester",
+    ]
+    raw = "-".join(part.strip() for part in parts if str(part).strip())
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "-", raw).strip("-") or "tester-feedback"
+    return f"{safe}.pdf"
+
+
+def pdf_escape(value):
+    text = str(value or "").replace("\r\n", "\n").replace("\r", "\n")
+    text = text.encode("cp1252", "replace").decode("cp1252")
+    return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+
+def wrap_pdf_text(value, width):
+    lines = []
+    for paragraph in str(value or "").split("\n"):
+        cleaned = " ".join(paragraph.split())
+        if not cleaned:
+            lines.append("")
+            continue
+        lines.extend(textwrap.wrap(cleaned, width=width, break_long_words=True, break_on_hyphens=False) or [""])
+    return lines or [""]
+
+
+def build_pdf_bytes_from_sections(title, subtitle, sections):
+    page_width = 595
+    page_height = 842
+    margin_x = 48
+    top_y = 792
+    bottom_y = 52
+    line_height = 14
+    pages = []
+    commands = []
+    current_y = top_y
+
+    def flush_page():
+        nonlocal commands, current_y
+        pages.append("\n".join(commands))
+        commands = []
+        current_y = top_y
+
+    def ensure_space(lines_needed=1, extra=0):
+        nonlocal current_y
+        needed = lines_needed * line_height + extra
+        if current_y - needed < bottom_y:
+            flush_page()
+
+    def add_text_line(text, size=10, x=None, font="F1"):
+        nonlocal current_y
+        if x is None:
+            x = margin_x
+        commands.append(f"BT /{font} {size} Tf 0 g 1 0 0 1 {x} {current_y} Tm ({pdf_escape(text)}) Tj ET")
+        current_y -= line_height
+
+    def add_spacer(height=8):
+        nonlocal current_y
+        current_y -= height
+
+    def add_rule():
+        nonlocal current_y
+        commands.append(f"0.82 0.79 0.73 RG {margin_x} {current_y} m {page_width - margin_x} {current_y} l S")
+        current_y -= 10
+
+    ensure_space(4)
+    add_text_line(title, size=18, font="F2")
+    add_text_line(subtitle, size=10)
+    add_rule()
+
+    for section_title, section_items in sections:
+        if not section_items:
+            continue
+        if section_title == "Tool Responses":
+            ensure_space(2, extra=10)
+            add_spacer(4)
+            add_text_line(section_title, size=13, font="F2")
+            add_spacer(4)
+            for tool_title, tool_items in section_items:
+                if not tool_items:
+                    continue
+                ensure_space(2, extra=8)
+                add_text_line(tool_title, size=11, font="F2")
+                add_spacer(2)
+                for label, value in tool_items:
+                    value_lines = wrap_pdf_text(value, 82)
+                    ensure_space(len(value_lines) + 2, extra=4)
+                    add_text_line(f"{label}:", size=10, font="F2")
+                    for line in value_lines:
+                        add_text_line(line or " ", size=10, x=margin_x + 18)
+                    add_spacer(2)
+                add_spacer(4)
+            add_rule()
+            continue
+
+        ensure_space(2, extra=10)
+        add_spacer(4)
+        add_text_line(section_title, size=13, font="F2")
+        add_spacer(4)
+        for label, value in section_items:
+            value_lines = wrap_pdf_text(value, 82)
+            ensure_space(len(value_lines) + 2, extra=4)
+            add_text_line(f"{label}:", size=10, font="F2")
+            for line in value_lines:
+                add_text_line(line or " ", size=10, x=margin_x + 18)
+            add_spacer(2)
+        add_rule()
+
+    if commands:
+        flush_page()
+    elif not pages:
+        pages.append("")
+
+    objects = []
+
+    def add_object(data):
+        objects.append(data)
+        return len(objects)
+
+    pages_obj_id = add_object(b"")
+    font_regular_id = add_object(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    font_bold_id = add_object(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>")
+    page_ids = []
+
+    for content in pages:
+        content_bytes = content.encode("latin-1", "replace")
+        content_id = add_object(
+            f"<< /Length {len(content_bytes)} >>\nstream\n".encode("latin-1")
+            + content_bytes
+            + b"\nendstream"
+        )
+        page_id = add_object(
+            (
+                f"<< /Type /Page /Parent {pages_obj_id} 0 R "
+                f"/MediaBox [0 0 {page_width} {page_height}] "
+                f"/Resources << /Font << /F1 {font_regular_id} 0 R /F2 {font_bold_id} 0 R >> >> "
+                f"/Contents {content_id} 0 R >>"
+            ).encode("latin-1")
+        )
+        page_ids.append(page_id)
+
+    objects[pages_obj_id - 1] = (
+        f"<< /Type /Pages /Kids [{' '.join(f'{page_id} 0 R' for page_id in page_ids)}] /Count {len(page_ids)} >>"
+    ).encode("latin-1")
+    catalog_id = add_object(f"<< /Type /Catalog /Pages {pages_obj_id} 0 R >>".encode("latin-1"))
+
+    output = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
+    offsets = [0]
+    for index, obj in enumerate(objects, start=1):
+        offsets.append(len(output))
+        output.extend(f"{index} 0 obj\n".encode("latin-1"))
+        output.extend(obj)
+        output.extend(b"\nendobj\n")
+    xref_offset = len(output)
+    output.extend(f"xref\n0 {len(objects) + 1}\n".encode("latin-1"))
+    output.extend(b"0000000000 65535 f \n")
+    for offset in offsets[1:]:
+        output.extend(f"{offset:010d} 00000 n \n".encode("latin-1"))
+    output.extend(
+        (
+            f"trailer\n<< /Size {len(objects) + 1} /Root {catalog_id} 0 R >>\n"
+            f"startxref\n{xref_offset}\n%%EOF"
+        ).encode("latin-1")
+    )
+    return bytes(output)
+
+
+def build_feedback_report_pdf(detail):
+    onboarding = detail.get("onboarding") or {}
+    title_name = " ".join(part for part in [onboarding.get("firstName"), onboarding.get("lastName")] if part)
+    title_name = title_name or (detail.get("email") or detail.get("invitationNumber") or detail.get("submissionId"))
+    title = f"Serenzer Feedback Report - {title_name}"
+    subtitle = f"Generated on {now_iso()} | Invitation {detail.get('invitationNumber') or '—'} | Lang {(detail.get('lang') or '—').upper()}"
+    sections = build_feedback_report_sections(detail)
+    return build_pdf_bytes_from_sections(title, subtitle, sections)
 
 
 def get_onboarding_from_row(row):
@@ -1015,6 +1399,10 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/feedback":
             self._handle_feedback_list()
             return
+        if parsed.path.startswith("/api/admin/feedback/") and parsed.path.endswith("/pdf"):
+            submission_id = parsed.path.removeprefix("/api/admin/feedback/").removesuffix("/pdf").rstrip("/")
+            self._handle_feedback_detail_pdf(submission_id)
+            return
         if parsed.path.startswith("/api/admin/feedback/"):
             submission_id = parsed.path.removeprefix("/api/admin/feedback/")
             self._handle_feedback_detail(submission_id)
@@ -1697,6 +2085,35 @@ class FeedbackHandler(BaseHTTPRequestHandler):
 
         self._send_json(200, feedback_detail_from_row(row))
 
+    def _handle_feedback_detail_pdf(self, submission_id):
+        if not submission_id or submission_id.startswith("ghost:"):
+            self._send_json(400, {"error": "PDF export is only available for saved participant submissions"})
+            return
+
+        conn = get_db()
+        try:
+            row = get_feedback_detail_row(conn, submission_id)
+        finally:
+            conn.close()
+
+        if row is None:
+            self._send_json(404, {"error": "Submission not found"})
+            return
+
+        detail = feedback_detail_from_row(row)
+        pdf_bytes = build_feedback_report_pdf(detail)
+        filename = make_report_filename(detail)
+        self._send_bytes(
+            200,
+            pdf_bytes,
+            "application/pdf",
+            extra_headers=[
+                ("Content-Disposition", f'attachment; filename="{filename}"'),
+                ("Cache-Control", "no-store"),
+                ("Pragma", "no-cache"),
+            ],
+        )
+
     def _get_cookie(self, name):
         cookie = SimpleCookie()
         cookie.load(self.headers.get("Cookie", ""))
@@ -1710,6 +2127,15 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(payload)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("Pragma", "no-cache")
+        for header_name, header_value in (extra_headers or []):
+            self.send_header(header_name, header_value)
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def _send_bytes(self, status_code, payload, content_type, extra_headers=None):
+        self.send_response(status_code)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(payload)))
         for header_name, header_value in (extra_headers or []):
             self.send_header(header_name, header_value)
         self.end_headers()
