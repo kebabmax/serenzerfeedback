@@ -1972,6 +1972,22 @@
       `;
     }
 
+    function renderAnalysisError(message) {
+      const safe = esc(message || "Could not load AI reports.");
+      const configPane = document.getElementById("analysis-config-pane");
+      const listPane = document.getElementById("analysis-report-list");
+      const detailPane = document.getElementById("analysis-detail-pane");
+      if (configPane) {
+        configPane.innerHTML = `<div class="empty-state">${safe}</div>`;
+      }
+      if (listPane) {
+        listPane.innerHTML = `<div class="empty-state">${safe}</div>`;
+      }
+      if (detailPane) {
+        detailPane.innerHTML = `<div class="empty-state">${safe}</div>`;
+      }
+    }
+
     async function loadAnalysisConfig(forceRender = true) {
       const response = await apiFetch("/api/admin/analysis/config");
       if (!response.ok) throw new Error(`Failed to load analysis config (${response.status})`);
@@ -2887,9 +2903,29 @@
         document.getElementById("log-list").innerHTML = `<div class="empty-state">Loading activity logs…</div>`;
         renderLogDetail(null);
       }
-      try {
-        await Promise.all([loadList(), loadInvites(), loadBugReports(), loadLogs(), loadAnalysisConfig(false), loadAnalysisReports(false)]);
+      const baseResults = await Promise.allSettled([loadList(), loadInvites(), loadBugReports(), loadLogs()]);
+      const baseError = baseResults.find(result => result.status === "rejected");
+      if (baseError) {
+        const message = baseError.reason?.message || "The admin page could not reach the feedback API.";
+        document.getElementById("submission-list").innerHTML = `<div class="empty-state">${esc(message)}</div>`;
+        document.getElementById("invite-list").innerHTML = `<div class="empty-state">${esc(message)}</div>`;
+        document.getElementById("bug-list").innerHTML = `<div class="empty-state">${esc(message)}</div>`;
+        document.getElementById("log-list").innerHTML = `<div class="empty-state">${esc(message)}</div>`;
+        renderEmptyDetail("The admin page could not reach the feedback API.");
+        renderBugDetail(null);
+        renderLogDetail(null);
         if (state.activeView === "analysis") {
+          renderAnalysisError(message);
+        }
+        return;
+      }
+
+      if (state.activeView === "analysis") {
+        const analysisResults = await Promise.allSettled([loadAnalysisConfig(false), loadAnalysisReports(false)]);
+        const analysisError = analysisResults.find(result => result.status === "rejected");
+        if (analysisError) {
+          renderAnalysisError(analysisError.reason?.message || "Could not load AI reports.");
+        } else {
           if (!state.analysisConfigDirty) {
             renderAnalysisConfigPane();
           }
@@ -2901,6 +2937,8 @@
             renderAnalysisReportDetail(null);
           }
         }
+      }
+      try {
         if (state.activeId) {
           const item = state.list.find(entry => entry.submissionId === state.activeId);
           if (item?.entryType === "ghost") {
@@ -2920,16 +2958,7 @@
           }
         }
       } catch (error) {
-        document.getElementById("submission-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
-        document.getElementById("invite-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
-        document.getElementById("bug-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
-        document.getElementById("log-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
-        document.getElementById("analysis-report-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
-        document.getElementById("analysis-config-pane").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
         renderEmptyDetail("The admin page could not reach the feedback API.");
-        renderBugDetail(null);
-        renderLogDetail(null);
-        renderAnalysisReportDetail(null);
       }
     }
 
@@ -2963,13 +2992,18 @@
         }
       }
       if (view === "analysis") {
-        renderAnalysisConfigPane();
-        renderAnalysisReportList();
-        const active = state.analysisReports.find(item => item.id === state.activeAnalysisReportId);
-        if (active) {
-          loadAnalysisReportDetail(active.id);
+        if (state.analysisConfig || state.analysisReports.length) {
+          renderAnalysisConfigPane();
+          renderAnalysisReportList();
+          const active = state.analysisReports.find(item => item.id === state.activeAnalysisReportId);
+          if (active) {
+            loadAnalysisReportDetail(active.id);
+          } else {
+            renderAnalysisReportDetail(null);
+          }
         } else {
-          renderAnalysisReportDetail(null);
+          renderAnalysisError("Loading AI reports…");
+          refreshAll(true);
         }
       }
     }
