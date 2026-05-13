@@ -1030,6 +1030,11 @@
         <option value="complete">Completed only</option>
         <option value="incomplete">In progress only</option>
       </select>
+      <select id="ghost-filter">
+        <option value="all">All participant types</option>
+        <option value="started">Started forms only</option>
+        <option value="ghost">Ghost forms only</option>
+      </select>
       <select id="lang-filter">
         <option value="all">All languages</option>
       </select>
@@ -1188,6 +1193,7 @@
           </div>
           <div class="stats-panel-body stats-filter-grid">
             <select id="stats-status-filter"></select>
+            <select id="stats-ghost-filter"></select>
             <select id="stats-lang-filter"></select>
             <select id="stats-gender-filter"></select>
             <select id="stats-age-filter"></select>
@@ -1318,6 +1324,7 @@
 
     const STATS_FILTER_FIELDS = [
       ["stats-status-filter", "isComplete", "All completion states"],
+      ["stats-ghost-filter", "entryType", "All participant types"],
       ["stats-lang-filter", "lang", "All languages"],
       ["stats-gender-filter", "gender", "All genders"],
       ["stats-age-filter", "ageRange", "All age ranges"],
@@ -2102,9 +2109,9 @@
       renderStatsFilterControls();
       const participants = filteredStatsParticipants();
       const total = participants.length;
-      const complete = participants.filter(item => item.isComplete).length;
-      const ghosts = state.list.filter(item => item.entryType === "ghost").length;
-      const started = total;
+      const complete = participants.filter(item => item.entryType !== "ghost" && item.isComplete).length;
+      const ghosts = participants.filter(item => item.entryType === "ghost").length;
+      const started = participants.filter(item => item.entryType !== "ghost").length;
       const invites = state.invites.length;
       const completionRate = total ? `${Math.round((complete / total) * 100)}%` : "0%";
       document.getElementById("stat-total").textContent = total;
@@ -2291,11 +2298,12 @@
       if (!value && value !== false) return "Unknown";
       if (field === "lang") return String(value).toUpperCase();
       if (field === "isComplete") return String(value) === "true" || value === true ? "Complete" : "In progress";
+      if (field === "entryType") return value === "ghost" ? "Ghost forms only" : "Started forms only";
       return humanizeKey(String(value));
     }
 
     function statsParticipants() {
-      return state.list.filter(item => item.entryType !== "ghost");
+      return state.list.slice();
     }
 
     function getStatsFilters() {
@@ -2310,6 +2318,7 @@
         return Object.entries(filters).every(([field, value]) => {
           if (value === "all") return true;
           if (field === "isComplete") return String(Boolean(item.isComplete)) === value;
+          if (field === "entryType") return String(item.entryType || "submission") === value;
           return String(item[field] || "") === value;
         });
       });
@@ -2331,6 +2340,7 @@
     function renderStatsFilterControls() {
       const participants = statsParticipants();
       populateStatsSelect("stats-status-filter", ["true", "false"], "All completion states");
+      populateStatsSelect("stats-ghost-filter", ["submission", "ghost"], "All participant types");
       populateStatsSelect("stats-lang-filter", participants.map(item => item.lang), "All languages");
       populateStatsSelect("stats-gender-filter", participants.map(item => item.gender), "All genders");
       populateStatsSelect("stats-age-filter", participants.map(item => item.ageRange), "All age ranges");
@@ -2361,7 +2371,7 @@
       const usedInvites = state.invites.filter(item => item.useCount > 0 || item.boundSubmissionId).length;
       const unusedInvites = Math.max(state.invites.length - usedInvites, 0);
       const startedNotComplete = Math.max(startedCount - completeCount, 0);
-      const recent24h = filteredStatsParticipants().filter(item => {
+      const recent24h = filteredStatsParticipants().filter(item => item.entryType !== "ghost").filter(item => {
         const updated = new Date(item.updatedAt).getTime();
         return Number.isFinite(updated) && (Date.now() - updated) <= 24 * 60 * 60 * 1000;
       }).length;
@@ -2533,6 +2543,7 @@
     function applyFilters() {
       const query = document.getElementById("search-input").value.trim().toLowerCase();
       const status = document.getElementById("status-filter").value;
+      const ghostMode = document.getElementById("ghost-filter").value;
       const lang = document.getElementById("lang-filter").value;
 
       state.filtered = state.list.filter(item => {
@@ -2544,8 +2555,11 @@
         const matchesStatus = status === "all"
           || (status === "complete" && item.isComplete)
           || (status === "incomplete" && !item.isComplete);
+        const matchesGhostMode = ghostMode === "all"
+          || (ghostMode === "started" && item.entryType !== "ghost")
+          || (ghostMode === "ghost" && item.entryType === "ghost");
         const matchesLang = lang === "all" || item.lang === lang;
-        return matchesQuery && matchesStatus && matchesLang;
+        return matchesQuery && matchesStatus && matchesGhostMode && matchesLang;
       }).sort((a, b) => {
         const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
         const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
@@ -3024,6 +3038,7 @@
 
     document.getElementById("search-input").addEventListener("input", applyFilters);
     document.getElementById("status-filter").addEventListener("change", applyFilters);
+    document.getElementById("ghost-filter").addEventListener("change", applyFilters);
     document.getElementById("lang-filter").addEventListener("change", applyFilters);
     document.getElementById("refresh-btn").addEventListener("click", () => refreshAll(false));
     document.getElementById("invite-create-btn").addEventListener("click", createInvites);
