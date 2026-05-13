@@ -527,6 +527,162 @@
       text-align: right;
     }
 
+    .analysis-config {
+      display: grid;
+      gap: 12px;
+      padding: 18px 20px 20px;
+    }
+
+    .analysis-config label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .analysis-config input,
+    .analysis-config textarea,
+    .analysis-config button {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 253, 248, 0.95);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 12px 14px;
+    }
+
+    .analysis-config textarea {
+      min-height: 240px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .analysis-config-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .analysis-config-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .analysis-config-actions-left {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .analysis-config-actions button {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .analysis-config-status {
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 20px;
+      text-align: right;
+    }
+
+    .analysis-report-list {
+      display: grid;
+      gap: 10px;
+      padding: 18px 20px 20px;
+      max-height: 420px;
+      overflow: auto;
+    }
+
+    .analysis-report-row {
+      border: 1px solid rgba(217, 210, 196, 0.8);
+      border-radius: 16px;
+      background: var(--card);
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+      text-align: left;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .analysis-report-row.active {
+      border-color: rgba(107, 143, 113, 0.5);
+      box-shadow: 0 0 0 2px rgba(144, 176, 144, 0.18);
+    }
+
+    .analysis-health {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      width: fit-content;
+    }
+
+    .analysis-health.strong {
+      background: rgba(144, 176, 144, 0.18);
+      color: var(--sage-dark);
+    }
+
+    .analysis-health.mixed {
+      background: rgba(201, 162, 84, 0.16);
+      color: #8b6a1f;
+    }
+
+    .analysis-health.at-risk {
+      background: rgba(201, 74, 67, 0.14);
+      color: var(--red);
+    }
+
+    .analysis-summary {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
+    .analysis-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .analysis-list-item {
+      border: 1px solid rgba(217, 210, 196, 0.8);
+      border-radius: 14px;
+      background: #f8f4ec;
+      padding: 12px 14px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .analysis-list-item-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .analysis-list-item-body {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
+    .analysis-inline-grid {
+      display: grid;
+      gap: 14px;
+    }
+
     .invite-list {
       display: grid;
       gap: 10px;
@@ -861,6 +1017,7 @@
     <section class="view-switcher">
       <button class="view-tab active" id="participants-tab" type="button">Participants</button>
       <button class="view-tab" id="messages-tab" type="button">Messages</button>
+      <button class="view-tab" id="analysis-tab" type="button">AI Reports</button>
       <button class="view-tab" id="bug-reports-tab" type="button">Bug Reports</button>
       <button class="view-tab" id="stats-tab" type="button">Stats</button>
       <button class="view-tab" id="logs-tab" type="button">Logs</button>
@@ -973,6 +1130,33 @@
       </div>
     </section>
 
+    <section class="layout hidden" id="analysis-view">
+      <div class="left-stack">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Prompt</h2>
+          </div>
+          <div class="analysis-config" id="analysis-config-pane"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Saved Reports</h2>
+          </div>
+          <div class="analysis-report-list" id="analysis-report-list"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Report Detail</h2>
+        </div>
+        <div class="detail-scroll" id="analysis-detail-pane">
+          <div class="empty-state">Generate or select a report to inspect the daily AI analysis.</div>
+        </div>
+      </div>
+    </section>
+
     <section id="stats-view" class="hidden">
       <section class="hero-meta" style="margin-top: 24px;">
         <div class="stat-card">
@@ -1076,6 +1260,12 @@
       messageDrafts: {},
       messageComposerDirty: {},
       invites: [],
+      analysisConfig: null,
+      analysisConfigDraft: { model: "", promptText: "", reportDate: "" },
+      analysisConfigDirty: false,
+      analysisReports: [],
+      activeAnalysisReportId: null,
+      analysisStatus: "",
       bugReports: [],
       activeBugId: null,
       logs: [],
@@ -1594,6 +1784,301 @@
       document.getElementById("participant-message-send")?.addEventListener("click", () => {
         sendParticipantMessage(detail);
       });
+    }
+
+    function todayDateInputValue() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function renderAnalysisConfigPane() {
+      const pane = document.getElementById("analysis-config-pane");
+      if (!pane) return;
+      const model = state.analysisConfigDraft.model || state.analysisConfig?.model || "gpt-5.5";
+      const promptText = state.analysisConfigDraft.promptText || state.analysisConfig?.promptText || "";
+      const reportDate = state.analysisConfigDraft.reportDate || todayDateInputValue();
+      pane.innerHTML = `
+        <div class="analysis-config-row">
+          <label for="analysis-model-input">Model</label>
+          <input id="analysis-model-input" type="text" value="${esc(model)}" placeholder="gpt-5.5">
+        </div>
+        <div class="analysis-config-row">
+          <label for="analysis-report-date-input">Report date</label>
+          <input id="analysis-report-date-input" type="date" value="${esc(reportDate)}">
+        </div>
+        <div class="analysis-config-row">
+          <label for="analysis-prompt-input">Daily analysis prompt</label>
+          <textarea id="analysis-prompt-input" placeholder="Write the daily analyst prompt here.">${esc(promptText)}</textarea>
+        </div>
+        <div class="analysis-config-actions">
+          <div class="analysis-config-actions-left">
+            <button id="analysis-save-btn" type="button">Save prompt</button>
+            <button id="analysis-generate-btn" type="button">Generate report</button>
+          </div>
+          <div class="analysis-config-status" id="analysis-config-status">${esc(state.analysisStatus || "")}</div>
+        </div>
+      `;
+      document.getElementById("analysis-model-input")?.addEventListener("input", event => {
+        state.analysisConfigDraft.model = event.currentTarget.value;
+        state.analysisConfigDirty = true;
+      });
+      document.getElementById("analysis-report-date-input")?.addEventListener("input", event => {
+        state.analysisConfigDraft.reportDate = event.currentTarget.value;
+      });
+      document.getElementById("analysis-prompt-input")?.addEventListener("input", event => {
+        state.analysisConfigDraft.promptText = event.currentTarget.value;
+        state.analysisConfigDirty = true;
+      });
+      document.getElementById("analysis-save-btn")?.addEventListener("click", saveAnalysisConfig);
+      document.getElementById("analysis-generate-btn")?.addEventListener("click", generateAnalysisReport);
+    }
+
+    function analysisHealthClass(value) {
+      return ["strong", "mixed", "at-risk"].includes(value) ? value : "mixed";
+    }
+
+    function renderAnalysisReportList() {
+      const list = document.getElementById("analysis-report-list");
+      if (!list) return;
+      if (!state.analysisReports.length) {
+        list.innerHTML = `<div class="empty-state">No AI reports yet. Generate the first one from the prompt panel.</div>`;
+        return;
+      }
+      list.innerHTML = state.analysisReports.map(item => `
+        <button class="analysis-report-row ${item.id === state.activeAnalysisReportId ? "active" : ""}" type="button" data-analysis-report-id="${item.id}">
+          <div class="submission-topline">
+            <div class="submission-email">${esc(item.reportDate || `Report #${item.id}`)}</div>
+            <span class="analysis-health ${analysisHealthClass(item.overallHealth)}">${esc(item.overallHealth || "mixed")}</span>
+          </div>
+          <div class="submission-meta">
+            <span>${esc(formatDate(item.createdAt))}</span>
+            <span>${esc(item.model || "—")}</span>
+          </div>
+          <div class="analysis-summary">${esc(item.executiveSummary || "No summary saved.")}</div>
+        </button>
+      `).join("");
+      list.querySelectorAll("[data-analysis-report-id]").forEach(button => {
+        button.addEventListener("click", () => {
+          loadAnalysisReportDetail(button.dataset.analysisReportId);
+        });
+      });
+    }
+
+    function renderAnalysisStringList(items) {
+      if (!Array.isArray(items) || !items.length) {
+        return `<div class="muted">Nothing captured here yet.</div>`;
+      }
+      return `<div class="analysis-list">${items.map(item => `
+        <div class="analysis-list-item">
+          <div class="analysis-list-item-body">${esc(item)}</div>
+        </div>
+      `).join("")}</div>`;
+    }
+
+    function renderAnalysisObjectList(items, formatter) {
+      if (!Array.isArray(items) || !items.length) {
+        return `<div class="muted">Nothing captured here yet.</div>`;
+      }
+      return `<div class="analysis-list">${items.map(formatter).join("")}</div>`;
+    }
+
+    function renderAnalysisReportDetail(report) {
+      const pane = document.getElementById("analysis-detail-pane");
+      if (!pane) return;
+      if (!report) {
+        pane.innerHTML = `<div class="empty-state">Generate or select a report to inspect the daily AI analysis.</div>`;
+        return;
+      }
+      const data = report.report || {};
+      const usage = report.usage || {};
+      pane.innerHTML = `
+        <div class="detail-card">
+          <h3>Overview</h3>
+          <div class="kv-grid">
+            <div class="kv-item"><div class="kv-label">Report date</div><div class="kv-value">${esc(report.reportDate || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Generated</div><div class="kv-value">${esc(formatDate(report.createdAt))}</div></div>
+            <div class="kv-item"><div class="kv-label">Model</div><div class="kv-value">${esc(report.model || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Overall health</div><div class="kv-value">${esc(data.overallHealth || "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Input tokens</div><div class="kv-value">${esc(usage.input_tokens ?? usage.inputTokens ?? "—")}</div></div>
+            <div class="kv-item"><div class="kv-label">Output tokens</div><div class="kv-value">${esc(usage.output_tokens ?? usage.outputTokens ?? "—")}</div></div>
+          </div>
+        </div>
+        <div class="detail-card">
+          <h3>Executive Summary</h3>
+          <div class="analysis-summary">${esc(data.executiveSummary || "No summary generated.")}</div>
+        </div>
+        <div class="detail-card">
+          <h3>Key Signals</h3>
+          ${renderAnalysisObjectList(data.keySignals, item => `
+            <div class="analysis-list-item">
+              <div class="analysis-list-item-title">${esc(item.title || "Signal")} · ${esc(item.severity || "medium")}</div>
+              <div class="analysis-list-item-body">${esc(item.insight || "")}</div>
+              <div class="analysis-list-item-body"><strong>Evidence:</strong> ${esc(item.evidence || "")}</div>
+            </div>
+          `)}
+        </div>
+        <div class="detail-card">
+          <h3>What is working</h3>
+          ${renderAnalysisStringList(data.wins)}
+        </div>
+        <div class="detail-card">
+          <h3>Friction points</h3>
+          ${renderAnalysisStringList(data.frictions)}
+        </div>
+        <div class="detail-card">
+          <h3>Tool Insights</h3>
+          ${renderAnalysisObjectList(data.toolInsights, item => `
+            <div class="analysis-list-item">
+              <div class="analysis-list-item-title">${esc(item.tool || "Tool")} · ${esc(item.sentiment || "mixed")}</div>
+              <div class="analysis-list-item-body">${esc(item.insight || "")}</div>
+              <div class="analysis-list-item-body"><strong>Recommendation:</strong> ${esc(item.recommendation || "")}</div>
+            </div>
+          `)}
+        </div>
+        <div class="detail-card">
+          <h3>Urgent Bugs</h3>
+          ${renderAnalysisObjectList(data.urgentBugs, item => `
+            <div class="analysis-list-item">
+              <div class="analysis-list-item-title">${esc(item.title || "Bug")}</div>
+              <div class="analysis-list-item-body"><strong>Impact:</strong> ${esc(item.impact || "")}</div>
+              <div class="analysis-list-item-body"><strong>Evidence:</strong> ${esc(item.evidence || "")}</div>
+            </div>
+          `)}
+        </div>
+        <div class="detail-card">
+          <h3>User Requests</h3>
+          ${renderAnalysisStringList(data.userRequests)}
+        </div>
+        <div class="detail-card">
+          <h3>Tomorrow Actions</h3>
+          ${renderAnalysisStringList(data.tomorrowActions)}
+        </div>
+        <div class="detail-card">
+          <h3>Prompt Adjustments</h3>
+          ${renderAnalysisStringList(data.promptAdjustments)}
+        </div>
+        <div class="detail-card">
+          <h3>Notable Quotes</h3>
+          ${renderAnalysisObjectList(data.notableQuotes, item => `
+            <div class="analysis-list-item">
+              <div class="analysis-list-item-body">“${esc(item.quote || "")}”</div>
+              <div class="analysis-list-item-body"><strong>Context:</strong> ${esc(item.context || "")}</div>
+            </div>
+          `)}
+        </div>
+      `;
+    }
+
+    async function loadAnalysisConfig(forceRender = true) {
+      const response = await apiFetch("/api/admin/analysis/config");
+      if (!response.ok) throw new Error(`Failed to load analysis config (${response.status})`);
+      const data = await response.json();
+      state.analysisConfig = data;
+      if (!state.analysisConfigDirty) {
+        state.analysisConfigDraft.model = data.model || "gpt-5.5";
+        state.analysisConfigDraft.promptText = data.promptText || "";
+      }
+      if (!state.analysisConfigDraft.reportDate) {
+        state.analysisConfigDraft.reportDate = todayDateInputValue();
+      }
+      if (forceRender && !state.analysisConfigDirty) renderAnalysisConfigPane();
+    }
+
+    async function loadAnalysisReports(forceRender = true) {
+      const response = await apiFetch("/api/admin/analysis/reports");
+      if (!response.ok) throw new Error(`Failed to load AI reports (${response.status})`);
+      const data = await response.json();
+      state.analysisReports = data.items || [];
+      if (!state.analysisReports.some(item => item.id === state.activeAnalysisReportId)) {
+        state.activeAnalysisReportId = state.analysisReports[0]?.id || null;
+      }
+      if (forceRender) {
+        renderAnalysisReportList();
+        const active = state.analysisReports.find(item => item.id === state.activeAnalysisReportId);
+        if (active) {
+          loadAnalysisReportDetail(active.id);
+        } else {
+          renderAnalysisReportDetail(null);
+        }
+      }
+    }
+
+    async function loadAnalysisReportDetail(reportId) {
+      const response = await apiFetch(`/api/admin/analysis/reports/${encodeURIComponent(reportId)}`);
+      if (!response.ok) {
+        renderAnalysisReportDetail(null);
+        return;
+      }
+      const report = await response.json();
+      state.activeAnalysisReportId = report.id;
+      renderAnalysisReportList();
+      renderAnalysisReportDetail(report);
+    }
+
+    async function saveAnalysisConfig() {
+      state.analysisStatus = "Saving prompt...";
+      renderAnalysisConfigPane();
+      try {
+        const response = await apiFetch("/api/admin/analysis/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: state.analysisConfigDraft.model || "gpt-5.5",
+            promptText: state.analysisConfigDraft.promptText || "",
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          state.analysisStatus = data.error || "Could not save the prompt.";
+          renderAnalysisConfigPane();
+          return false;
+        }
+        state.analysisConfig = data.config;
+        state.analysisConfigDirty = false;
+        state.analysisStatus = "Prompt saved.";
+        renderAnalysisConfigPane();
+        return true;
+      } catch (_) {
+        state.analysisStatus = "Could not save the prompt.";
+        renderAnalysisConfigPane();
+        return false;
+      }
+    }
+
+    async function generateAnalysisReport() {
+      if (state.analysisConfigDirty) {
+        const ok = await saveAnalysisConfig();
+        if (!ok) return;
+      }
+      state.analysisStatus = "Generating report...";
+      renderAnalysisConfigPane();
+      try {
+        const response = await apiFetch("/api/admin/analysis/reports/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reportDate: state.analysisConfigDraft.reportDate || todayDateInputValue(),
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          state.analysisStatus = data.error || "Could not generate the report.";
+          renderAnalysisConfigPane();
+          return;
+        }
+        state.analysisStatus = "Report generated.";
+        await loadAnalysisReports(true);
+        if (data.report?.id) {
+          await loadAnalysisReportDetail(data.report.id);
+        }
+        renderAnalysisConfigPane();
+      } catch (_) {
+        state.analysisStatus = "Could not generate the report.";
+        renderAnalysisConfigPane();
+      }
     }
 
     function renderStats() {
@@ -2403,7 +2888,19 @@
         renderLogDetail(null);
       }
       try {
-        await Promise.all([loadList(), loadInvites(), loadBugReports(), loadLogs()]);
+        await Promise.all([loadList(), loadInvites(), loadBugReports(), loadLogs(), loadAnalysisConfig(false), loadAnalysisReports(false)]);
+        if (state.activeView === "analysis") {
+          if (!state.analysisConfigDirty) {
+            renderAnalysisConfigPane();
+          }
+          renderAnalysisReportList();
+          const active = state.analysisReports.find(item => item.id === state.activeAnalysisReportId);
+          if (active) {
+            loadAnalysisReportDetail(active.id);
+          } else {
+            renderAnalysisReportDetail(null);
+          }
+        }
         if (state.activeId) {
           const item = state.list.find(entry => entry.submissionId === state.activeId);
           if (item?.entryType === "ghost") {
@@ -2427,9 +2924,12 @@
         document.getElementById("invite-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
         document.getElementById("bug-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
         document.getElementById("log-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
+        document.getElementById("analysis-report-list").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
+        document.getElementById("analysis-config-pane").innerHTML = `<div class="empty-state">${esc(error.message)}</div>`;
         renderEmptyDetail("The admin page could not reach the feedback API.");
         renderBugDetail(null);
         renderLogDetail(null);
+        renderAnalysisReportDetail(null);
       }
     }
 
@@ -2437,12 +2937,14 @@
       state.activeView = view;
       document.getElementById("participants-tab").classList.toggle("active", view === "participants");
       document.getElementById("messages-tab").classList.toggle("active", view === "messages");
+      document.getElementById("analysis-tab").classList.toggle("active", view === "analysis");
       document.getElementById("bug-reports-tab").classList.toggle("active", view === "bugs");
       document.getElementById("stats-tab").classList.toggle("active", view === "stats");
       document.getElementById("logs-tab").classList.toggle("active", view === "logs");
       document.getElementById("participants-toolbar").classList.toggle("hidden", !(view === "participants" || view === "messages"));
       document.getElementById("participants-view").classList.toggle("hidden", view !== "participants");
       document.getElementById("messages-view").classList.toggle("hidden", view !== "messages");
+      document.getElementById("analysis-view").classList.toggle("hidden", view !== "analysis");
       document.getElementById("bug-reports-view").classList.toggle("hidden", view !== "bugs");
       document.getElementById("stats-view").classList.toggle("hidden", view !== "stats");
       document.getElementById("logs-view").classList.toggle("hidden", view !== "logs");
@@ -2458,6 +2960,16 @@
           }
         } else {
           renderEmptyMessagePane("Select a participant on the left to send an update or review past messages.");
+        }
+      }
+      if (view === "analysis") {
+        renderAnalysisConfigPane();
+        renderAnalysisReportList();
+        const active = state.analysisReports.find(item => item.id === state.activeAnalysisReportId);
+        if (active) {
+          loadAnalysisReportDetail(active.id);
+        } else {
+          renderAnalysisReportDetail(null);
         }
       }
     }
@@ -2483,6 +2995,7 @@
     document.getElementById("invite-toggle-btn").addEventListener("click", toggleInviteCreatePanel);
     document.getElementById("participants-tab").addEventListener("click", () => setActiveView("participants"));
     document.getElementById("messages-tab").addEventListener("click", () => setActiveView("messages"));
+    document.getElementById("analysis-tab").addEventListener("click", () => setActiveView("analysis"));
     document.getElementById("bug-reports-tab").addEventListener("click", () => setActiveView("bugs"));
     document.getElementById("stats-tab").addEventListener("click", () => setActiveView("stats"));
     document.getElementById("logs-tab").addEventListener("click", () => setActiveView("logs"));

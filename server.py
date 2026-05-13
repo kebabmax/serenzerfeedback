@@ -5,6 +5,8 @@ import re
 import secrets
 import sqlite3
 import textwrap
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -18,10 +20,118 @@ DB_PATH = DATA_DIR / "feedback.sqlite3"
 HOST = os.environ.get("SERENZER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("SERENZER_PORT", "8000"))
 IMPORT_API_KEY = os.environ.get("SERENZER_IMPORT_API_KEY", "").strip()
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
+ANALYSIS_DEFAULT_MODEL = os.environ.get("SERENZER_ANALYSIS_MODEL", "gpt-5.5").strip() or "gpt-5.5"
 
 
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
+
+
+DEFAULT_ANALYSIS_PROMPT = """You are Serenzer's daily beta feedback analyst.
+
+Your job is to read the supplied tester snapshot and produce one clear daily report for the product team.
+
+Rules:
+- Be concrete, evidence-led, and skeptical.
+- Prioritize repeated patterns over one-off noise.
+- Treat direct bug reports and repeated confusion as higher signal than isolated preferences.
+- Call out uncertainty when evidence is thin.
+- Prefer plain language over consultant language.
+- Focus on what the team should learn and do next.
+- If there is tension in the data, name it explicitly.
+- Do not invent facts that are not present in the snapshot.
+
+The resulting report should help the team answer:
+1. What is going well?
+2. What is breaking or confusing people?
+3. Which tools/pages are strongest or weakest?
+4. What should we change tomorrow?
+5. How should we update our tester-facing communication or prompt next?
+"""
+
+
+ANALYSIS_REPORT_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": [
+        "reportDate",
+        "overallHealth",
+        "executiveSummary",
+        "keySignals",
+        "wins",
+        "frictions",
+        "toolInsights",
+        "urgentBugs",
+        "userRequests",
+        "tomorrowActions",
+        "promptAdjustments",
+        "notableQuotes",
+    ],
+    "properties": {
+        "reportDate": {"type": "string"},
+        "overallHealth": {"type": "string", "enum": ["strong", "mixed", "at-risk"]},
+        "executiveSummary": {"type": "string"},
+        "keySignals": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["title", "severity", "insight", "evidence"],
+                "properties": {
+                    "title": {"type": "string"},
+                    "severity": {"type": "string", "enum": ["high", "medium", "low"]},
+                    "insight": {"type": "string"},
+                    "evidence": {"type": "string"},
+                },
+            },
+        },
+        "wins": {"type": "array", "items": {"type": "string"}},
+        "frictions": {"type": "array", "items": {"type": "string"}},
+        "toolInsights": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["tool", "sentiment", "insight", "recommendation"],
+                "properties": {
+                    "tool": {"type": "string"},
+                    "sentiment": {"type": "string", "enum": ["positive", "mixed", "negative"]},
+                    "insight": {"type": "string"},
+                    "recommendation": {"type": "string"},
+                },
+            },
+        },
+        "urgentBugs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["title", "impact", "evidence"],
+                "properties": {
+                    "title": {"type": "string"},
+                    "impact": {"type": "string"},
+                    "evidence": {"type": "string"},
+                },
+            },
+        },
+        "userRequests": {"type": "array", "items": {"type": "string"}},
+        "tomorrowActions": {"type": "array", "items": {"type": "string"}},
+        "promptAdjustments": {"type": "array", "items": {"type": "string"}},
+        "notableQuotes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["quote", "context"],
+                "properties": {
+                    "quote": {"type": "string"},
+                    "context": {"type": "string"},
+                },
+            },
+        },
+    },
+}
 
 
 def normalize_code(value):
@@ -148,6 +258,39 @@ def get_db():
             dismissed_at TEXT
         )
         """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS analysis_config (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            updated_at TEXT NOT NULL,
+            model TEXT NOT NULL,
+            prompt_text TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS analysis_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            report_date TEXT NOT NULL,
+            model TEXT NOT NULL,
+            prompt_text TEXT NOT NULL,
+            source_snapshot_json TEXT NOT NULL,
+            report_json TEXT NOT NULL,
+            usage_json TEXT,
+            error_text TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO analysis_config (id, updated_at, model, prompt_text)
+        VALUES (1, ?, ?, ?)
+        ON CONFLICT(id) DO NOTHING
+        """,
+        (now_iso(), ANALYSIS_DEFAULT_MODEL, DEFAULT_ANALYSIS_PROMPT),
     )
     existing_columns = {row["name"] for row in conn.execute("PRAGMA table_info(invitation_codes)").fetchall()}
     if "remember_token" not in existing_columns:
@@ -1166,6 +1309,293 @@ def list_activity_logs(conn):
     return items
 
 
+def get_analysis_config(conn):
+    row = conn.execute(
+        """
+        SELECT id, updated_at, model, prompt_text
+        FROM analysis_config
+        WHERE id = 1
+        """
+    ).fetchone()
+    if row is None:
+        return {
+            "updatedAt": now_iso(),
+            "model": ANALYSIS_DEFAULT_MODEL,
+            "promptText": DEFAULT_ANALYSIS_PROMPT,
+        }
+    return {
+        "updatedAt": row["updated_at"],
+        "model": row["model"] or ANALYSIS_DEFAULT_MODEL,
+        "promptText": row["prompt_text"] or DEFAULT_ANALYSIS_PROMPT,
+    }
+
+
+def update_analysis_config(conn, model, prompt_text):
+    cleaned_model = str(model or ANALYSIS_DEFAULT_MODEL).strip() or ANALYSIS_DEFAULT_MODEL
+    cleaned_prompt = str(prompt_text or "").strip() or DEFAULT_ANALYSIS_PROMPT
+    timestamp = now_iso()
+    conn.execute(
+        """
+        INSERT INTO analysis_config (id, updated_at, model, prompt_text)
+        VALUES (1, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            updated_at = excluded.updated_at,
+            model = excluded.model,
+            prompt_text = excluded.prompt_text
+        """,
+        (timestamp, cleaned_model, cleaned_prompt),
+    )
+    return {
+        "updatedAt": timestamp,
+        "model": cleaned_model,
+        "promptText": cleaned_prompt,
+    }
+
+
+def compact_tool_answers(tools):
+    if not isinstance(tools, dict):
+        return {}
+    compact = {}
+    for tool_key, value in tools.items():
+        if not isinstance(value, dict):
+            continue
+        fields = list(TOOL_FIELDS.get(tool_key, [])) + list(TOOL_FIELDS["generic"])
+        compact_items = []
+        for label, answer in collect_labeled_items(value, fields):
+            if answer == "—":
+                continue
+            compact_items.append({"label": label, "answer": answer})
+        if compact_items:
+            compact[TOOL_LABELS.get(tool_key, humanize_key(tool_key))] = compact_items
+    return compact
+
+
+def build_analysis_snapshot(conn, report_date=None):
+    rows = conn.execute(
+        """
+        SELECT submission_id, created_at, updated_at, lang, is_complete, email,
+               invitation_number, completed_tabs_json, onboarding_json, tools_json
+        FROM feedback_submissions
+        ORDER BY updated_at DESC
+        """
+    ).fetchall()
+    participants = []
+    language_counts = {}
+    complete_count = 0
+    for row in rows:
+        onboarding = json.loads(row["onboarding_json"] or "{}")
+        tools = json.loads(row["tools_json"] or "{}")
+        completed_tabs = json.loads(row["completed_tabs_json"] or "[]")
+        lang = row["lang"] or "unknown"
+        language_counts[lang] = language_counts.get(lang, 0) + 1
+        if row["is_complete"]:
+            complete_count += 1
+        participants.append(
+            {
+                "submissionId": row["submission_id"],
+                "updatedAt": row["updated_at"],
+                "createdAt": row["created_at"],
+                "language": lang,
+                "status": "complete" if row["is_complete"] else "in_progress",
+                "email": row["email"],
+                "invitationNumber": row["invitation_number"],
+                "completedTabsCount": len(completed_tabs),
+                "profile": {
+                    "tech": onboarding.get("tech"),
+                    "time": onboarding.get("time"),
+                    "ageRange": onboarding.get("ageRange"),
+                    "gender": onboarding.get("gender"),
+                    "workSituation": onboarding.get("workSituation"),
+                    "livingSituation": onboarding.get("livingSituation"),
+                    "familySituation": onboarding.get("familySituation"),
+                },
+                "expectations": onboarding.get("hopes"),
+                "responses": compact_tool_answers(tools),
+            }
+        )
+
+    bug_reports = list_bug_reports(conn)
+    recent_bug_reports = bug_reports[:40]
+    recent_logs = list_activity_logs(conn)[:80]
+    invite_codes = list_invitation_codes(conn)
+    report_date_value = str(report_date or now_iso()[:10]).strip() or now_iso()[:10]
+
+    return {
+        "reportDate": report_date_value,
+        "generatedAt": now_iso(),
+        "totals": {
+            "participants": len(participants),
+            "completed": complete_count,
+            "inProgress": max(0, len(participants) - complete_count),
+            "invitationCodes": len(invite_codes),
+            "bugReports": len(bug_reports),
+        },
+        "languageCounts": language_counts,
+        "participants": participants,
+        "recentBugReports": recent_bug_reports,
+        "recentActivityLogs": recent_logs,
+    }
+
+
+def extract_response_text(response_body):
+    if isinstance(response_body.get("output_text"), str) and response_body.get("output_text"):
+        return response_body["output_text"]
+    for item in response_body.get("output", []) or []:
+        if item.get("type") != "message":
+            continue
+        for content in item.get("content", []) or []:
+            text = content.get("text")
+            if isinstance(text, str) and text.strip():
+                return text
+    return ""
+
+
+def request_openai_analysis(model, prompt_text, snapshot):
+    if not OPENAI_API_KEY:
+        return False, {"error": "OPENAI_API_KEY is not configured on the server"}
+
+    payload = {
+        "model": model,
+        "instructions": prompt_text,
+        "input": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "Analyze this Serenzer beta feedback snapshot and return a structured JSON report.\n\n"
+                            f"Snapshot:\n{json.dumps(snapshot, ensure_ascii=False)}"
+                        ),
+                    }
+                ],
+            }
+        ],
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "daily_feedback_analysis",
+                "schema": ANALYSIS_REPORT_SCHEMA,
+                "strict": True,
+            }
+        },
+        "max_output_tokens": 4000,
+    }
+    request = urllib.request.Request(
+        "https://api.openai.com/v1/responses",
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=180) as response:
+            body = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        try:
+            detail = error.read().decode("utf-8")
+        except Exception:
+            detail = str(error)
+        return False, {"error": f"OpenAI request failed ({error.code})", "details": detail}
+    except Exception as error:
+        return False, {"error": f"OpenAI request failed: {error}"}
+
+    text = extract_response_text(body)
+    if not text:
+        return False, {"error": "OpenAI returned no analysis text", "details": body}
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        return False, {"error": "OpenAI returned invalid JSON", "details": text}
+    return True, {
+        "report": parsed,
+        "usage": body.get("usage") or {},
+        "rawResponseId": body.get("id"),
+    }
+
+
+def create_analysis_report(conn, report_date, model, prompt_text, snapshot, report_json, usage=None, error_text=None):
+    timestamp = now_iso()
+    cursor = conn.execute(
+        """
+        INSERT INTO analysis_reports (
+            created_at,
+            report_date,
+            model,
+            prompt_text,
+            source_snapshot_json,
+            report_json,
+            usage_json,
+            error_text
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            timestamp,
+            str(report_date or "").strip() or timestamp[:10],
+            str(model or ANALYSIS_DEFAULT_MODEL).strip() or ANALYSIS_DEFAULT_MODEL,
+            str(prompt_text or "").strip() or DEFAULT_ANALYSIS_PROMPT,
+            json.dumps(snapshot, ensure_ascii=False),
+            json.dumps(report_json, ensure_ascii=False),
+            json.dumps(usage or {}, ensure_ascii=False) if usage is not None else None,
+            str(error_text or "").strip() or None,
+        ),
+    )
+    return cursor.lastrowid
+
+
+def list_analysis_reports(conn):
+    rows = conn.execute(
+        """
+        SELECT id, created_at, report_date, model, report_json, usage_json, error_text
+        FROM analysis_reports
+        ORDER BY created_at DESC, id DESC
+        """
+    ).fetchall()
+    items = []
+    for row in rows:
+        report = json.loads(row["report_json"] or "{}")
+        usage = json.loads(row["usage_json"] or "{}") if row["usage_json"] else {}
+        items.append(
+            {
+                "id": row["id"],
+                "createdAt": row["created_at"],
+                "reportDate": row["report_date"],
+                "model": row["model"],
+                "overallHealth": report.get("overallHealth"),
+                "executiveSummary": report.get("executiveSummary"),
+                "usage": usage,
+                "error": row["error_text"],
+            }
+        )
+    return items
+
+
+def get_analysis_report(conn, report_id):
+    row = conn.execute(
+        """
+        SELECT id, created_at, report_date, model, prompt_text, source_snapshot_json, report_json, usage_json, error_text
+        FROM analysis_reports
+        WHERE id = ?
+        """,
+        (int(report_id),),
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "id": row["id"],
+        "createdAt": row["created_at"],
+        "reportDate": row["report_date"],
+        "model": row["model"],
+        "promptText": row["prompt_text"],
+        "snapshot": json.loads(row["source_snapshot_json"] or "{}"),
+        "report": json.loads(row["report_json"] or "{}"),
+        "usage": json.loads(row["usage_json"] or "{}") if row["usage_json"] else {},
+        "error": row["error_text"],
+    }
+
+
 def create_bug_report(conn, payload):
     message = str(payload.get("message") or "").strip()
     if not message:
@@ -1381,6 +1811,16 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/admin/logs":
             self._handle_activity_log_list()
             return
+        if parsed.path == "/api/admin/analysis/config":
+            self._handle_analysis_config_get()
+            return
+        if parsed.path == "/api/admin/analysis/reports":
+            self._handle_analysis_report_list()
+            return
+        if parsed.path.startswith("/api/admin/analysis/reports/"):
+            report_id = parsed.path.removeprefix("/api/admin/analysis/reports/")
+            self._handle_analysis_report_detail(report_id)
+            return
         if parsed.path == "/api/admin/bug-reports":
             self._handle_bug_report_list()
             return
@@ -1426,6 +1866,12 @@ class FeedbackHandler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/messages/dismiss":
             self._handle_participant_message_dismiss()
+            return
+        if parsed.path == "/api/admin/analysis/config":
+            self._handle_analysis_config_update()
+            return
+        if parsed.path == "/api/admin/analysis/reports/generate":
+            self._handle_analysis_report_generate()
             return
         if parsed.path == "/api/admin/participants/delete":
             self._handle_participant_delete()
@@ -1974,6 +2420,94 @@ class FeedbackHandler(BaseHTTPRequestHandler):
         finally:
             conn.close()
         self._send_json(200, {"ok": True})
+
+    def _handle_analysis_config_get(self):
+        conn = get_db()
+        try:
+            config = get_analysis_config(conn)
+        finally:
+            conn.close()
+        self._send_json(200, config)
+
+    def _handle_analysis_config_update(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+        conn = get_db()
+        try:
+            config = update_analysis_config(conn, payload.get("model"), payload.get("promptText"))
+            self._log_activity(
+                conn,
+                "analysis_config_updated",
+                details={"model": config.get("model")},
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        self._send_json(200, {"ok": True, "config": config})
+
+    def _handle_analysis_report_list(self):
+        conn = get_db()
+        try:
+            items = list_analysis_reports(conn)
+        finally:
+            conn.close()
+        self._send_json(200, {"count": len(items), "items": items})
+
+    def _handle_analysis_report_detail(self, report_id):
+        if not str(report_id or "").strip().isdigit():
+            self._send_json(400, {"error": "Invalid report id"})
+            return
+        conn = get_db()
+        try:
+            report = get_analysis_report(conn, int(report_id))
+        finally:
+            conn.close()
+        if report is None:
+            self._send_json(404, {"error": "Analysis report not found"})
+            return
+        self._send_json(200, report)
+
+    def _handle_analysis_report_generate(self):
+        payload, error = self._read_json_body()
+        if error:
+            self._send_json(400, error)
+            return
+        conn = get_db()
+        try:
+            config = get_analysis_config(conn)
+            report_date = str(payload.get("reportDate") or now_iso()[:10]).strip() or now_iso()[:10]
+            snapshot = build_analysis_snapshot(conn, report_date=report_date)
+            ok, result = request_openai_analysis(config["model"], config["promptText"], snapshot)
+            if not ok:
+                conn.rollback()
+                self._send_json(502, result)
+                return
+            report_id = create_analysis_report(
+                conn,
+                report_date=report_date,
+                model=config["model"],
+                prompt_text=config["promptText"],
+                snapshot=snapshot,
+                report_json=result["report"],
+                usage=result.get("usage"),
+            )
+            self._log_activity(
+                conn,
+                "analysis_report_generated",
+                details={
+                    "reportId": report_id,
+                    "reportDate": report_date,
+                    "model": config.get("model"),
+                    "openaiResponseId": result.get("rawResponseId"),
+                },
+            )
+            conn.commit()
+            report = get_analysis_report(conn, report_id)
+        finally:
+            conn.close()
+        self._send_json(200, {"ok": True, "report": report})
 
     def _handle_activity_log_list(self):
         conn = get_db()
