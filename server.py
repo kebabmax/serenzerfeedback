@@ -5,6 +5,7 @@ import re
 import secrets
 import sqlite3
 import textwrap
+import threading
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -22,6 +23,8 @@ PORT = int(os.environ.get("SERENZER_PORT", "8000"))
 IMPORT_API_KEY = os.environ.get("SERENZER_IMPORT_API_KEY", "").strip()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
 ANALYSIS_DEFAULT_MODEL = os.environ.get("SERENZER_ANALYSIS_MODEL", "gpt-5.5").strip() or "gpt-5.5"
+DB_INIT_LOCK = threading.Lock()
+DB_INITIALIZED = False
 
 
 def now_iso():
@@ -170,10 +173,7 @@ def merge_saved_value(existing, incoming):
     return incoming if is_meaningful_value(incoming) else existing
 
 
-def get_db():
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+def _initialize_db(conn):
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS feedback_submissions (
@@ -368,6 +368,22 @@ def get_db():
         END
         """
     )
+    conn.commit()
+
+
+def get_db():
+    global DB_INITIALIZED
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA busy_timeout = 30000")
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA synchronous = NORMAL")
+    if not DB_INITIALIZED:
+        with DB_INIT_LOCK:
+            if not DB_INITIALIZED:
+                _initialize_db(conn)
+                DB_INITIALIZED = True
     return conn
 
 
