@@ -1850,7 +1850,7 @@
       list.innerHTML = state.analysisReports.map(item => `
         <button class="analysis-report-row ${item.id === state.activeAnalysisReportId ? "active" : ""}" type="button" data-analysis-report-id="${item.id}">
           <div class="submission-topline">
-            <div class="submission-email">${esc(item.reportDate || `Report #${item.id}`)}</div>
+            <div class="submission-email">${esc(item.reportName || item.reportDate || `Report #${item.id}`)}</div>
             <span class="analysis-health ${analysisHealthClass(item.overallHealth)}">${esc(item.overallHealth || "mixed")}</span>
           </div>
           <div class="submission-meta">
@@ -1898,6 +1898,7 @@
         <div class="detail-card">
           <h3>Overview</h3>
           <div class="kv-grid">
+            <div class="kv-item"><div class="kv-label">Report name</div><div class="kv-value">${esc(report.reportName || "—")}</div></div>
             <div class="kv-item"><div class="kv-label">Report date</div><div class="kv-value">${esc(report.reportDate || "—")}</div></div>
             <div class="kv-item"><div class="kv-label">Generated</div><div class="kv-value">${esc(formatDate(report.createdAt))}</div></div>
             <div class="kv-item"><div class="kv-label">Model</div><div class="kv-value">${esc(report.model || "—")}</div></div>

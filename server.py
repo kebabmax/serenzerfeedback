@@ -1346,6 +1346,21 @@ def get_analysis_config(conn):
     }
 
 
+def format_analysis_report_name(report_date, sequence_number):
+    raw = str(report_date or "").strip()
+    try:
+        dt = datetime.fromisoformat(raw)
+        base = dt.strftime("%d-%m-%Y")
+    except Exception:
+        parts = raw.split("-")
+        if len(parts) == 3 and all(part.isdigit() for part in parts):
+            year, month, day = parts
+            base = f"{day.zfill(2)}-{month.zfill(2)}-{year}"
+        else:
+            base = raw or "report"
+    return f"{base}_{int(sequence_number):03d}"
+
+
 def update_analysis_config(conn, model, prompt_text):
     cleaned_model = str(model or ANALYSIS_DEFAULT_MODEL).strip() or ANALYSIS_DEFAULT_MODEL
     cleaned_prompt = str(prompt_text or "").strip() or DEFAULT_ANALYSIS_PROMPT
@@ -1566,18 +1581,25 @@ def list_analysis_reports(conn):
         """
         SELECT id, created_at, report_date, model, report_json, usage_json, error_text
         FROM analysis_reports
-        ORDER BY created_at DESC, id DESC
+        ORDER BY report_date DESC, created_at DESC, id DESC
         """
     ).fetchall()
+    sequence_by_date = {}
     items = []
+    for row in reversed(rows):
+        report_date = row["report_date"]
+        sequence_by_date[report_date] = sequence_by_date.get(report_date, 0) + 1
     for row in rows:
         report = json.loads(row["report_json"] or "{}")
         usage = json.loads(row["usage_json"] or "{}") if row["usage_json"] else {}
+        report_date = row["report_date"]
+        sequence = sequence_by_date.get(report_date, 1)
         items.append(
             {
                 "id": row["id"],
                 "createdAt": row["created_at"],
-                "reportDate": row["report_date"],
+                "reportDate": report_date,
+                "reportName": format_analysis_report_name(report_date, sequence),
                 "model": row["model"],
                 "overallHealth": report.get("overallHealth"),
                 "executiveSummary": report.get("executiveSummary"),
@@ -1585,6 +1607,7 @@ def list_analysis_reports(conn):
                 "error": row["error_text"],
             }
         )
+        sequence_by_date[report_date] = max(1, sequence - 1)
     return items
 
 
@@ -1599,10 +1622,25 @@ def get_analysis_report(conn, report_id):
     ).fetchone()
     if row is None:
         return None
+    report_date = row["report_date"]
+    sequence_row = conn.execute(
+        """
+        SELECT COUNT(*) AS seq
+        FROM analysis_reports
+        WHERE report_date = ?
+          AND (
+            created_at < ?
+            OR (created_at = ? AND id <= ?)
+          )
+        """,
+        (report_date, row["created_at"], row["created_at"], int(report_id)),
+    ).fetchone()
+    sequence = int(sequence_row["seq"]) if sequence_row and sequence_row["seq"] else 1
     return {
         "id": row["id"],
         "createdAt": row["created_at"],
-        "reportDate": row["report_date"],
+        "reportDate": report_date,
+        "reportName": format_analysis_report_name(report_date, sequence),
         "model": row["model"],
         "promptText": row["prompt_text"],
         "snapshot": json.loads(row["source_snapshot_json"] or "{}"),
